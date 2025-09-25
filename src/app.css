@@ -1,0 +1,14 @@
+@source "../node_modules/@pixelcode_/blocks";
+@import url('https://fonts.googleapis.com/css2?family=Geist&display=swap');
+@import '@pixelcode_/blocks/app.css';
+@import 'tailwindcss';
+
+@theme {
+	--color-primary: oklch(0.63 0.12 135.21);
+}
+
+@layer theme {
+	.dark {
+		--color-primary: oklch(100 0 0);
+	}
+}

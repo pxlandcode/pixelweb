@@ -1,0 +1,3 @@
+type PixelType = {
+	foo: string;
+};
