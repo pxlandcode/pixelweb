@@ -1,3 +1,4 @@
-type PixelType = {
-	foo: string;
+export type NavLink = {
+	label: string;
+	href: string;
 };
