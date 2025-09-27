@@ -1,8 +1,8 @@
 <script lang="ts">
 	export type NavLink = {
-	label: string;
-	href: string;
-};
+		label: string;
+		href: string;
+	};
 
 	export let links: NavLink[] = [
 		{ label: 'For companies', href: '#' },
@@ -31,7 +31,7 @@
 	</nav>
 	<a class="inline-flex items-center" href="/" aria-label="Pixel & Code">
 		{#if logoSrc}
-			<img class="h-[clamp(1.75rem,4vw,2.75rem)] w-auto" src={logoSrc} alt="Pixel & Code" />
+			<img class="h-6 w-auto" src={logoSrc} alt="Pixel & Code" />
 		{:else}
 			<span class="text-base font-semibold text-white">pixel&code_</span>
 		{/if}

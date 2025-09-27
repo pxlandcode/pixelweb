@@ -17,6 +17,7 @@
 	export let brandText = 'Pixel & Code';
 	export let brandLogo = '';
 	export let intervalMs = 2200;
+	export let brandHoldTicks = 1;
 
 	export let workWeight = 0.75;
 
@@ -40,7 +41,7 @@
 		'Movie Lovers',
 		'Pixel Artists',
 		'Coffee Nerds',
-		'Friday Fika Fans',
+		'Friday Fans',
 		'Ski Bums',
 		'Gamers',
 		'Music Makers',
@@ -60,6 +61,7 @@
 	let culturePool: string[] = [];
 	let previousWorkSignature = '';
 	let previousCultureSignature = '';
+	let brandHoldRemaining = 0;
 
 	$: normalizedWorkStatements = workStatements
 		.map((value) => value?.trim() ?? '')
@@ -187,6 +189,17 @@
 		headlineKey += 1;
 	}
 
+	function tickHeadline() {
+		// Keep brand logo on screen for a few extra intervals.
+		if (currentItem.type === 'brand' && brandHoldTicks > 0 && brandHoldRemaining < brandHoldTicks) {
+			brandHoldRemaining += 1;
+			return;
+		}
+
+		brandHoldRemaining = 0;
+		advance();
+	}
+
 	function registerMeasurement(node: HTMLElement, index: number) {
 		let currentIndex = index;
 
@@ -236,7 +249,7 @@
 		const remeasure = setTimeout(() => void measureHeadlineHeight(), 80);
 
 		timer = setInterval(() => {
-			advance();
+			tickHeadline();
 		}, intervalMs);
 
 		return () => {
@@ -255,8 +268,8 @@
 </script>
 
 <section class="flex flex-1 items-center justify-center px-6 pt-12 pb-16 md:px-24 md:pt-24">
-	<div class="flex flex-col items-center gap-6 text-center">
-		<span class="text-xs tracking-[0.4em] text-white/55 uppercase md:text-sm">{eyebrow}</span>
+	<div class="flex flex-col items-center gap-4 text-center">
+		<p class="text-xs tracking-[0.4em] text-white/55 uppercase md:text-sm">{eyebrow}</p>
 		<div
 			class="grid place-items-center overflow-hidden"
 			style={`min-height: ${headlineHeightPx ? `${headlineHeightPx}px` : '0px'};`}

@@ -9,7 +9,7 @@
 	$: marqueeLogos = logos.length ? [...logos, ...logos] : [];
 </script>
 
-<section class="relative py-6 md:py-7" style={`background:${background}`}>
+<section class="relative py-4 md:py-4" style={`background:${background}`}>
 	<div class="relative overflow-hidden">
 		<div
 			class="pointer-events-none absolute inset-y-0 left-0 z-[1] w-20 bg-gradient-to-r from-[#f35b3f] to-transparent"
@@ -22,9 +22,7 @@
 			aria-hidden="true"
 		>
 			{#each marqueeLogos as logo, index}
-				<div
-					class="flex h-[clamp(2.5rem,6vw,3.5rem)] w-[clamp(5rem,12vw,8rem)] flex-none items-center justify-center"
-				>
+				<div class="flex h-15 w-[clamp(5rem,12vw,8rem)] flex-none items-center justify-center">
 					<img
 						src={logo}
 						alt={`Partner logo ${(index % totalUnique) + 1}`}
