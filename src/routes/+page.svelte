@@ -4,6 +4,7 @@
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 	import type { NavLink } from '$types';
+	import { Button } from '@pixelcode_/blocks/components';
 
 	const navLinks: NavLink[] = [
 		{ label: 'For companies', href: '#' },
@@ -27,5 +28,9 @@
 <main class="flex min-h-screen flex-col bg-[#0f0f11] text-[#f0f0f0]">
 	<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
 	<HeroSection brandLogo={pixelLogoUrl} />
+	<div class="flex justify-center pb-6">
+		<Button size="lg" variant="primary" href="#contact">Get in touch</Button>
+	</div>
+
 	<LogoMarquee {logos} />
 </main>
