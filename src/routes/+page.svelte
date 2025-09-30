@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
-	import { fly } from 'svelte/transition';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import Cardstack from '$lib/components/Cardstack.svelte';
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
@@ -9,9 +8,9 @@
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 
-	import { Button, Icon } from '@pixelcode_/blocks/components';
-	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
+	import { Button } from '@pixelcode_/blocks/components';
 	import { navLinks } from '$lib/navlinks';
+	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -79,8 +78,6 @@
 		}
 	];
 
-	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
-
 	let headerWrapper: HTMLDivElement | null = null;
 	let firstFoldSection: HTMLElement | null = null;
 	let heroSectionEl: HTMLDivElement | null = null;
@@ -99,7 +96,6 @@
 	$: headerHideDistance = headerHeight ? headerHeight + 120 : 220;
 	$: headerProgress = Math.min(scrollY / headerHideDistance, 1);
 	$: parallaxOffset = headerHeight ? headerProgress * headerHeight : headerProgress * 80;
-	$: headerOpacity = Math.max(0, 1 - headerProgress);
 	$: headerFullyHidden = headerProgress >= 0.95;
 	$: heroButtonShouldFloat = heroButtonBottom <= 96;
 	$: floatingNavActive = headerFullyHidden;
@@ -110,7 +106,7 @@
 		firstFoldScrollProgress * HERO_PARALLAX_MULTIPLIER,
 		heroParallaxLimit
 	);
-	$: heroOpacity = Math.max(0, 1 - scrollY / (HERO_PARALLAX_DISTANCE * 1.3));
+	$: setFloatingNavState({ active: floatingNavActive, showCta: showFloatingCta });
 
 	function recalcMeasurements() {
 		if (headerWrapper) {
@@ -155,43 +151,13 @@
 		recalcMeasurements();
 		scrollY = window.scrollY || 0;
 	});
+
+	onDestroy(() => {
+		resetFloatingNavState();
+	});
 </script>
 
 <svelte:window on:scroll={handleScroll} on:resize={handleResize} />
-
-{#if floatingNavActive}
-	<div
-		class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
-	>
-		<div
-			class="pointer-events-auto flex items-center gap-3"
-			transition:fly={{ y: 50, duration: 220, delay: 50 }}
-		>
-			<Button
-				size="md"
-				variant="primary"
-				href="#contact"
-				class="border border-white/20 transition-transform duration-200"
-			>
-				Get in touch
-			</Button>
-		</div>
-		<div
-			class="pointer-events-auto flex items-center gap-3"
-			transition:fly={{ y: 50, duration: 220 }}
-		>
-			<Button
-				href="/"
-				size="md"
-				variant="ghost"
-				class="w-10 rounded-full bg-white p-0 text-primary shadow-sm hover:bg-white/90 focus-visible:outline-white"
-				aria-label="Pixel & Code"
-			>
-				<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
-			</Button>
-		</div>
-	</div>
-{/if}
 
 <main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
 	<section
@@ -199,7 +165,7 @@
 		bind:this={firstFoldSection}
 	>
 		<div
-			class="first-fold__header sticky top-0 z-40 w-full border-b border-white/10 bg-background/80 backdrop-blur-lg transition-opacity duration-150 ease-out"
+			class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
 			bind:this={headerWrapper}
 			style:transform={`translate3d(0, ${-parallaxOffset}px, 0)`}
 		>

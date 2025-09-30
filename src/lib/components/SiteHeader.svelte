@@ -24,10 +24,12 @@
 		</ul>
 	</nav>
 	<a class="inline-flex items-center" href="/" aria-label="Pixel & Code">
-		{#if logoSrc}
-			<img class="h-6 w-auto" src={logoSrc} alt="Pixel & Code" />
-		{:else}
-			<span class="text-base font-semibold text-white">pixel&code_</span>
-		{/if}
+		<RollingText>
+			{#if logoSrc}
+				<img class="h-6 w-auto" src={logoSrc} alt="Pixel & Code" />
+			{:else}
+				<span class="text-base font-semibold text-white">pixel&code_</span>
+			{/if}
+		</RollingText>
 	</a>
 </header>
