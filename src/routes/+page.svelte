@@ -3,19 +3,12 @@
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
-	import SiteFooter from '$lib/components/SiteFooter.svelte';
+
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
-	import type { NavLink } from '$types';
-	import { Button } from '@pixelcode_/blocks/components';
 
-	const navLinks: NavLink[] = [
-		{ label: 'For companies', href: '#' },
-		{ label: 'Join the team', href: '#' },
-		{ label: 'For developers', href: '#' },
-		{ label: 'Web shop', href: '#' },
-		{ label: 'Contact', href: '#' }
-	];
+	import { Button } from '@pixelcode_/blocks/components';
+	import { navLinks } from '$lib/navlinks';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -123,5 +116,3 @@
 		{/each}
 	</Cardstack>
 </main>
-
-<SiteFooter links={navLinks} ctaHref="#contact" />

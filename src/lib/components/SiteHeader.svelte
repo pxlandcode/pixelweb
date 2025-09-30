@@ -1,18 +1,8 @@
 <script lang="ts">
 	import { RollingText } from '$components/rolling-text';
+	import type { NavLink } from '$types';
 
-	export type NavLink = {
-		label: string;
-		href: string;
-	};
-
-	export let links: NavLink[] = [
-		{ label: 'For companies', href: '#' },
-		{ label: 'Join the team', href: '#' },
-		{ label: 'For developers', href: '#' },
-		{ label: 'Web shop', href: '#' },
-		{ label: 'Contact', href: '#' }
-	];
+	export let links: NavLink[] = [];
 
 	export let logoSrc: string;
 </script>
