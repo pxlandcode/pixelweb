@@ -4,7 +4,7 @@
 @import 'tailwindcss';
 
 @theme {
-	--color-primary: oklch(0.63 0.12 135.21);
+	--color-primary: #f35b3f;
 }
 
 @layer theme {
