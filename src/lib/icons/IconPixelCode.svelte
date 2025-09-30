@@ -1,18 +1,22 @@
-<script>
-    export let size = '40px';
-    export let color = 'black';
-    export let extraClasses = '';
-    export let extraStyle = '';
+<script lang="ts">
+	let {
+		size = '40px',
+		color = 'black',
+		extraClasses = '',
+		extraStyle = '',
+		class: className = '',
+		style = ''
+	} = $props();
 
-    $: classString = `text-${color} ${extraClasses}`;
-    $: styleString = `${extraStyle}`;
 </script>
 
 <svg
     width={size}
     height={size}
-    class={classString}
-    style={styleString}
+    class={[color ? `text-${color}` : '', extraClasses, className]
+		.filter(Boolean)
+		.join(' ')}
+    style={[extraStyle, style].filter(Boolean).join('; ')}
     fill="currentColor"
     viewBox="0 0 40 40"
     xmlns="http://www.w3.org/2000/svg"

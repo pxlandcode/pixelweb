@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
 	import Cardstack from '$lib/components/Cardstack.svelte';
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
@@ -7,7 +9,8 @@
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 
-	import { Button } from '@pixelcode_/blocks/components';
+	import { Button, Icon } from '@pixelcode_/blocks/components';
+	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import { navLinks } from '$lib/navlinks';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
@@ -75,20 +78,128 @@
 			link: { href: '#contact', label: 'Talk with our team' }
 		}
 	];
+
+	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
+
+	let headerWrapper: HTMLDivElement | null = null;
+	let heroButtonContainer: HTMLDivElement | null = null;
+	let scrollY = 0;
+	let headerHeight = 0;
+	let heroButtonBottom = Number.POSITIVE_INFINITY;
+
+	const HERO_PARALLAX_DISTANCE = 280;
+
+	$: headerHideDistance = headerHeight ? headerHeight + 120 : 220;
+	$: headerProgress = Math.min(scrollY / headerHideDistance, 1);
+	$: parallaxOffset = headerHeight ? headerProgress * headerHeight : headerProgress * 80;
+	$: headerOpacity = Math.max(0, 1 - headerProgress);
+	$: headerFullyHidden = headerProgress >= 0.95;
+	$: heroButtonShouldFloat = heroButtonBottom <= 96;
+	$: floatingNavActive = headerFullyHidden;
+	$: showFloatingCta = floatingNavActive && heroButtonShouldFloat;
+	$: heroButtonHidden = floatingNavActive && heroButtonShouldFloat;
+	$: heroParallaxOffset = Math.min(scrollY * 0.9, HERO_PARALLAX_DISTANCE);
+	$: heroOpacity = Math.max(0, 1 - scrollY / (HERO_PARALLAX_DISTANCE * 1.3));
+
+	function recalcMeasurements() {
+		if (headerWrapper) {
+			headerHeight = headerWrapper.offsetHeight;
+		}
+		if (heroButtonContainer) {
+			const rect = heroButtonContainer.getBoundingClientRect();
+			heroButtonBottom = rect.bottom;
+		} else {
+			heroButtonBottom = Number.POSITIVE_INFINITY;
+		}
+	}
+
+	function handleScroll() {
+		scrollY = window.scrollY || 0;
+		recalcMeasurements();
+	}
+
+	function handleResize() {
+		recalcMeasurements();
+	}
+
+	onMount(async () => {
+		await tick();
+		recalcMeasurements();
+		scrollY = window.scrollY || 0;
+	});
 </script>
 
+<svelte:window on:scroll={handleScroll} on:resize={handleResize} />
+
+{#if floatingNavActive}
+	<div
+		class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
+	>
+		<div
+			class="pointer-events-auto flex items-center gap-3"
+			transition:fly={{ y: 50, duration: 220, delay: 50 }}
+		>
+			<Button
+				size="md"
+				variant="primary"
+				href="#contact"
+				class="border border-white/20 transition-transform duration-200"
+			>
+				Get in touch
+			</Button>
+		</div>
+		<div
+			class="pointer-events-auto flex items-center gap-3"
+			transition:fly={{ y: 50, duration: 220 }}
+		>
+			<Button
+				href="/"
+				size="md"
+				variant="ghost"
+				class="w-10 rounded-full bg-white p-0 text-[#ff7a2b] shadow-sm hover:bg-white/90 focus-visible:outline-white"
+				aria-label="Pixel & Code"
+			>
+				<Icon icon={PixelCodeLucideIcon} size="md" class="text-[#ff7a2b]" />
+			</Button>
+		</div>
+	</div>
+{/if}
+
 <main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
-	<section class="first-fold flex min-h-screen flex-col">
-		<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
-		<div class="first-fold__content flex h-full flex-1 flex-col justify-center gap-10">
+	<section class="first-fold relative flex min-h-screen flex-col overflow-hidden">
+		<div
+			class="first-fold__header sticky top-0 z-40 w-full border-b border-white/10 bg-background/80 backdrop-blur-lg transition-opacity duration-150 ease-out"
+			bind:this={headerWrapper}
+			style:transform={`translate3d(0, ${-parallaxOffset}px, 0)`}
+		>
+			<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
+		</div>
+		<div
+			class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10"
+			style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}
+		>
 			<div class="first-fold__hero flex w-full flex-col items-center gap-6">
 				<HeroSection brandLogo={pixelLogoUrl} />
-				<div class="flex justify-center pt-2">
-					<Button size="lg" variant="primary" href="#contact">Get in touch</Button>
+				<div
+					class="flex justify-center pt-2 transition-all duration-200 ease-out"
+					bind:this={heroButtonContainer}
+					class:opacity-0={heroButtonHidden}
+					class:-translate-y-2={heroButtonHidden}
+					class:pointer-events-none={heroButtonHidden}
+				>
+					<Button
+						size="lg"
+						variant="primary"
+						href="#contact"
+						aria-hidden={heroButtonHidden ? 'true' : undefined}
+						tabindex={heroButtonHidden ? -1 : undefined}
+					>
+						Get in touch
+					</Button>
 				</div>
 			</div>
 		</div>
-		<div class="first-fold__marquee w-full">
+		<div class="first-fold__marquee relative z-20 w-full bg-background">
 			<LogoMarquee {logos} />
 		</div>
 	</section>
