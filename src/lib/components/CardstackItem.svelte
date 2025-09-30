@@ -24,17 +24,17 @@
 <style>
 	.stack-card {
 		background: #ffffff;
-		border-radius: clamp(1.75rem, 4vw, 3rem);
-		box-shadow: 0 32px 90px rgba(14, 17, 29, 0.15), 0 12px 40px rgba(14, 17, 29, 0.12);
+		border-radius: 0;
+		border: 1px solid rgba(17, 19, 29, 0.08);
+		box-shadow: none;
 		color: inherit;
 		display: grid;
-		grid-template-columns: clamp(5.5rem, 11vw, 8.5rem) minmax(0, 1fr);
-		gap: clamp(1.5rem, 4vw, 3.5rem);
-		min-height: clamp(26rem, 82vh, 34rem);
+		grid-template-columns: clamp(5.5rem, 12vw, 9rem) minmax(0, 1fr);
+		min-height: clamp(24rem, 75vh, 32rem);
 		overflow: hidden;
-		padding: clamp(2.5rem, 6vw, 4.75rem);
+		padding: clamp(2.25rem, 5vw, 4rem);
 		position: sticky;
-		top: var(--stack-top-offset);
+		top: 0;
 		transform-origin: center top;
 		transition: transform 160ms ease-out;
 		will-change: transform;
@@ -43,9 +43,9 @@
 
 	.stack-card::before {
 		content: '(' counter(cardstack, decimal-leading-zero) ')';
-		font-size: clamp(2.75rem, 9vw, 5.5rem);
-		font-weight: 600;
-		letter-spacing: -0.02em;
+		font-size: clamp(3.25rem, 10vw, 6rem);
+		font-weight: 500;
+		letter-spacing: -0.05em;
 		line-height: 1;
 		align-self: flex-start;
 		color: #0f111c;
@@ -136,7 +136,7 @@
 		}
 
 		.stack-card::before {
-			font-size: clamp(2.5rem, 18vw, 4rem);
+			font-size: clamp(2.8rem, 20vw, 4.4rem);
 			margin-bottom: 1rem;
 		}
 

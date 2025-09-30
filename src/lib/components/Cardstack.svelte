@@ -147,7 +147,7 @@
 	{#if eyebrow || heading || description}
 		<div class="cardstack__intro">
 			{#if eyebrow}
-				<p class="cardstack__eyebrow">{eyebrow}</p>
+				<p class="cardstack__eyebrow color-primary">{eyebrow}</p>
 			{/if}
 			{#if heading}
 				<h2 class="cardstack__heading">{heading}</h2>
@@ -168,23 +168,17 @@
 		--stack-gap: clamp(3rem, 6vw, 5rem);
 		position: relative;
 		isolation: isolate;
-		background: linear-gradient(180deg, #f7f8fc 0%, #f1f2f8 90%);
-		color: #11131d;
+		background: black;
+		color: #ffffff;
 		display: grid;
 		gap: clamp(3rem, 7vw, 6rem);
 		margin: 0;
-		padding: clamp(4.5rem, 9vw, 7.5rem) clamp(1.5rem, 6vw, 5rem) clamp(7rem, 11vw, 10rem);
+		padding: 40px 0 40px 0;
 		min-height: 100vh;
 	}
 
 	.cardstack::after {
 		content: none;
-	}
-
-	.cardstack__intro,
-	.stack-cards {
-		margin-inline: auto;
-		width: min(100%, 70rem);
 	}
 
 	.cardstack__intro {
@@ -194,7 +188,6 @@
 	}
 
 	.cardstack__eyebrow {
-		color: #4f56ff;
 		font-size: 0.9rem;
 		font-weight: 600;
 		letter-spacing: 0.12em;
@@ -222,7 +215,7 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: var(--stack-gap);
+
 		counter-reset: cardstack;
 	}
 
@@ -231,9 +224,9 @@
 			padding-inline: clamp(1rem, 5vw, 2rem);
 		}
 
-		.cardstack__intro,
-		.stack-cards {
-			width: 100%;
+		.cardstack__intro {
+			margin-inline: auto;
+			width: min(100%, 70rem);
 		}
 	}
 </style>
