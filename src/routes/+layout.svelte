@@ -46,7 +46,7 @@
 			transition:fly={{ y: 50, duration: 220 }}
 		>
 			<Button
-				class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-primary shadow-sm transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+				class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
 				aria-label="Open main menu"
 				aria-expanded={$curtainMenu ? 'true' : 'false'}
 				aria-controls="curtain-menu"

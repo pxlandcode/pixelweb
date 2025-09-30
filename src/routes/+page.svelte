@@ -11,6 +11,7 @@
 	import { Button } from '@pixelcode_/blocks/components';
 	import { navLinks } from '$lib/navlinks';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
+	import RollingText from '$components/rolling-text/RollingText.svelte';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -194,7 +195,7 @@
 						aria-hidden={heroButtonHidden ? 'true' : undefined}
 						tabindex={heroButtonHidden ? -1 : undefined}
 					>
-						Get in touch
+						<RollingText>Get in touch</RollingText>
 					</Button>
 				</div>
 			</div>
