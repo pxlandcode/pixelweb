@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { RollingText } from '$components/rolling-text';
+
 	export type NavLink = {
 		label: string;
 		href: string;
@@ -24,7 +26,9 @@
 		>
 			{#each links as { label, href }}
 				<li>
-					<a class="transition-colors hover:text-white focus-visible:text-white" {href}>{label}</a>
+					<a class="transition-colors hover:text-white focus-visible:text-white" {href}>
+						<RollingText text={label} />
+					</a>
 				</li>
 			{/each}
 		</ul>
