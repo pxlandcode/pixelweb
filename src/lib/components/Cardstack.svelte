@@ -178,25 +178,7 @@
 	}
 
 	.cardstack::after {
-		content: '';
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: clamp(-10rem, -14vw, -6rem);
-		height: clamp(5rem, 14vw, 11rem);
-		background: linear-gradient(
-			180deg,
-			rgba(15, 15, 17, 0) 0%,
-			rgba(15, 15, 17, 0.65) 60%,
-			#0f0f11 100%
-		);
-		pointer-events: none;
-		opacity: 0;
-		transition: opacity 240ms ease-out;
-	}
-
-	.cardstack--has-exit::after {
-		opacity: 1;
+		content: none;
 	}
 
 	.cardstack__intro,

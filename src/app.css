@@ -5,6 +5,7 @@
 
 @theme {
 	--color-primary: #f35b3f;
+    --color-background: #18191B;
 }
 
 @layer theme {

@@ -3,6 +3,7 @@
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
+	import SiteFooter from '$lib/components/SiteFooter.svelte';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 	import type { NavLink } from '$types';
@@ -83,7 +84,7 @@
 	];
 </script>
 
-<main class="flex min-h-screen flex-col bg-[#0f0f11] text-[#f0f0f0]">
+<main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
 	<section class="first-fold flex min-h-screen flex-col">
 		<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
 		<div class="first-fold__content flex h-full flex-1 flex-col justify-center gap-10">
@@ -122,3 +123,5 @@
 		{/each}
 	</Cardstack>
 </main>
+
+<SiteFooter links={navLinks} ctaHref="#contact" />
