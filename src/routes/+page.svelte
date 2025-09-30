@@ -82,12 +82,19 @@
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 
 	let headerWrapper: HTMLDivElement | null = null;
+	let firstFoldSection: HTMLElement | null = null;
+	let heroSectionEl: HTMLDivElement | null = null;
+	let marqueeEl: HTMLDivElement | null = null;
 	let heroButtonContainer: HTMLDivElement | null = null;
 	let scrollY = 0;
 	let headerHeight = 0;
 	let heroButtonBottom = Number.POSITIVE_INFINITY;
+	let firstFoldScrollProgress = 0;
+	let heroSectionHeight = 0;
+	let marqueeHeight = 0;
 
 	const HERO_PARALLAX_DISTANCE = 280;
+	const HERO_PARALLAX_MULTIPLIER = 0.45;
 
 	$: headerHideDistance = headerHeight ? headerHeight + 120 : 220;
 	$: headerProgress = Math.min(scrollY / headerHideDistance, 1);
@@ -98,12 +105,33 @@
 	$: floatingNavActive = headerFullyHidden;
 	$: showFloatingCta = floatingNavActive && heroButtonShouldFloat;
 	$: heroButtonHidden = floatingNavActive && heroButtonShouldFloat;
-	$: heroParallaxOffset = Math.min(scrollY * 0.9, HERO_PARALLAX_DISTANCE);
+	$: heroParallaxLimit = Math.max(heroSectionHeight + marqueeHeight * 0.7, HERO_PARALLAX_DISTANCE);
+	$: heroParallaxOffset = Math.min(
+		firstFoldScrollProgress * HERO_PARALLAX_MULTIPLIER,
+		heroParallaxLimit
+	);
 	$: heroOpacity = Math.max(0, 1 - scrollY / (HERO_PARALLAX_DISTANCE * 1.3));
 
 	function recalcMeasurements() {
 		if (headerWrapper) {
 			headerHeight = headerWrapper.offsetHeight;
+		}
+		if (firstFoldSection) {
+			const rect = firstFoldSection.getBoundingClientRect();
+			const progress = Math.max(0, Math.min(rect.height, -rect.top));
+			firstFoldScrollProgress = progress;
+		} else {
+			firstFoldScrollProgress = 0;
+		}
+		if (heroSectionEl) {
+			heroSectionHeight = heroSectionEl.offsetHeight;
+		} else {
+			heroSectionHeight = 0;
+		}
+		if (marqueeEl) {
+			marqueeHeight = marqueeEl.offsetHeight;
+		} else {
+			marqueeHeight = 0;
 		}
 		if (heroButtonContainer) {
 			const rect = heroButtonContainer.getBoundingClientRect();
@@ -156,17 +184,20 @@
 				href="/"
 				size="md"
 				variant="ghost"
-				class="w-10 rounded-full bg-white p-0 text-[#ff7a2b] shadow-sm hover:bg-white/90 focus-visible:outline-white"
+				class="w-10 rounded-full bg-white p-0 text-primary shadow-sm hover:bg-white/90 focus-visible:outline-white"
 				aria-label="Pixel & Code"
 			>
-				<Icon icon={PixelCodeLucideIcon} size="md" class="text-[#ff7a2b]" />
+				<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
 			</Button>
 		</div>
 	</div>
 {/if}
 
 <main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
-	<section class="first-fold relative flex min-h-screen flex-col overflow-hidden">
+	<section
+		class="first-fold relative flex min-h-screen flex-col overflow-hidden"
+		bind:this={firstFoldSection}
+	>
 		<div
 			class="first-fold__header sticky top-0 z-40 w-full border-b border-white/10 bg-background/80 backdrop-blur-lg transition-opacity duration-150 ease-out"
 			bind:this={headerWrapper}
@@ -178,7 +209,10 @@
 			class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10"
 			style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}
 		>
-			<div class="first-fold__hero flex w-full flex-col items-center gap-6">
+			<div
+				class="first-fold__hero flex w-full flex-col items-center gap-6"
+				bind:this={heroSectionEl}
+			>
 				<HeroSection brandLogo={pixelLogoUrl} />
 				<div
 					class="flex justify-center pt-2 transition-all duration-200 ease-out"
@@ -199,7 +233,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="first-fold__marquee relative z-20 w-full bg-background">
+		<div class="first-fold__marquee relative z-20 w-full bg-background" bind:this={marqueeEl}>
 			<LogoMarquee {logos} />
 		</div>
 	</section>
