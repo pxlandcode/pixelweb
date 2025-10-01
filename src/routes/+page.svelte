@@ -12,6 +12,13 @@
 	import { navLinks } from '$lib/navlinks';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import { cardstackEntries } from '$lib/mockdata';
+	import ImageHeadline from '$components/ImageHeadline.svelte';
+	import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
+
+	import asset from '$lib/images/asset.jpg';
+	import workLife from '$lib/images/work-life.jpg';
+	import meetingRoom from '$lib/images/meeting-room.jpg';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -19,65 +26,11 @@
 		eager: true
 	});
 
+	const cards = cardstackEntries;
+
 	const discoveredLogos = Object.values(logoImports) as string[];
 
 	const logos = (discoveredLogos.length ? [...discoveredLogos].sort() : []) satisfies string[];
-
-	type CardstackEntry = {
-		eyebrow: string;
-		title: string;
-		description: string;
-		bullets?: string[];
-		link?: { href: string; label: string };
-	};
-
-	const cardstackEntries: CardstackEntry[] = [
-		{
-			eyebrow: 'Discovery',
-			title: 'Align around the outcome before we touch the code',
-			description:
-				"We uncover the real problem through workshops, customer interviews, and rapid validation so we know we're investing in the right solution.",
-			bullets: [
-				'Problem framing sessions with your core stakeholders',
-				'Clickable prototypes to test product value early',
-				'Roadmaps grounded in measurable business impact'
-			]
-		},
-		{
-			eyebrow: 'Design',
-			title: 'Design journeys that feel effortless and on-brand',
-			description:
-				'Our designers co-create with your team to craft accessible, production-ready interfaces that your customers actually enjoy using.',
-			bullets: [
-				'Hands-on design sprints with real user feedback loops',
-				'Robust design systems that scale across products',
-				'Micro-interactions that bring your brand to life'
-			]
-		},
-		{
-			eyebrow: 'Engineering',
-			title: 'Ship stable builds on a cadence you can trust',
-			description:
-				'We blend modern stacks with pragmatic engineering so releases stay predictable, maintainable, and ready for whatever comes next.',
-			bullets: [
-				'CI/CD pipelines with automated quality gates',
-				'Modular architectures that adapt as you grow',
-				'Performance budgets baked into every sprint'
-			]
-		},
-		{
-			eyebrow: 'Partnership',
-			title: 'Extend your team with people who own the outcomes',
-			description:
-				'We stay plugged in after launch with product coaching, analytics reviews, and roadmap support so the wins keep compounding.',
-			bullets: [
-				'Embedded squads that collaborate as true partners',
-				'Monthly product reviews with actionable next steps',
-				'Post-launch optimisation backed by usage data'
-			],
-			link: { href: '#contact', label: 'Talk with our team' }
-		}
-	];
 
 	let headerWrapper: HTMLDivElement | null = null;
 	let firstFoldSection: HTMLElement | null = null;
@@ -97,11 +50,11 @@
 	$: headerHideDistance = headerHeight ? headerHeight + 120 : 220;
 	$: headerProgress = Math.min(scrollY / headerHideDistance, 1);
 	$: parallaxOffset = headerHeight ? headerProgress * headerHeight : headerProgress * 80;
-	$: headerFullyHidden = headerProgress >= 0.95;
+	$: headerFullyHidden = headerProgress >= 0.2;
 	$: heroButtonShouldFloat = heroButtonBottom <= 96;
 	$: floatingNavActive = headerFullyHidden;
 	$: showFloatingCta = floatingNavActive && heroButtonShouldFloat;
-	$: heroButtonHidden = floatingNavActive && heroButtonShouldFloat;
+	$: heroButtonHidden = floatingNavActive;
 	$: heroParallaxLimit = Math.max(heroSectionHeight + marqueeHeight * 0.7, HERO_PARALLAX_DISTANCE);
 	$: heroParallaxOffset = Math.min(
 		firstFoldScrollProgress * HERO_PARALLAX_MULTIPLIER,
@@ -156,6 +109,18 @@
 	onDestroy(() => {
 		resetFloatingNavState();
 	});
+	const leadTitle =
+		"We don't believe in making things complicated.\nWe strive for simplicity, and focus on results.";
+
+	const leftTitle = 'Work-life balance';
+	const leftBody =
+		'We prioritize work-life balance and we foster a culture of professional development, innovation and creativity, encouraging our employees to continuously build their skills, think outside the box and bring new ideas to the table.';
+	const rightTitle = 'Our greatest asset';
+	const rightBody =
+		'Our employees are our greatest asset and we are committed to create a workplace that inspires and offers competitive compensation, success and well-being.';
+
+	const bannerTitle =
+		'We design, build and support digital products that create real business value.';
 </script>
 
 <svelte:window on:scroll={handleScroll} on:resize={handleResize} />
@@ -182,10 +147,10 @@
 			>
 				<HeroSection brandLogo={pixelLogoUrl} />
 				<div
-					class="flex justify-center pt-2 transition-all duration-200 ease-out"
+					class="flex transform-gpu justify-center pt-2 transition-all duration-200 ease-in-out"
 					bind:this={heroButtonContainer}
 					class:opacity-0={heroButtonHidden}
-					class:-translate-y-2={heroButtonHidden}
+					class:translate-y-8={heroButtonHidden}
 					class:pointer-events-none={heroButtonHidden}
 				>
 					<Button
@@ -204,18 +169,29 @@
 			<LogoMarquee {logos} />
 		</div>
 	</section>
+	<ImageFeaturePair
+		{leadTitle}
+		{leftTitle}
+		{leftBody}
+		leftImageSrc={workLife}
+		{rightTitle}
+		{rightBody}
+		rightImageSrc={asset}
+	/>
 
-	<Cardstack
-		eyebrow="How we partner"
-		heading="Ship digital experiences that feel tailor-made"
-		description="From fuzzy ideas to production-ready releases, our product squads cover the full lifecycle so you can focus on the next big bet."
-	>
+	<!-- Parallax banner -->
+	<ImageHeadline imageSrc={meetingRoom} title={bannerTitle} parallax={0.25} />
+
+	<Cardstack>
 		{#each cardstackEntries as entry (entry.title)}
 			<CardstackItem
+				counter={cards.indexOf(entry) + 1}
 				title={entry.title}
 				eyebrow={entry.eyebrow}
 				description={entry.description}
 				link={entry.link}
+				img={entry.img}
+				imgAlt={entry.imgAlt}
 			>
 				{#if entry.bullets}
 					<ul class="stack-card__list">

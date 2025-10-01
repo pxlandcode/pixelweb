@@ -1,107 +1,87 @@
 <script lang="ts">
+	import { Icon } from '@pixelcode_/blocks/components';
+	import RollingText from './rolling-text/RollingText.svelte';
+	import { IconPixelCode } from '$lib/icons';
+
 	export let title: string;
 	export let eyebrow: string | undefined = undefined;
 	export let description: string | undefined = undefined;
 	export let link: { href: string; label: string } | undefined = undefined;
+	export let img: string | undefined = undefined;
+	export let imgAlt: string = '';
+	export let counter: number;
+
+	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 </script>
 
-<li class="stack-card js-stack-cards__item">
-	<div class="stack-card__content">
+<li
+	class="js-stack-cards__item relative sticky top-0 grid min-h-[clamp(24rem,75vh,32rem)] origin-top grid-cols-[clamp(5.5rem,12vw,9rem)_minmax(0,1fr)] overflow-hidden rounded-none border border-black/10 bg-white p-[clamp(2.25rem,5vw,4rem)] transition-transform duration-150 ease-out will-change-transform [counter-increment:cardstack] max-[50rem]:min-h-0 max-[50rem]:grid-cols-1 max-[50rem]:p-[clamp(2rem,8vw,3rem)]"
+>
+	<!-- Counter column -->
+	<!-- <div
+		class="self-start text-[clamp(3.25rem,10vw,6rem)] leading-none font-medium tracking-[-0.05em] text-background before:hidden max-[50rem]:mb-4 max-[50rem]:text-[clamp(2.8rem,20vw,4.4rem)]"
+		aria-hidden="true"
+	>
+		<RollingText>
+			{counter}
+		</RollingText>
+	</div> -->
+
+	<div class="items-center self-start text-primary" aria-hidden="true"></div>
+
+	<!-- Content -->
+	<div class="grid grid-cols-1 gap-[clamp(1.25rem,2.5vw,2rem)]">
 		{#if eyebrow}
-			<p class="stack-card__eyebrow">{eyebrow}</p>
+			<p class="m-0 text-[0.9rem] font-semibold tracking-[0.12em] text-primary uppercase">
+				{eyebrow}
+			</p>
 		{/if}
-		<h3 class="stack-card__title">{title}</h3>
+
+		<h3
+			class="m-0 text-[clamp(1.75rem,3.8vw,2.75rem)] leading-[1.1] font-bold tracking-[-0.015em] text-background"
+		>
+			{title}
+		</h3>
+
+		{#if img}
+			<img src={img} alt={imgAlt} class="block max-h-50 w-full object-cover" />
+		{/if}
+
 		{#if description}
-			<p class="stack-card__description">{description}</p>
+			<p class="m-0 text-[clamp(1rem,2vw,1.1rem)] leading-[1.7] text-[#31333f]">
+				{description}
+			</p>
 		{/if}
+
 		<slot />
+
 		{#if link}
-			<a class="stack-card__link" href={link.href}>{link.label}</a>
+			<a
+				class="group inline-flex items-center gap-1 font-semibold text-[#12152b] no-underline"
+				href={link.href}
+			>
+				<RollingText>
+					{link.label}
+				</RollingText>
+				<span class="transition-transform duration-150 ease-out group-hover:translate-x-1">→</span>
+			</a>
 		{/if}
 	</div>
+
+	<!-- Shadow overlay that intensifies as the card falls back -->
+	<div
+		class="js-tilt-overlay will-change-opacity pointer-events-none absolute inset-0 z-10 bg-black opacity-0 transition-opacity duration-150 ease-out"
+	/>
 </li>
 
 <style>
-	.stack-card {
-		background: #ffffff;
-		border-radius: 0;
-		border: 1px solid rgba(17, 19, 29, 0.08);
-		box-shadow: none;
-		color: inherit;
-		display: grid;
-		grid-template-columns: clamp(5.5rem, 12vw, 9rem) minmax(0, 1fr);
-		min-height: clamp(24rem, 75vh, 32rem);
-		overflow: hidden;
-		padding: clamp(2.25rem, 5vw, 4rem);
-		position: sticky;
-		top: 0;
-		transform-origin: center top;
-		transition: transform 160ms ease-out;
-		will-change: transform;
-		counter-increment: cardstack;
-	}
-
-	.stack-card::before {
+	/* Numeric counter in the leading column */
+	:global(li.js-stack-cards__item > div:first-child)::before {
 		content: '(' counter(cardstack, decimal-leading-zero) ')';
-		font-size: clamp(3.25rem, 10vw, 6rem);
-		font-weight: 500;
-		letter-spacing: -0.05em;
-		line-height: 1;
-		align-self: flex-start;
-		color: #0f111c;
+		color: var(--color-primary);
 	}
 
-	.stack-card__content {
-		display: grid;
-		gap: clamp(1.25rem, 2.5vw, 2rem);
-		grid-column: 2 / -1;
-	}
-
-	.stack-card__eyebrow {
-		color: #4248ff;
-		font-size: 0.9rem;
-		font-weight: 600;
-		letter-spacing: 0.12em;
-		margin: 0;
-		text-transform: uppercase;
-	}
-
-	.stack-card__title {
-		color: #080811;
-		font-size: clamp(1.75rem, 3.8vw, 2.75rem);
-		font-weight: 700;
-		letter-spacing: -0.015em;
-		line-height: 1.1;
-		margin: 0;
-	}
-
-	.stack-card__description {
-		color: #31333f;
-		font-size: clamp(1rem, 2vw, 1.1rem);
-		line-height: 1.7;
-		margin: 0;
-	}
-
-	.stack-card__link {
-		align-items: center;
-		color: #12152b;
-		display: inline-flex;
-		font-weight: 600;
-		gap: 0.4rem;
-		text-decoration: none;
-	}
-
-	.stack-card__link::after {
-		content: '→';
-		font-size: 1rem;
-		transition: transform 160ms ease-out;
-	}
-
-	.stack-card__link:hover::after,
-	.stack-card__link:focus-visible::after {
-		transform: translateX(4px);
-	}
-
+	/* Optional helper list styles if you use .stack-card__list in slots */
 	:global(.stack-card__list) {
 		list-style: none;
 		margin: 0;
@@ -109,7 +89,6 @@
 		display: grid;
 		gap: 0.65rem;
 	}
-
 	:global(.stack-card__list li) {
 		display: flex;
 		gap: 0.6rem;
@@ -118,9 +97,8 @@
 		font-size: 0.98rem;
 		line-height: 1.55;
 	}
-
 	:global(.stack-card__list li::before) {
-		background: radial-gradient(circle, #5056ff 0%, rgba(80, 86, 255, 0) 70%);
+		background: radial-gradient(circle, var(--color-primary) 0%, rgba(80, 86, 255, 0) 70%);
 		border-radius: 999px;
 		content: '';
 		height: 0.5rem;
@@ -128,25 +106,8 @@
 		width: 0.5rem;
 	}
 
-	@media (max-width: 50rem) {
-		.stack-card {
-			grid-template-columns: 1fr;
-			min-height: auto;
-			padding: clamp(2rem, 8vw, 3rem);
-		}
-
-		.stack-card::before {
-			font-size: clamp(2.8rem, 20vw, 4.4rem);
-			margin-bottom: 1rem;
-		}
-
-		.stack-card__content {
-			grid-column: 1 / -1;
-		}
-	}
-
 	@media (prefers-reduced-motion: reduce) {
-		.stack-card {
+		:global(.js-stack-cards__item) {
 			transition: none;
 			transform: none !important;
 		}

@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 
-	export let eyebrow: string | undefined = undefined;
-	export let heading: string | undefined = undefined;
-	export let description: string | undefined = undefined;
-
 	let listEl: HTMLUListElement | null = null;
 	let items: HTMLElement[] = [];
+	let overlays: (HTMLElement | null)[] = [];
+	let tiltAngles: number[] = [];
+
 	let intersectionObserver: IntersectionObserver | null = null;
 	let resizeObserver: ResizeObserver | null = null;
 	let scrollCleanup: (() => void) | null = null;
@@ -22,6 +21,10 @@
 
 	const SHRINK_FACTOR = 0.05;
 	const MIN_SCALE = 0.9;
+
+	const MAX_TILT_DEG = 2; // maximum absolute tilt (deg)
+	const MIN_TILT_DEG = 0.6; // minimum absolute tilt (deg)
+	const MAX_OVERLAY = 0.35; // max overlay opacity when fully “fallen back”
 
 	function computeMetrics() {
 		if (!listEl || !items.length) return;
@@ -49,14 +52,29 @@
 	function applyTransforms() {
 		if (!items.length) return;
 		const scrollY = window.scrollY;
+
 		items.forEach((item, index) => {
 			const base = baseTranslations[index] ?? 0;
 			const start = stickyStartPoints[index] ?? 0;
 			const progress = Math.max(0, scrollY - start);
 			const height = cardHeights[index] ?? cardHeight;
+
 			const scaleReduction = (progress * SHRINK_FACTOR) / Math.max(height, 1);
 			const scale = Math.max(MIN_SCALE, 1 - scaleReduction);
-			item.style.transform = `translateY(${base}px) scale(${scale})`;
+
+			const t = (1 - scale) / (1 - MIN_SCALE);
+
+			// Subtle random tilt per card, scaled by t
+			const tilt = (tiltAngles[index] ?? 0) * t;
+
+			// Apply transform
+			item.style.transform = `translateY(${base}px) scale(${scale}) rotate(${tilt}deg)`;
+
+			// Shadow overlay: intensifies with t
+			const overlay = overlays[index];
+			if (overlay) {
+				overlay.style.opacity = String(Math.min(MAX_OVERLAY, Math.max(0, t * MAX_OVERLAY)));
+			}
 		});
 	}
 
@@ -105,14 +123,22 @@
 		items = Array.from(listEl.querySelectorAll<HTMLElement>('.js-stack-cards__item'));
 		if (!items.length) return;
 
+		// Overlay nodes (added in CardStackItem markup)
+		overlays = items.map((el) => el.querySelector<HTMLElement>('.js-tilt-overlay'));
+
+		// Stable-enough random tilt per item (small left/right)
+		tiltAngles = items.map(() => {
+			const sign = Math.random() < 0.5 ? -1 : 1;
+			const mag = MIN_TILT_DEG + Math.random() * (MAX_TILT_DEG - MIN_TILT_DEG);
+			return sign * mag;
+		});
+
 		const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 		computeMetrics();
 		applyTransforms();
 
-		if (reduceMotion) {
-			return;
-		}
+		if (reduceMotion) return;
 
 		window.addEventListener('resize', handleResize);
 		resizeAttached = true;
@@ -143,90 +169,10 @@
 	});
 </script>
 
-<section class="cardstack cardstack--has-exit">
-	{#if eyebrow || heading || description}
-		<div class="cardstack__intro">
-			{#if eyebrow}
-				<p class="cardstack__eyebrow color-primary">{eyebrow}</p>
-			{/if}
-			{#if heading}
-				<h2 class="cardstack__heading">{heading}</h2>
-			{/if}
-			{#if description}
-				<p class="cardstack__description">{description}</p>
-			{/if}
-		</div>
-	{/if}
-	<ul class="stack-cards js-stack-cards" bind:this={listEl} role="list">
+<section
+	class="relative isolate grid min-h-screen gap-[clamp(3rem,7vw,6rem)] bg-black text-white [--stack-gap:clamp(3rem,6vw,5rem)] max-[50rem]:px-[clamp(1rem,5vw,2rem)]"
+>
+	<ul class="m-0 grid list-none p-0 [counter-reset:cardstack]" bind:this={listEl} role="list">
 		<slot />
 	</ul>
 </section>
-
-<style>
-	.cardstack {
-		--stack-top-offset: clamp(2.5rem, 7vw, 4.5rem);
-		--stack-gap: clamp(3rem, 6vw, 5rem);
-		position: relative;
-		isolation: isolate;
-		background: black;
-		color: #ffffff;
-		display: grid;
-		gap: clamp(3rem, 7vw, 6rem);
-		margin: 0;
-		padding: 40px 0 40px 0;
-		min-height: 100vh;
-	}
-
-	.cardstack::after {
-		content: none;
-	}
-
-	.cardstack__intro {
-		display: grid;
-		gap: clamp(1.25rem, 2.5vw, 2rem);
-		text-align: center;
-	}
-
-	.cardstack__eyebrow {
-		font-size: 0.9rem;
-		font-weight: 600;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.cardstack__heading {
-		font-size: clamp(2.25rem, 5vw, 3.75rem);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-		line-height: 1.1;
-		margin: 0;
-	}
-
-	.cardstack__description {
-		color: #3b3d4a;
-		font-size: clamp(1.05rem, 2vw, 1.25rem);
-		line-height: 1.7;
-		margin: 0 auto;
-		max-width: 45rem;
-	}
-
-	.stack-cards {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-
-		counter-reset: cardstack;
-	}
-
-	@media (max-width: 50rem) {
-		.cardstack {
-			padding-inline: clamp(1rem, 5vw, 2rem);
-		}
-
-		.cardstack__intro {
-			margin-inline: auto;
-			width: min(100%, 70rem);
-		}
-	}
-</style>
