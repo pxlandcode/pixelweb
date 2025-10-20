@@ -1,80 +1,207 @@
 import type { ChatCompletion } from 'openai/resources/chat/completions';
 import { getModel, openai } from './openai';
+import type {
+        BrokenLinksResult,
+        DivSoupResult,
+        IndexabilityResult,
+        InternalLinksResult,
+        KeyPagesResult,
+        ReadabilityResult,
+        RobotsResult,
+        SemanticDensityResult,
+        SitemapResult
+} from './analyzers';
 
-export type ReadabilityScore = {
+export type PresenceReport = {
+        serp: Array<{ query: string; engine: string; rank?: number }>;
+};
+
+export type DiagnosticSection = {
+        summary: string;
+        highlights: string[];
+        actions: string[];
+};
+
+export type LLMOverview = {
         clarity: number;
         summary: string;
         issues: string[];
 };
 
-const parsingFallback: ReadabilityScore = {
-        clarity: 7,
-        summary: 'The readability audit could not be parsed from the language model response.',
-        issues: ['Failed to parse readability JSON from the language model response.']
+export type LLMReport = {
+        overview: LLMOverview;
+        discoverability: DiagnosticSection;
+        understanding: DiagnosticSection;
+        clarity: DiagnosticSection;
+        evidence: DiagnosticSection;
+        tech: DiagnosticSection;
+        aiPolicy: DiagnosticSection;
+        presence?: PresenceReport;
 };
 
-const sanitiseIssues = (issues: unknown): string[] => {
-        if (!Array.isArray(issues)) {
-                return parsingFallback.issues;
-        }
-
-        const cleaned = issues.filter((issue): issue is string => typeof issue === 'string' && issue.trim().length > 0);
-
-        return cleaned.length > 0 ? cleaned : parsingFallback.issues;
+export type AnalyzerSnapshot = {
+        url: string;
+        title?: string;
+        oneLiner: string;
+        readability?: ReadabilityResult;
+        jargon?: number;
+        sitemap?: SitemapResult;
+        robots?: RobotsResult;
+        indexability?: IndexabilityResult;
+        keyPages?: KeyPagesResult;
+        internalLinks?: InternalLinksResult;
+        brokenLinks?: BrokenLinksResult;
+        divSoup?: DivSoupResult;
+        semanticDensity?: SemanticDensityResult;
+        hasServiceSchema?: boolean;
+        jsOnlyContent?: boolean;
+        presence?: PresenceReport;
 };
 
-const extractJson = (content: string): string => {
-        const start = content.indexOf('{');
-        const end = content.lastIndexOf('}');
-
-        if (start === -1 || end === -1 || end <= start) {
-                return content;
-        }
-
-        return content.slice(start, end + 1);
+const emptySection: DiagnosticSection = {
+        summary: 'No insights available.',
+        highlights: [],
+        actions: []
 };
 
-export const scoreWithLLM = async (sample: string): Promise<ReadabilityScore | undefined> => {
+const parsingFallback: LLMReport = {
+        overview: {
+                clarity: 5,
+                summary: 'The readability audit could not be parsed from the language model response.',
+                issues: ['Failed to parse structured readability report from the language model response.']
+        },
+        discoverability: emptySection,
+        understanding: emptySection,
+        clarity: emptySection,
+        evidence: emptySection,
+        tech: emptySection,
+        aiPolicy: emptySection
+};
+
+const sanitiseStringArray = (value: unknown): string[] => {
+        if (!Array.isArray(value)) return [];
+        return value
+                .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+                .map((entry) => entry.trim());
+};
+
+const safeNumber = (value: unknown, fallback: number): number => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const buildPrompt = (snapshot: AnalyzerSnapshot): string => {
+        const { url, title, oneLiner, presence, ...rest } = snapshot;
+        const payload = {
+                url,
+                title,
+                oneLiner,
+                analyzers: rest,
+                presence
+        };
+        return `You are a meticulous marketing analytics assistant. Analyse the provided diagnostics and respond with actionable feedback for improving how language models and search engines consume the page.\n\nDiagnostics JSON:\n${JSON.stringify(payload, null, 2)}\n\nRespond ONLY with valid JSON using this exact structure:\n{\n  "overview": {"clarity": number (0-10), "summary": string, "issues": string[]},\n  "discoverability": {"summary": string, "highlights": string[], "actions": string[]},\n  "understanding": {"summary": string, "highlights": string[], "actions": string[]},\n  "clarity": {"summary": string, "highlights": string[], "actions": string[]},\n  "evidence": {"summary": string, "highlights": string[], "actions": string[]},\n  "tech": {"summary": string, "highlights": string[], "actions": string[]},\n  "aiPolicy": {"summary": string, "highlights": string[], "actions": string[]}\n}`;
+};
+
+export const scoreWithLLM = async (snapshot: AnalyzerSnapshot): Promise<LLMReport | undefined> => {
         try {
                 const model = getModel();
-                console.info(`[readability] scoring with model: ${model}`);
-
+                const prompt = buildPrompt(snapshot);
                 const completion: ChatCompletion = await openai.chat.completions.create({
                         model,
-                        temperature: 0.2,
-                        max_tokens: 400,
+                        temperature: 0.1,
+                        max_tokens: 900,
                         messages: [
                                 {
                                         role: 'system',
                                         content:
-                                                'You are a rigorous readability auditor assessing marketing web content for how well large language models can understand it. Provide balanced, actionable feedback.'
+                                                'You are a rigorous readability and SEO co-pilot. Provide concise, high-signal diagnostics based on structured data.'
                                 },
-                                {
-                                        role: 'user',
-                                        content: `Analyse the following marketing page sample. Respond ONLY with valid JSON using the keys clarity (number 1-10), summary (string), and issues (array of up to three concrete readability issues).\n\nSample:\n"""${sample}\"\""`
-                                }
+                                { role: 'user', content: prompt }
                         ]
                 });
 
                 const rawContent = completion.choices[0]?.message?.content?.trim();
-
                 if (!rawContent) {
-                        return parsingFallback;
+                        return { ...parsingFallback, presence: snapshot.presence };
                 }
 
-                const extracted = extractJson(rawContent);
+                const start = rawContent.indexOf('{');
+                const end = rawContent.lastIndexOf('}');
+                if (start === -1 || end === -1 || end <= start) {
+                        return { ...parsingFallback, presence: snapshot.presence };
+                }
 
+                const extracted = rawContent.slice(start, end + 1);
                 try {
-                        const parsed = JSON.parse(extracted) as Partial<ReadabilityScore>;
-                        const clarityValue = Number(parsed.clarity);
-                        const clarity = Number.isFinite(clarityValue) ? clarityValue : parsingFallback.clarity;
-                        const summary = typeof parsed.summary === 'string' && parsed.summary.trim().length > 0 ? parsed.summary : parsingFallback.summary;
-                        const issues = sanitiseIssues(parsed.issues);
+                        const parsed = JSON.parse(extracted) as Partial<LLMReport>;
+                        const overview = parsed.overview ?? parsingFallback.overview;
+                        const report: LLMReport = {
+                                overview: {
+                                        clarity: safeNumber(overview?.clarity, parsingFallback.overview.clarity),
+                                        summary:
+                                                typeof overview?.summary === 'string' && overview.summary.trim().length > 0
+                                                        ? overview.summary
+                                                        : parsingFallback.overview.summary,
+                                        issues:
+                                                sanitiseStringArray(overview?.issues).length > 0
+                                                        ? sanitiseStringArray(overview?.issues)
+                                                        : parsingFallback.overview.issues
+                                },
+                                discoverability: {
+                                        summary:
+                                                typeof parsed.discoverability?.summary === 'string'
+                                                        ? parsed.discoverability.summary
+                                                        : emptySection.summary,
+                                        highlights: sanitiseStringArray(parsed.discoverability?.highlights),
+                                        actions: sanitiseStringArray(parsed.discoverability?.actions)
+                                },
+                                understanding: {
+                                        summary:
+                                                typeof parsed.understanding?.summary === 'string'
+                                                        ? parsed.understanding.summary
+                                                        : emptySection.summary,
+                                        highlights: sanitiseStringArray(parsed.understanding?.highlights),
+                                        actions: sanitiseStringArray(parsed.understanding?.actions)
+                                },
+                                clarity: {
+                                        summary:
+                                                typeof parsed.clarity?.summary === 'string'
+                                                        ? parsed.clarity.summary
+                                                        : emptySection.summary,
+                                        highlights: sanitiseStringArray(parsed.clarity?.highlights),
+                                        actions: sanitiseStringArray(parsed.clarity?.actions)
+                                },
+                                evidence: {
+                                        summary:
+                                                typeof parsed.evidence?.summary === 'string'
+                                                        ? parsed.evidence.summary
+                                                        : emptySection.summary,
+                                        highlights: sanitiseStringArray(parsed.evidence?.highlights),
+                                        actions: sanitiseStringArray(parsed.evidence?.actions)
+                                },
+                                tech: {
+                                        summary:
+                                                typeof parsed.tech?.summary === 'string'
+                                                        ? parsed.tech.summary
+                                                        : emptySection.summary,
+                                        highlights: sanitiseStringArray(parsed.tech?.highlights),
+                                        actions: sanitiseStringArray(parsed.tech?.actions)
+                                },
+                                aiPolicy: {
+                                        summary:
+                                                typeof parsed.aiPolicy?.summary === 'string'
+                                                        ? parsed.aiPolicy.summary
+                                                        : emptySection.summary,
+                                        highlights: sanitiseStringArray(parsed.aiPolicy?.highlights),
+                                        actions: sanitiseStringArray(parsed.aiPolicy?.actions)
+                                },
+                                presence: snapshot.presence ?? parsed.presence
+                        };
 
-                        return { clarity, summary, issues };
+                        return report;
                 } catch (parseError) {
                         console.warn('[readability] failed to parse LLM response', parseError);
-                        return parsingFallback;
+                        return { ...parsingFallback, presence: snapshot.presence };
                 }
         } catch (error) {
                 console.error('[readability] scoring failed', error);
