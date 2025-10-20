@@ -40,9 +40,9 @@
 		"vite": "^7.0.4",
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
-        "dependencies": {
-                "@supabase/supabase-js": "^2.48.0",
-                "openai": "^6.5.0",
-                "zod": "^3.23.8"
-        }
+	"dependencies": {
+		"@supabase/supabase-js": "^2.48.0",
+		"openai": "^6.6.0",
+		"zod": "^3.23.8"
+	}
 }
