@@ -45,8 +45,8 @@ The AI Compatibility Checker relies on the following environment variables:
 | --- | --- | --- |
 | `OPENAI_API_KEY` | ✅ | Used for LLM-based diagnostics. |
 | `LLM_MODEL` | ➖ | Optional override for the OpenAI model (defaults to `gpt-4o-mini`). |
-| `BING_SEARCH_KEY` | ➖ | Optional key to enable Bing-powered SERP checks. |
 | `BRAVE_SEARCH_KEY` | ➖ | Optional key to enable Brave Search ranking. |
+| `BRAVE_AI_GROUNDING_KEY` | ➖ | Optional key to enable citation grounding results. |
 | `ENABLE_RANKING` | ➖ | Set to `1` to activate the presence module (`/api/presence`). |
 
-When `ENABLE_RANKING=1`, at least one search API key must be provided to enrich the SERP presence report.
+When `ENABLE_RANKING=1`, provide a Brave Search key to enrich the SERP presence report.

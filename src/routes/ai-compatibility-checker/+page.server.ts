@@ -46,7 +46,13 @@ type AnalyzerBundle = {
         jsOnlyContent: boolean;
 };
 
-type Insights = Array<{ label: string; action: string }>;
+type Insight = {
+        label: string;
+        action: string;
+        tooltip?: string;
+        details?: string;
+};
+type Insights = Insight[];
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -114,20 +120,28 @@ const deriveInsights = (bundle: AnalyzerBundle): Insights => {
         const insights: Insights = [];
         if (bundle.robots && bundle.robots.blocksAIs.length > 0) {
                 insights.push({
-                        label: 'Block for GPTBot found',
-                        action: 'Remove from robots.txt to allow AI access'
+                        label: 'AI bots blocked in robots.txt',
+                        action: 'Remove disallow rules so language models can crawl the page.',
+                        tooltip:
+                                'Blocking AI-focused user agents (like GPTBot) stops language models from reading or trusting your content.'
                 });
         }
         if (!bundle.hasServiceSchema) {
                 insights.push({
-                        label: 'No Service schema',
-                        action: 'Add JSON-LD Service for primary offering'
+                        label: 'Service schema missing',
+                        action: 'Publish JSON-LD structured data that describes your primary service offering.',
+                        tooltip:
+                                'A Service schema is JSON-LD that spells out what you provide, giving search engines and LLMs a canonical description.',
+                        details:
+                                'Include fields such as @type: "Service", name, description, provider, and areaServed so crawlers can interpret your offer.'
                 });
         }
         if (bundle.jsOnlyContent) {
                 insights.push({
-                        label: 'JS-only content detected',
-                        action: 'Prerender critical copy'
+                        label: 'Critical copy only renders in JavaScript',
+                        action: 'Prerender or SSR key marketing text so crawlers see it immediately.',
+                        tooltip:
+                                'When essential text depends on client-side rendering, crawlers and AI systems may index an empty or incomplete page.'
                 });
         }
         return insights;
@@ -203,8 +217,13 @@ export const actions: Actions = {
                         });
                 }
 
+                const remoteFetch: typeof fetch =
+                        typeof globalThis.fetch === 'function'
+                                ? globalThis.fetch.bind(globalThis)
+                                : fetch;
+
                 try {
-                        const response = await fetch(target.href, {
+                        const response = await remoteFetch(target.href, {
                                 headers: { 'user-agent': 'PixelReadabilityBot/1.0' }
                         });
                         if (!response.ok) {
@@ -240,17 +259,17 @@ export const actions: Actions = {
                                 calculateReadability(mainText)
                         );
                         bundle.jargon = await safeRun('estimateJargon', async () => estimateJargon(mainText));
-                        bundle.sitemap = await safeRun('fetchSitemap', () => fetchSitemap(fetch, target));
-                        bundle.robots = await safeRun('parseRobots', () => parseRobots(fetch, target));
+                        bundle.sitemap = await safeRun('fetchSitemap', () => fetchSitemap(remoteFetch, target));
+                        bundle.robots = await safeRun('parseRobots', () => parseRobots(remoteFetch, target));
                         bundle.indexability = await safeRun('checkIndexability', async () =>
                                 checkIndexability(html, response.headers)
                         );
-                        bundle.keyPages = await safeRun('detectKeyPages', () => detectKeyPages(fetch, target));
+                        bundle.keyPages = await safeRun('detectKeyPages', () => detectKeyPages(remoteFetch, target));
                         bundle.internalLinks = await safeRun('measureInternalLinks', async () =>
                                 measureInternalLinks(html, target)
                         );
                         bundle.brokenLinks = await safeRun('sampleBrokenLinks', () =>
-                                sampleBrokenLinks(fetch, html, target)
+                                sampleBrokenLinks(remoteFetch, html, target)
                         );
                         bundle.divSoup = await safeRun('computeDivSoup', async () => computeDivSoup(mainHtml));
                         bundle.semanticDensity = await safeRun('semanticDensity', async () => semanticDensity(mainHtml));

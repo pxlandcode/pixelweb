@@ -1,11 +1,12 @@
-@source "../node_modules/@pixelcode_/blocks";
+@source "../node_modules/@pixelcode_/blocks/**/*.{js,ts,svelte}";
 @import url('https://fonts.googleapis.com/css2?family=Geist&display=swap');
 @import '@pixelcode_/blocks/app.css';
 @import 'tailwindcss';
 
 @theme {
 	--color-primary: #f35b3f;
-    --color-background: #18191B;
+	--color-background: #18191b;
+	--color-foreground: #f5f6f8;
 }
 
 @layer theme {
@@ -18,6 +19,15 @@
 	body {
 		font-family: 'Montserrat', 'Inter', system-ui, -apple-system, sans-serif;
 		@apply bg-[#0f0f11] text-[#f0f0f0];
+	}
+}
+
+@layer components {
+	.attachment-tooltip {
+		max-width: 18rem;
+		min-width: 12rem;
+		text-align: left;
+		white-space: normal;
 	}
 }
 

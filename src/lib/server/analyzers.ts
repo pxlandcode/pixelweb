@@ -78,6 +78,17 @@ const fetchWithTimeout = async (
         const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
         try {
                 return await fetcher(input, { ...init, signal: controller.signal });
+        } catch (error) {
+                if (error instanceof Error && error.name === 'AbortError') {
+                        const target =
+                                typeof input === 'string'
+                                        ? input
+                                        : input instanceof URL
+                                        ? input.href
+                                        : 'unknown';
+                        console.warn('[analyzers] fetchWithTimeout aborted', target, init.method ?? 'GET');
+                }
+                throw error;
         } finally {
                 clearTimeout(timeout);
         }
