@@ -4,11 +4,15 @@ export type NavLink = {
 };
 
 export type CardstackEntry = {
-	eyebrow: string;
-	title: string;
-	description: string;
-	bullets?: string[];
-	link?: { href: string; label: string };
-	img?: string;
-	imgAlt?: string;
+        eyebrow: string;
+        title: string;
+        description: string;
+        bullets?: string[];
+        link?: { href: string; label: string };
+        img?: string;
+        imgAlt?: string;
 };
+
+export type LeadInput = { website_url: string; email: string; consent: 'true' };
+
+export type QuotaInfo = { remaining: number };

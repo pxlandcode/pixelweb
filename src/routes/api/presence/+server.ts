@@ -1,8 +1,16 @@
 import { json, error, type RequestHandler } from '@sveltejs/kit';
-import { BING_SEARCH_KEY, BRAVE_SEARCH_KEY, ENABLE_RANKING } from '$env/static/private';
+import {
+        BING_SEARCH_KEY,
+        BRAVE_AI_GROUNDING_KEY,
+        BRAVE_SEARCH_KEY,
+        ENABLE_GROUNDING,
+        ENABLE_RANKING
+} from '$env/static/private';
 import { extractMainContent, extractTitle, normaliseWhitespace } from '$lib/server/analyzers';
+import type { PresenceGroundingEntry } from '$lib/server/llmScore';
 
 const rankingEnabled = ENABLE_RANKING?.trim() === '1';
+const groundingEnabled = ENABLE_GROUNDING?.trim() === '1' && !!BRAVE_AI_GROUNDING_KEY;
 const REQUEST_TIMEOUT = 10_000;
 
 const fetchWithTimeout = async (
@@ -151,6 +159,92 @@ const runBraveSearch = async (
         }
 };
 
+const normaliseCitations = (input: unknown): PresenceGroundingEntry['citations'] => {
+        if (!Array.isArray(input)) return [];
+        const result: PresenceGroundingEntry['citations'] = [];
+
+        for (const raw of input) {
+                if (!raw || typeof raw !== 'object') continue;
+                const record = raw as Record<string, unknown>;
+                const urlCandidate = typeof record.url === 'string'
+                        ? record.url
+                        : typeof record.link === 'string'
+                        ? record.link
+                        : undefined;
+                if (!urlCandidate) continue;
+
+                const title = typeof record.title === 'string'
+                        ? record.title
+                        : typeof record.name === 'string'
+                        ? record.name
+                        : undefined;
+                const scoreValue = Number(record.score ?? record.relevance ?? record.confidence);
+                const score = Number.isFinite(scoreValue) ? scoreValue : undefined;
+
+                result.push({ url: urlCandidate, title, score });
+        }
+
+        return result;
+};
+
+const runBraveGrounding = async (
+        fetcher: typeof fetch,
+        query: string,
+        host: string
+): Promise<PresenceGroundingEntry | undefined> => {
+        if (!groundingEnabled || !BRAVE_AI_GROUNDING_KEY) return undefined;
+        try {
+                const res = await fetchWithTimeout(
+                        fetcher,
+                        `https://api.search.brave.com/res/v1/grounding/search?q=${encodeURIComponent(query)}&count=20`,
+                        {
+                                headers: {
+                                        Authorization: `Bearer ${BRAVE_AI_GROUNDING_KEY}`,
+                                        Accept: 'application/json'
+                                }
+                        }
+                );
+
+                if (!res.ok) {
+                        console.warn('[presence] brave grounding failed', res.status);
+                        return undefined;
+                }
+
+                const payload = (await res.json()) as Record<string, unknown>;
+                const groundingSection = payload?.grounding as Record<string, unknown> | undefined;
+                const collected = [
+                        ...normaliseCitations(groundingSection?.citations),
+                        ...normaliseCitations(groundingSection?.results),
+                        ...normaliseCitations(payload?.citations),
+                        ...normaliseCitations(payload?.results)
+                ];
+
+                const deduped: PresenceGroundingEntry['citations'] = [];
+                const seenUrls = new Set<string>();
+                for (const entry of collected) {
+                        if (!seenUrls.has(entry.url)) {
+                                seenUrls.add(entry.url);
+                                deduped.push(entry);
+                        }
+                }
+
+                if (deduped.length === 0) {
+                        return undefined;
+                }
+
+                const cited = deduped.some((entry) => findRank(host, entry.url));
+                return {
+                        query,
+                        engine: 'brave-ai',
+                        cited,
+                        citations: deduped.slice(0, 20)
+                };
+        } catch (error) {
+                console.warn('[presence] brave grounding lookup failed', error);
+                return undefined;
+        }
+};
+
 export const POST: RequestHandler = async ({ request, fetch }) => {
         if (!rankingEnabled) {
                 throw error(404, 'Ranking module disabled');
@@ -180,14 +274,24 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
         const host = target.hostname.replace(/^www\./, '');
 
         const serp: Array<{ query: string; engine: string; rank?: number }> = [];
+        const grounding: PresenceGroundingEntry[] = [];
         for (const query of queries) {
                 const entry = { query, engine: 'bing', rank: await runBingSearch(fetch, query, host) };
                 serp.push(entry);
                 const braveRank = await runBraveSearch(fetch, query, host);
                 serp.push({ query, engine: 'brave', rank: braveRank });
+
+                const groundingEntry = await runBraveGrounding(fetch, query, host);
+                if (groundingEntry) {
+                        grounding.push(groundingEntry);
+                }
         }
 
         // TODO: Hook LLM citation verification for rankings.
+
+        if (grounding.length > 0) {
+                return json({ serp, grounding });
+        }
 
         return json({ serp });
 };
