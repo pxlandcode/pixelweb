@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, type Snippet } from 'svelte';
+
+	type Props = { children?: Snippet };
+
+	let { children }: Props = $props();
 
 	let listEl: HTMLUListElement | null = null;
 	let items: HTMLElement[] = [];
@@ -173,6 +177,6 @@
 	class="relative isolate grid min-h-screen gap-[clamp(3rem,7vw,6rem)] bg-black text-white [--stack-gap:clamp(3rem,6vw,5rem)] max-[50rem]:px-[clamp(1rem,5vw,2rem)]"
 >
 	<ul class="m-0 grid list-none p-0 [counter-reset:cardstack]" bind:this={listEl} role="list">
-		<slot />
+		{@render children?.()}
 	</ul>
 </section>

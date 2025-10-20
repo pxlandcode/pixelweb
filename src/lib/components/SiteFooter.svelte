@@ -2,12 +2,11 @@
 	import { RollingText } from '$components/rolling-text';
 	import type { NavLink } from '$types';
 	import footerImageUrl from '$lib/assets/footerimage.svg?url';
+	type Props = {
+		links?: NavLink[];
+	};
 
-	export let links: NavLink[] = [];
-	export let ctaLabel = 'Get in touch';
-	export let ctaHref = '#contact';
-
-	const currentYear = new Date().getFullYear();
+	let { links = [] }: Props = $props();
 </script>
 
 <footer class="border-t border-white/10 bg-background text-[#f0f0f0]">

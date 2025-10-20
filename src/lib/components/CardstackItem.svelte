@@ -2,14 +2,20 @@
 	import { Icon } from '@pixelcode_/blocks/components';
 	import RollingText from './rolling-text/RollingText.svelte';
 	import { IconPixelCode } from '$lib/icons';
+	import type { Snippet } from 'svelte';
 
-	export let title: string;
-	export let eyebrow: string | undefined = undefined;
-	export let description: string | undefined = undefined;
-	export let link: { href: string; label: string } | undefined = undefined;
-	export let img: string | undefined = undefined;
-	export let imgAlt: string = '';
-	export let counter: number;
+	type Props = {
+		title: string;
+		eyebrow?: string;
+		description?: string;
+		link?: { href: string; label: string };
+		img?: string;
+		imgAlt?: string;
+		counter: number;
+		children: Snippet;
+	};
+
+	let { title, eyebrow, description, link, img, imgAlt, counter, children }: Props = $props();
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 </script>
@@ -53,7 +59,7 @@
 			</p>
 		{/if}
 
-		<slot />
+		{@render children()}
 
 		{#if link}
 			<a

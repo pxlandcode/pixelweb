@@ -2,7 +2,7 @@ import Root from './RollingText.svelte';
 import { tv, type VariantProps } from 'tailwind-variants';
 
 const rollingTextVariants = tv({
-	base: 'group relative inline-flex shrink-0 overflow-hidden align-baseline text-current [line-height:var(--rolling-line-height,1)]',
+	base: 'relative inline-flex shrink-0 overflow-hidden align-baseline text-current [line-height:var(--rolling-line-height,1)]',
 	variants: {
 		size: {
 			inherit: '',

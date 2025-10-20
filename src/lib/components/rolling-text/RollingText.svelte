@@ -15,6 +15,7 @@
 		duration?: number;
 		easing?: string;
 		offset?: string;
+		inheritParentHover?: boolean; // requires parent to have tailwinds group class
 	};
 
 	let {
@@ -23,9 +24,10 @@
 		size,
 		as = 'span',
 		class: className,
-		duration = 200,
+		duration = 500,
 		easing = 'cubic-bezier(0.34, 1.56, 0.64, 1)',
 		offset = '110%',
+		inheritParentHover = false,
 		style,
 		...rest
 	}: Props & HTMLAttributes<HTMLElement> = $props();
@@ -45,7 +47,7 @@
 <svelte:element
 	this={as}
 	{...rest}
-	class={cn(rollingTextVariants({ size, className }))}
+	class={cn(rollingTextVariants({ size, className }), !inheritParentHover && 'group')}
 	style={inlineStyle()}
 >
 	<span class="flex overflow-hidden">
