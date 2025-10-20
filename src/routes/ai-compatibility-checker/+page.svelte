@@ -93,9 +93,26 @@
 		'Complete raw output for troubleshooting or sharing with support.'
 	);
 
-	$: clarityValue = form?.result?.report?.overview?.clarity ?? null;
-	$: presenceRows = form?.result?.report?.presence?.serp ?? [];
-	$: groundingRows = form?.result?.report?.presence?.grounding ?? [];
+        type PresenceRow = {
+                query: string;
+                engine: string;
+                rank?: number;
+                matchedUrl?: string;
+                highlight?: string;
+        };
+
+        $: clarityValue = form?.result?.report?.overview?.clarity ?? null;
+        $: presenceQueries = form?.result?.report?.presence?.queries ?? [];
+        $: presenceRows = (() => {
+                const lookup = new Map(
+                        presenceQueries.map((entry) => [entry.query, entry.highlight ?? undefined])
+                );
+                return (form?.result?.report?.presence?.serp ?? []).map((row) => ({
+                        ...row,
+                        highlight: lookup.get(row.query) ?? undefined
+                })) as PresenceRow[];
+        })();
+        $: groundingRows = form?.result?.report?.presence?.grounding ?? [];
 
 	const infoButtonClass =
 		'inline-flex size-7 items-center justify-center rounded-full border border-transparent text-muted-fg transition-colors hover:border-border hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2';
@@ -387,12 +404,31 @@
 						</thead>
 						<tbody>
 							{#each presenceRows as row}
-								<tr class="border-b border-border/40 last:border-none">
-									<td class="py-2 pr-4">{row.query}</td>
-									<td class="py-2 pr-4 uppercase">{row.engine}</td>
-									<td class="py-2">{row.rank ?? '—'}</td>
-								</tr>
-							{/each}
+                                                        <tr class="border-b border-border/40 last:border-none">
+                                                                <td class="py-2 pr-4 align-top">
+                                                                        <div class="font-medium text-foreground/90">
+                                                                                {row.query}
+                                                                        </div>
+                                                                        {#if row.highlight}
+                                                                                <p class="mt-1 text-xs text-muted-fg">
+                                                                                        {row.highlight}
+                                                                                </p>
+                                                                        {/if}
+                                                                        {#if row.matchedUrl}
+                                                                                <a
+                                                                                        class="mt-1 block text-[11px] font-medium text-primary hover:underline"
+                                                                                        href={row.matchedUrl}
+                                                                                        rel="noreferrer"
+                                                                                        target="_blank"
+                                                                                >
+                                                                                        View result
+                                                                                </a>
+                                                                        {/if}
+                                                                </td>
+                                                                <td class="py-2 pr-4 align-top uppercase">{row.engine}</td>
+                                                                <td class="py-2 align-top">{row.rank ?? '—'}</td>
+                                                        </tr>
+                                                {/each}
 						</tbody>
 					</table>
 				</div>
