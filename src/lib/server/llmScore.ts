@@ -12,8 +12,22 @@ import type {
         SitemapResult
 } from './analyzers';
 
+export type PresenceGroundingCitation = {
+        url: string;
+        title?: string;
+        score?: number;
+};
+
+export type PresenceGroundingEntry = {
+        query: string;
+        engine: 'brave-ai';
+        cited: boolean;
+        citations: PresenceGroundingCitation[];
+};
+
 export type PresenceReport = {
         serp: Array<{ query: string; engine: string; rank?: number }>;
+        grounding?: PresenceGroundingEntry[];
 };
 
 export type DiagnosticSection = {

@@ -20,6 +20,7 @@
 
         $: clarityValue = form?.result?.report?.overview?.clarity ?? null;
         $: presenceRows = form?.result?.report?.presence?.serp ?? [];
+        $: groundingRows = form?.result?.report?.presence?.grounding ?? [];
 </script>
 
 <svelte:head>
@@ -187,6 +188,51 @@
                                                         {/each}
                                                 </tbody>
                                         </table>
+                                </div>
+                        </Card>
+                {/if}
+
+                {#if groundingRows.length}
+                        <Card class="gap-4 bg-card/80 p-6">
+                                <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-semibold text-foreground">Brave AI citations</h3>
+                                        <Badge variant="info">Grounding</Badge>
+                                </div>
+                                <div class="space-y-4">
+                                        {#each groundingRows as grounding}
+                                                <article class="rounded-lg border border-border/40 bg-background/40 p-4">
+                                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                                <h4 class="text-sm font-semibold text-foreground">{grounding.query}</h4>
+                                                                <span class={`text-xs font-semibold uppercase tracking-wide ${grounding.cited ? 'text-emerald-300' : 'text-muted-fg'}`}>
+                                                                        {grounding.cited ? 'Cited domain' : 'Domain not cited'}
+                                                                </span>
+                                                        </div>
+                                                        <p class="mt-1 text-xs text-muted-fg">
+                                                                {grounding.cited
+                                                                        ? 'Din domän förekommer bland Brave AI:s källor för denna sökning.'
+                                                                        : 'Brave AI citerade andra källor för denna sökning.'}
+                                                        </p>
+                                                        {#if grounding.citations.length}
+                                                                <ul class="mt-3 space-y-2">
+                                                                        {#each grounding.citations.slice(0, 10) as citation}
+                                                                                <li class="rounded-md border border-border/40 bg-background/60 p-3">
+                                                                                        <p class="text-sm font-medium text-foreground">
+                                                                                                {citation.title ?? citation.url}
+                                                                                        </p>
+                                                                                        <div class="mt-1 flex flex-col gap-1 text-xs text-muted-fg sm:flex-row sm:items-center sm:justify-between">
+                                                                                                <span class="truncate text-xs text-muted-fg">{citation.url}</span>
+                                                                                                {#if citation.score !== undefined}
+                                                                                                        <span class="rounded bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-fg">
+                                                                                                                Relevans: {citation.score.toFixed(2)}
+                                                                                                        </span>
+                                                                                                {/if}
+                                                                                        </div>
+                                                                                </li>
+                                                                        {/each}
+                                                                </ul>
+                                                        {/if}
+                                                </article>
+                                        {/each}
                                 </div>
                         </Card>
                 {/if}
