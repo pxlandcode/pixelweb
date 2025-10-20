@@ -25,8 +25,21 @@ export type PresenceGroundingEntry = {
         citations: PresenceGroundingCitation[];
 };
 
+export type PresenceQuery = {
+        query: string;
+        highlight?: string;
+};
+
+export type PresenceSerpEntry = {
+        query: string;
+        engine: string;
+        rank?: number;
+        matchedUrl?: string;
+};
+
 export type PresenceReport = {
-        serp: Array<{ query: string; engine: string; rank?: number }>;
+        queries: PresenceQuery[];
+        serp: PresenceSerpEntry[];
         grounding?: PresenceGroundingEntry[];
 };
 
