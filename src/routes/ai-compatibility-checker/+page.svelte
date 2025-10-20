@@ -17,6 +17,9 @@
                 { key: 'tech', title: 'Technical' },
                 { key: 'aiPolicy', title: 'AI Policy' }
         ] as const;
+
+        $: clarityValue = form?.result?.report?.overview?.clarity ?? null;
+        $: presenceRows = form?.result?.report?.presence?.serp ?? [];
 </script>
 
 <svelte:head>
@@ -89,7 +92,6 @@
                 {/if}
 
                 <section class="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-                        {@const clarityValue = form.result.report.overview.clarity}
                         <Card class="gap-4 bg-card/80 p-6">
                                 <h2 class="text-lg font-semibold text-foreground">LLM overview</h2>
                                 <p class="text-5xl font-bold text-primary">
@@ -160,7 +162,6 @@
                         {/each}
                 </section>
 
-                {@const presenceRows = form.result.report.presence?.serp ?? []}
                 {#if presenceRows.length}
                         <Card class="gap-4 bg-card/80 p-6">
                                 <div class="flex items-center justify-between">
