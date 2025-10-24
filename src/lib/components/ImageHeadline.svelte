@@ -1,49 +1,18 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	export let imageSrc: string;
 	export let title: string; // large white text over the image
 	export let subtitle: string = ''; // optional, smaller line under the title
 	export let parallax = 0.25; // 0–1 (how much the image moves while scrolling)
-
-	let wrapper: HTMLDivElement | null = null;
-	let imgEl: HTMLDivElement | null = null;
-
-	function updateParallax() {
-		if (!wrapper || !imgEl) return;
-		const rect = wrapper.getBoundingClientRect();
-		// progress: 0 at top entering, ~1 when fully scrolled past height
-		const progress = (window.innerHeight - rect.top) / (window.innerHeight + rect.height);
-		// clamp and shift a bit so it moves subtly only while in view
-		const t = Math.max(0, Math.min(1, progress));
-		const translate = (t - 0.5) * parallax * 100; // px-ish, subtle
-		imgEl.style.transform = `translate3d(0, ${translate}px, 0) scale(1.05)`; // tiny scale for depth edges
-	}
-
-	function onScroll() {
-		updateParallax();
-	}
-	function onResize() {
-		updateParallax();
-	}
-
-	onMount(() => {
-		updateParallax();
-		window.addEventListener('scroll', onScroll, { passive: true });
-		window.addEventListener('resize', onResize);
-		return () => {
-			window.removeEventListener('scroll', onScroll);
-			window.removeEventListener('resize', onResize);
-		};
-	});
 </script>
 
 <!-- Wrapper -->
-<section class="relative isolate h-dvh w-full overflow-hidden bg-black" bind:this={wrapper}>
+<section
+	class="image-headline relative isolate h-dvh w-full overflow-hidden bg-black"
+	style={`--parallax-strength: ${parallax};`}
+>
 	<!-- Parallax image -->
 	<div
-		class="absolute inset-0 transform-gpu will-change-transform"
-		bind:this={imgEl}
+		class="parallax-image absolute transform-gpu will-change-transform"
 		style={`background-image:url('${imageSrc}'); background-size:cover; background-position:center;`}
 		aria-hidden="true"
 	/>
@@ -61,3 +30,67 @@
 		{/if}
 	</div>
 </section>
+
+<style>
+	.image-headline {
+		--parallax-strength: 0.35;
+		--parallax-scale: 1;
+		--parallax-distance: calc(clamp(0, var(--parallax-strength), 1) * 22rem);
+	}
+
+	.parallax-image {
+		position: absolute;
+		top: -12%;
+		bottom: -12%;
+		left: -12%;
+		right: -12%;
+		background-repeat: no-repeat;
+		background-size: cover;
+		background-position: center;
+		transform: translate3d(0, calc(var(--parallax-distance) * -0.35), 0)
+			scale(var(--parallax-scale));
+	}
+
+	@media (max-width: 640px) {
+		.parallax-image {
+			top: -18%;
+			bottom: -18%;
+			left: -18%;
+			right: -18%;
+		}
+	}
+
+	@supports (animation-timeline: auto) {
+		.image-headline {
+			view-timeline-name: --headline;
+			view-timeline-axis: block;
+		}
+
+		.parallax-image {
+			animation-name: image-parallax;
+			animation-timing-function: linear;
+			animation-duration: 1ms; /* duration is driven by animation range */
+			animation-fill-mode: both;
+			animation-timeline: --headline;
+			animation-range: entry 0% exit 100%;
+		}
+
+		@keyframes image-parallax {
+			from {
+				transform: translate3d(0, calc(var(--parallax-distance) * -0.65), 0)
+					scale(var(--parallax-scale));
+			}
+			to {
+				transform: translate3d(0, calc(var(--parallax-distance) * 0.45), 0)
+					scale(var(--parallax-scale));
+			}
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.parallax-image {
+			animation: none;
+			transform: scale(var(--parallax-scale));
+		}
+	}
+</style>
