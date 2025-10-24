@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Badge, Button, Card, FormControl, Input } from '@pixelcode_/blocks/components';
-	import { tooltip } from '@pixelcode_/blocks/attachments';
-	import Info from 'lucide-svelte/icons/info';
-	import type { Action } from 'svelte/action';
-	import type { ActionData, PageData } from './$types';
+import { Badge, Button, Card, FormControl, Input } from '@pixelcode_/blocks/components';
+import { tooltip } from '@pixelcode_/blocks/attachments';
+import Info from 'lucide-svelte/icons/info';
+import type { Action } from 'svelte/action';
+import type { ActionData, PageData } from './$types';
+import type { SubmitFunction } from '@sveltejs/kit';
+import { loading } from '$lib/stores/loading';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -89,9 +91,36 @@
 	const tooltipGrounding = createTooltip(
 		'Shows the sources Brave AI relied on and whether your domain was mentioned.'
 	);
-	const tooltipDiagnostics = createTooltip(
-		'Complete raw output for troubleshooting or sharing with support.'
-	);
+const tooltipDiagnostics = createTooltip(
+	'Complete raw output for troubleshooting or sharing with support.'
+);
+
+const presenceLoadingMessages = [
+	'Calibrating Brave search antennas…',
+	'Asking LLMs how they really feel about your page…',
+	'Linking citations into a brag-worthy dossier…'
+];
+
+const handleFormEnhance: SubmitFunction = async () => {
+	loading.start({
+		title: 'AI Compatibility Lab',
+		messages: presenceLoadingMessages,
+		message: presenceLoadingMessages[0],
+		forceDialog: true
+	});
+
+	return async ({ update, result }) => {
+		await update();
+
+		if (result.type === 'error') {
+			loading.fail('The signal fizzled out. Refresh and try again.');
+			setTimeout(() => loading.stop(), 1_500);
+			return;
+		}
+
+		loading.stop();
+	};
+};
 
         type PresenceRow = {
                 query: string;
@@ -144,7 +173,12 @@
 	</header>
 
 	<Card class="gap-6 bg-card/80 p-6">
-		<form method="post" action="?/evaluate" class="flex flex-col gap-5" use:enhance>
+		<form
+			method="post"
+			action="?/evaluate"
+			class="flex flex-col gap-5"
+			use:enhance={handleFormEnhance}
+		>
 			<FormControl
 				for="url"
 				label="Marketing page URL"

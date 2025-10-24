@@ -11,7 +11,7 @@ import { openai } from '$lib/server/openai';
 
 const rankingEnabled = ENABLE_RANKING?.trim() === '1';
 const groundingEnabled = ENABLE_GROUNDING?.trim() === '1' && !!BRAVE_AI_GROUNDING_KEY;
-const REQUEST_TIMEOUT = 10_000;
+const REQUEST_TIMEOUT = 25_000;
 const PRESENCE_USER_AGENT =
 	'Mozilla/5.0 (compatible; PixelPresenceBot/1.0; +https://pixelcode.se/ai-compatibility-checker)';
 
@@ -84,6 +84,43 @@ const decodeHtmlEntities = (input: string): string =>
 		.replace(/&quot;/gi, '"')
 		.replace(/&#39;/gi, "'")
 		.replace(/&nbsp;/gi, ' ');
+
+const getRegistrableDomain = (url: URL): string => {
+	const hostname = url.hostname.replace(/^www\./i, '');
+	const parts = hostname.split('.');
+	if (parts.length <= 2) {
+		return hostname || url.hostname;
+	}
+	return parts.slice(-2).join('.');
+};
+
+const extractOpenGraph = (html: string, prop: string): string | undefined => {
+	const pattern = new RegExp(
+		`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`,
+		'i'
+	);
+	const match = html.match(pattern);
+	return decodeHtmlEntities(match?.[1]?.trim() ?? '') || undefined;
+};
+
+const deriveBrand = (html: string, target: URL): string => {
+	const ogSite = extractOpenGraph(html, 'og:site_name');
+	const ogTitle = extractOpenGraph(html, 'og:title');
+	const domain = getRegistrableDomain(target);
+	const fallbackDomain = domain || target.hostname.replace(/^www\./i, '');
+	const candidate =
+		ogSite ||
+		(ogTitle && ogTitle.split(/[–|-]/)[0]?.trim()) ||
+		fallbackDomain;
+	const badStarts = ['prisvärda', 'affordable', 'welcome to', 'home of'];
+	const cleaned = candidate.replace(/[“”"']/g, '').trim();
+	const head = cleaned.split(/\s+/)[0]?.toLowerCase();
+	if (head && badStarts.includes(head)) {
+		const shortDomain = fallbackDomain.split('.')[0] ?? fallbackDomain;
+		return shortDomain.toUpperCase();
+	}
+	return cleaned || fallbackDomain;
+};
 
 const extractJsonPayload = (raw: string): any => {
 	const trimmed = raw.trim();
@@ -175,7 +212,7 @@ const summariseHighlights = async (brand: string, text: string): Promise<string[
 				{
 					role: 'system',
 					content:
-						'You write tight marketing bullets. Return JSON {"highlights": string[]} with up to three points (<=12 words) describing what the company offers.'
+						'You write tight marketing bullets. Respond ONLY with JSON {"highlights": string[]} (up to three items, <=12 words each) describing what the company offers. No extra text.'
 				},
 				{
 					role: 'user',
@@ -195,6 +232,63 @@ const summariseHighlights = async (brand: string, text: string): Promise<string[
 			.slice(0, 3);
 	} catch (error) {
 		console.warn('[presence] highlight summary failed', error);
+		return [];
+	}
+};
+
+const genCustomerQuestions = async (
+	brand: string,
+	sample: string,
+	locale: 'sv' | 'en'
+): Promise<string[]> => {
+	const prompt =
+		locale === 'sv'
+			? `Du är en kund som funderar på ${brand}. Skriv 4–6 naturliga frågor en kund skulle söka på, baserat på texten. Variera frågetyper (vad, hur, pris, support, leverans, tjänster). Svara som JSON {"questions": string[]}.`
+			: `You are a prospective customer of ${brand}. Write 4–6 natural search questions a customer would ask, based on the text. Vary topics (what, how, pricing, support, delivery, services). Return JSON {"questions": string[]}.`;
+
+	try {
+		const response = await openai.responses.create({
+			model: 'gpt-4.1-mini',
+			temperature: 0.2,
+			max_output_tokens: 200,
+			text: {
+				format: {
+					type: 'json_schema',
+					name: 'CustomerQuestions',
+					schema: {
+						type: 'object',
+						properties: {
+							questions: {
+								type: 'array',
+								items: { type: 'string' },
+								minItems: 4,
+								maxItems: 6
+							}
+						},
+						required: ['questions'],
+						additionalProperties: false
+					}
+				}
+			},
+			input: [
+				{ role: 'system', content: 'Return only the specified JSON.' },
+				{ role: 'user', content: `Brand: ${brand}\nCopy:\n${sample.slice(0, 2000)}` },
+				{ role: 'user', content: prompt }
+			]
+		});
+		const raw = response.output_text ?? '{"questions": []}';
+		let payload: { questions?: unknown };
+		try {
+			payload = JSON.parse(raw);
+		} catch {
+			payload = { questions: [] };
+		}
+		if (!Array.isArray(payload.questions)) return [];
+		return payload.questions
+			.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+			.map((entry) => entry.trim());
+	} catch (error) {
+		console.warn('[presence] customer question generation failed', error);
 		return [];
 	}
 };
@@ -223,7 +317,9 @@ const buildDefaultQueries = async (
 		const title = extractTitle(html) ?? target.hostname;
 		const { text } = extractMainContent(html);
 		const normalized = normaliseWhitespace(text);
-		const brand = decodeHtmlEntities(title.split(/[-|–]/)[0]?.trim() || target.hostname);
+		const brand =
+			decodeHtmlEntities(deriveBrand(html, target) || title).trim() ||
+			target.hostname;
 
 		const keyPhrases = extractKeyPhrases(normalized.slice(0, 1_200));
 		const descriptions = extractMeta(html);
@@ -235,24 +331,41 @@ const buildDefaultQueries = async (
 		const cityMatch = normalized.match(/\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
 		const city = cityMatch?.[1];
 
-		const queries = new Set<string>();
-		queries.add(`what does ${brand} do`);
-		queries.add(`${brand} reviews`);
+		const isSwedish = /[åäöÅÄÖ]/.test(normalized) || /Sverige|svenska|kr/.test(normalized);
+		const locale: 'sv' | 'en' = isSwedish ? 'sv' : 'en';
+		const aiQs = await genCustomerQuestions(brand, normalized, locale);
+		const baseQs =
+			locale === 'sv'
+				? [`vad gör ${brand}`.trim(), `${brand} priser`.trim()]
+				: [`what does ${brand} do`.trim(), `${brand} pricing`.trim()];
 
-		for (const phrase of keyPhrases.slice(0, 3)) {
-			queries.add(`${brand} ${phrase}`);
-			if (city) {
-				queries.add(`${phrase} ${city}`);
-			} else {
-				const [firstWord] = phrase.split(' ');
-				queries.add(`${phrase} pricing`);
-				if (firstWord) {
-					queries.add(`${firstWord} for ${brand.split(' ')[0] ?? 'businesses'}`);
+		const queryList = new Set<string>();
+		for (const query of [...baseQs, ...aiQs]) {
+			if (query && query.trim().length > 0) {
+				queryList.add(query.trim());
+			}
+		}
+
+		if (queryList.size < 4) {
+			for (const phrase of keyPhrases.slice(0, 3)) {
+				const trimmedPhrase = phrase.trim();
+				if (!trimmedPhrase) continue;
+				const base = `${brand} ${trimmedPhrase}`.trim();
+				if (base) queryList.add(base);
+				if (city) {
+					const localised = `${trimmedPhrase} ${city}`.trim();
+					if (localised) queryList.add(localised);
+				} else {
+					const priced =
+						locale === 'sv'
+							? `${trimmedPhrase} priser`.trim()
+							: `${trimmedPhrase} pricing`.trim();
+					if (priced) queryList.add(priced);
 				}
 			}
 		}
 
-		const ordered = Array.from(queries).slice(0, 6);
+		const ordered = Array.from(queryList).slice(0, 6);
 		return ordered.map((query, index) => ({
 			query,
 			highlight:
@@ -292,14 +405,17 @@ const runBraveSearch = async (
 	try {
 		console.log('[presence] brave search request', { query, host });
 		const offsets = [0, 20, 40];
+		const safeQuery = query.replace(/&/g, ' and ');
+		let previousPageFull = true;
 		for (const offset of offsets) {
+			if (offset > 0 && !previousPageFull) break;
 			let attempt = 0;
 			let res: Response | undefined;
 
 			while (attempt < 2) {
 				const candidate = await fetchWithTimeout(
 					fetcher,
-					`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=20&offset=${offset}`,
+					`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(safeQuery)}&count=20&offset=${offset}`,
 					{
 						headers: {
 							'X-Subscription-Token': BRAVE_SEARCH_KEY,
@@ -340,6 +456,15 @@ const runBraveSearch = async (
 			}
 
 			if (!res.ok) {
+				if (res.status === 422) {
+					console.warn('[presence] brave search validation failed', {
+						query,
+						host,
+						offset,
+						status: res.status
+					});
+					break;
+				}
 				console.warn('[presence] brave search failed', res.status);
 				return {};
 			}
@@ -351,13 +476,27 @@ const runBraveSearch = async (
 				return {};
 			}
 			const results = payload.web?.results ?? [];
-			const index = results.findIndex((entry) => findRank(host, entry.url));
+			const domain = normaliseHost(host);
+			let matchedUrl: string | undefined;
+			let index = -1;
+			for (let i = 0; i < results.length; i += 1) {
+				const entry = results[i];
+				if (!entry?.url) continue;
+				try {
+					const candidateHost = normaliseHost(new URL(entry.url).hostname);
+					if (candidateHost === domain || candidateHost.endsWith(`.${domain}`)) {
+						matchedUrl = entry.url;
+						index = i;
+						break;
+					}
+				} catch {
+					continue;
+				}
+			}
 			if (index !== -1) {
-				return { rank: offset + index + 1, matchedUrl: results[index]?.url };
+				return { rank: offset + index + 1, matchedUrl };
 			}
-			if (results.length < 20) {
-				break;
-			}
+			previousPageFull = results.length >= 20;
 		}
 		return {};
 	} catch (error) {
@@ -372,12 +511,27 @@ const runOpenAISearch = async (query: string, host: string): Promise<RankResult>
 			model: 'gpt-4.1-mini',
 			temperature: 0,
 			tools: [{ type: 'web_search' }],
+			text: {
+				format: {
+					type: 'json_schema',
+					name: 'SearchJudgement',
+					schema: {
+						type: 'object',
+						properties: {
+							rank: { type: ['integer', 'null'] },
+							matchedUrl: { type: ['string', 'null'] }
+						},
+						required: ['rank', 'matchedUrl'],
+						additionalProperties: false
+					}
+				}
+			},
 			max_output_tokens: 120,
 			input: [
 				{
 					role: 'system',
 					content:
-						'You judge web search results. Use the web_search tool and return JSON {"rank": number|null, "matchedUrl": string|null} for the provided domain.'
+						'You judge web search results. Use the web_search tool and respond ONLY with JSON of the form {"rank": number|null, "matchedUrl": string|null}. Use null when unsure. Do not include any extra text.'
 				},
 				{
 					role: 'user',
@@ -387,14 +541,22 @@ const runOpenAISearch = async (query: string, host: string): Promise<RankResult>
 		});
 		const rawContent = response.output_text ?? '';
 		console.log('[presence] openai search raw response', rawContent.slice(0, 400));
-		const payload = extractJsonPayload(rawContent);
-		const rankValue = Number(payload.rank);
-		const rank = Number.isFinite(rankValue) ? rankValue : undefined;
+		let payload: { rank: unknown; matchedUrl: unknown };
+		try {
+			payload = JSON.parse(rawContent || '{"rank":null,"matchedUrl":null}');
+		} catch {
+			payload = { rank: null, matchedUrl: null };
+		}
+		if (!payload || typeof payload !== 'object') {
+			payload = { rank: null, matchedUrl: null };
+		}
+		const rawRank = Number(payload.rank);
+		const rank = Number.isFinite(rawRank) && rawRank >= 1 ? rawRank : undefined;
 		const matchedUrl =
 			typeof payload.matchedUrl === 'string' && payload.matchedUrl.trim().length > 0
 				? payload.matchedUrl.trim()
 				: undefined;
-		return { rank: rank ?? undefined, matchedUrl };
+		return { rank, matchedUrl };
 	} catch (error) {
 		console.warn('[presence] openai search failed', error);
 		return {};
@@ -479,7 +641,10 @@ const runBraveGrounding = async (
 		const payload = await parseJsonResponse<Record<string, any>>(res, 'brave grounding');
 		if (!payload) return undefined;
 
+		console.log('[presence] brave grounding raw', JSON.stringify(payload, null, 2).slice(0, 800));
+
 		const citations =
+			payload?.choices?.[0]?.message?.grounding?.citations ??
 			payload?.choices?.[0]?.grounding?.citations ??
 			payload?.grounding?.citations ??
 			payload?.citations ??
@@ -487,6 +652,13 @@ const runBraveGrounding = async (
 
 		const deduped: PresenceGroundingEntry['citations'] = normaliseCitations(citations);
 		const cited = deduped.some((entry) => findRank(host, entry.url));
+		if (!cited || deduped.length === 0) {
+			console.warn(
+				'[presence] grounding had no citations matching host; discarding text',
+				{ query, host, cited, citationCount: deduped.length }
+			);
+			return undefined;
+		}
 
 		return {
 			query,

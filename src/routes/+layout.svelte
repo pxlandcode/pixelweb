@@ -2,8 +2,9 @@
 	import '../app.css';
 	import { fly } from 'svelte/transition';
 	import favicon from '$lib/assets/favicon.svg';
-	import CurtainMenu from '$components/CurtainMenu.svelte';
-	import SiteFooter from '$components/SiteFooter.svelte';
+import CurtainMenu from '$components/CurtainMenu.svelte';
+import LoadingOverlay from '$components/LoadingOverlay.svelte';
+import SiteFooter from '$components/SiteFooter.svelte';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
@@ -22,6 +23,7 @@
 </svelte:head>
 
 <CurtainMenu links={navLinks} logoSrc={pixelLogoUrl} />
+<LoadingOverlay />
 
 {#if $floatingNavState.active}
 	<div
