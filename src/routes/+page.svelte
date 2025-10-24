@@ -1,10 +1,10 @@
 <script lang="ts">
-        import { onDestroy, onMount, tick } from 'svelte';
-        import Cardstack from '$lib/components/Cardstack.svelte';
-        import CardstackItem from '$lib/components/CardstackItem.svelte';
-        import HeroSection from '$lib/components/HeroSection.svelte';
-        import LogoMarquee from '$lib/components/LogoMarquee.svelte';
-        import type { ActionData } from './$types';
+	import { onDestroy, onMount, tick } from 'svelte';
+	import Cardstack from '$lib/components/Cardstack.svelte';
+	import CardstackItem from '$lib/components/CardstackItem.svelte';
+	import HeroSection from '$lib/components/HeroSection.svelte';
+	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
+	import type { ActionData } from './$types';
 
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
@@ -120,12 +120,12 @@
 	const rightBody =
 		'Our employees are our greatest asset and we are committed to create a workplace that inspires and offers competitive compensation, success and well-being.';
 
-        const bannerTitle =
-                'We design, build and support digital products that create real business value.';
+	const bannerTitle =
+		'We design, build and support digital products that create real business value.';
 
-        export let form: ActionData | undefined;
+	export let form: ActionData | undefined;
 
-        $: leadValues = form?.values ?? { website_url: '', email: '' };
+	$: leadValues = form?.values ?? { website_url: '', email: '' };
 </script>
 
 <svelte:window on:scroll={handleScroll} on:resize={handleResize} />
@@ -187,11 +187,11 @@
 	<!-- Parallax banner -->
 	<ImageHeadline imageSrc={meetingRoom} title={bannerTitle} parallax={0.25} />
 
-        <Cardstack>
-                {#each cardstackEntries as entry (entry.title)}
-                        <CardstackItem
-                                counter={cards.indexOf(entry) + 1}
-                                title={entry.title}
+	<Cardstack>
+		{#each cardstackEntries as entry (entry.title)}
+			<CardstackItem
+				counter={cards.indexOf(entry) + 1}
+				title={entry.title}
 				eyebrow={entry.eyebrow}
 				description={entry.description}
 				link={entry.link}
@@ -206,79 +206,6 @@
 					</ul>
 				{/if}
 			</CardstackItem>
-                {/each}
-        </Cardstack>
-
-        <section
-                id="contact"
-                class="border-t border-border/60 bg-background px-6 py-16"
-        >
-                <div class="mx-auto flex w-full max-w-3xl flex-col gap-6">
-                        <div class="space-y-2">
-                                <h2 class="text-3xl font-semibold text-primary">AI-kompatibilitetsanalys</h2>
-                                <p class="text-sm text-muted-fg">
-                                        Fyll i din webbplats och e-postadress så återkommer vi med en skräddarsydd analys.
-                                </p>
-                        </div>
-                        <form method="POST" class="space-y-5">
-                                {#if form?.error}
-                                        <div class="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                                                {form.error}
-                                        </div>
-                                {/if}
-                                {#if form?.success}
-                                        <div class="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-300">
-                                                Tack! Vi hör av oss så snart vi har granskat din sida.
-                                        </div>
-                                {/if}
-                                <label class="flex flex-col gap-1 text-sm text-foreground">
-                                        <span>Webbplats (URL)</span>
-                                        <input
-                                                name="website_url"
-                                                type="url"
-                                                required
-                                                value={leadValues.website_url}
-                                                placeholder="https://www.exempel.se"
-                                                class="w-full rounded-md border border-border bg-background/60 px-3 py-2 text-base text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                        />
-                                </label>
-                                <label class="flex flex-col gap-1 text-sm text-foreground">
-                                        <span>E-post</span>
-                                        <input
-                                                name="email"
-                                                type="email"
-                                                required
-                                                value={leadValues.email}
-                                                placeholder="namn@företag.se"
-                                                class="w-full rounded-md border border-border bg-background/60 px-3 py-2 text-base text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                        />
-                                </label>
-                                <label class="flex items-start gap-2 text-sm text-muted-fg">
-                                        <input
-                                                type="checkbox"
-                                                name="consent"
-                                                value="true"
-                                                required
-                                                class="mt-1 h-4 w-4 rounded border-border bg-background/80 text-primary focus:ring-2 focus:ring-primary/40"
-                                        />
-                                        <span>
-                                                Jag godkänner att Pixelweb kontaktar mig och sparar mina uppgifter för uppföljning.
-                                        </span>
-                                </label>
-                                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                        {#if form?.quota?.remaining !== undefined}
-                                                <span class="inline-flex w-fit items-center rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs text-muted-fg">
-                                                        AI-citat kvar idag: {form.quota.remaining}
-                                                </span>
-                                        {/if}
-                                        <button
-                                                type="submit"
-                                                class="inline-flex w-full items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-background transition hover:bg-primary/90 sm:w-auto"
-                                        >
-                                                Analysera
-                                        </button>
-                                </div>
-                        </form>
-                </div>
-        </section>
+		{/each}
+	</Cardstack>
 </main>
