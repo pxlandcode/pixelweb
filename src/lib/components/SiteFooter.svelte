@@ -2,6 +2,7 @@
 	import { RollingText } from '$components/rolling-text';
 	import type { NavLink } from '$types';
 	import footerImageUrl from '$lib/assets/footerimage.svg?url';
+	import InteractiveBackground from './backgrounds/InteractiveBackground.svelte';
 	type Props = {
 		links?: NavLink[];
 	};
@@ -9,7 +10,8 @@
 	let { links = [] }: Props = $props();
 </script>
 
-<footer class="border-t border-white/10 bg-background text-[#f0f0f0]">
+<footer class="relative border-t border-white/10 bg-background text-[#f0f0f0]">
+	<InteractiveBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" />
 	<div
 		class="mx-auto flex w-full flex-col gap-12 px-6 py-16 md:flex-row md:justify-between md:gap-16 md:px-16"
 	>

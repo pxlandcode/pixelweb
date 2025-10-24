@@ -20,6 +20,9 @@
 	import asset from '$lib/images/asset.jpg';
 	import workLife from '$lib/images/work-life.jpg';
 	import meetingRoom from '$lib/images/meeting-room.jpg';
+	import InteractiveBackground from '$components/backgrounds/InteractiveBackground.svelte';
+	import SnakeBackground from '$components/backgrounds/SnakeBackground.svelte';
+	import PixelAndCodeTrailBackground from '$components/backgrounds/PixelAndCodeTrailBackground.svelte';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -135,6 +138,10 @@
 		class="first-fold relative flex min-h-screen flex-col overflow-hidden"
 		bind:this={firstFoldSection}
 	>
+		<!-- <PixelAndCodeTrailBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" /> -->
+
+		<!-- <SnakeBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" /> -->
+		<!-- <InteractiveBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" /> -->
 		<div
 			class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
 			bind:this={headerWrapper}
