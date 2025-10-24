@@ -13,7 +13,7 @@
 	export let rightImageSrc: string;
 </script>
 
-<section class="relative w-full bg-[#1b1b1b] text-white">
+<section class="relative w-full bg-background text-white">
 	<div class="mx-auto max-w-7xl px-6 py-16 md:py-20 lg:py-24">
 		<!-- Centered headline on top -->
 		<h2
