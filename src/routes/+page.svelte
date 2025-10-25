@@ -204,6 +204,7 @@
 				link={entry.link}
 				img={entry.img}
 				imgAlt={entry.imgAlt}
+				imagePosition={entry.imagePosition}
 			>
 				{#if entry.bullets}
 					<ul class="stack-card__list">

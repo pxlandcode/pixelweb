@@ -16,7 +16,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Increased conversion rates by 18% during seasonal campaigns'
 		],
 		img: ecommerceImg,
-		imgAlt: 'E-commerce case image'
+		imgAlt: 'E-commerce case image',
+		imagePosition: 'left'
 	},
 	{
 		eyebrow: 'Healthcare',
@@ -29,7 +30,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Integration with national e-prescription APIs'
 		],
 		img: worklifeImg,
-		imgAlt: 'Healthcare case image'
+		imgAlt: 'Healthcare case image',
+		imagePosition: 'right'
 	},
 	{
 		eyebrow: 'Mobility',
@@ -42,7 +44,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Analytics dashboard that reduced idle time by 23%'
 		],
 		img: assetImg,
-		imgAlt: 'Mobility case image'
+		imgAlt: 'Mobility case image',
+		imagePosition: 'left'
 	},
 	{
 		eyebrow: 'Fitness',
@@ -55,6 +58,7 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Gamified challenges that boosted retention'
 		],
 		img: meetingRoomImg,
-		imgAlt: 'Fitness case image'
+		imgAlt: 'Fitness case image',
+		imagePosition: 'right'
 	}
 ];

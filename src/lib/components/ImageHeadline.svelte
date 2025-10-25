@@ -3,6 +3,7 @@
 	export let title: string; // large white text over the image
 	export let subtitle: string = ''; // optional, smaller line under the title
 	export let parallax = 0.25; // 0–1 (how much the image moves while scrolling)
+	export let pillText: string = `We've got proof`;
 </script>
 
 <!-- Wrapper -->
@@ -28,6 +29,22 @@
 				{subtitle}
 			</p>
 		{/if}
+	</div>
+	<div class="cta-pill" aria-label={pillText}>
+		<span class="cta-pill__text">{pillText}</span>
+		<span class="cta-pill__arrow" aria-hidden="true">
+			<svg
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M12 5v14" />
+				<path d="M18 13l-6 6-6-6" />
+			</svg>
+		</span>
 	</div>
 </section>
 
@@ -91,6 +108,78 @@
 		.parallax-image {
 			animation: none;
 			transform: scale(var(--parallax-scale));
+		}
+		.cta-pill__arrow {
+			animation: none;
+		}
+	}
+
+	.cta-pill {
+		position: absolute;
+		bottom: clamp(1.5rem, 4vw, 3rem);
+		right: clamp(1.5rem, 4vw, 3rem);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		padding: 0.6rem 0.8rem 0.6rem 1.5rem;
+		border-radius: 9999px;
+		border: 1px solid rgba(255, 255, 255, 0.8);
+		background: rgba(255, 255, 255, 0.2);
+		color: #fff;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		pointer-events: auto;
+	}
+
+	.cta-pill__text {
+		white-space: nowrap;
+		text-transform: inherit;
+	}
+
+	.cta-pill__arrow {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 1.5rem;
+		width: 1.5rem;
+		animation: arrow-bounce-paused 3.2s ease-in-out infinite;
+	}
+
+	.cta-pill__arrow svg {
+		height: 100%;
+		width: 100%;
+	}
+
+	@keyframes arrow-bounce-paused {
+		0% {
+			transform: translateY(0);
+		}
+		10% {
+			transform: translateY(8px);
+		}
+		18% {
+			transform: translateY(0);
+		}
+		26% {
+			transform: translateY(5px);
+		}
+		34% {
+			transform: translateY(0);
+		}
+		70% {
+			transform: translateY(0);
+		}
+		80% {
+			transform: translateY(7px);
+		}
+		88% {
+			transform: translateY(0);
+		}
+		100% {
+			transform: translateY(0);
 		}
 	}
 </style>

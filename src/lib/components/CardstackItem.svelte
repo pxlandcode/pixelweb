@@ -11,17 +11,34 @@
 		link?: { href: string; label: string };
 		img?: string;
 		imgAlt?: string;
+		imagePosition?: 'left' | 'right';
 		counter: number;
 		children: Snippet;
 	};
 
-	let { title, eyebrow, description, link, img, imgAlt, counter, children }: Props = $props();
+	let {
+		title,
+		eyebrow,
+		description,
+		link,
+		img,
+		imgAlt,
+		imagePosition = 'right',
+		children
+	}: Props = $props();
+
+	const imageWrapperOrderClass = $derived(() =>
+		imagePosition === 'right' ? 'md:order-2' : 'md:order-1'
+	);
+	const contentWrapperOrderClass = $derived(() =>
+		imagePosition === 'right' ? 'md:order-1' : 'md:order-2'
+	);
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 </script>
 
 <li
-	class="js-stack-cards__item relative sticky top-0 grid min-h-[clamp(24rem,75vh,32rem)] origin-top grid-cols-[clamp(5.5rem,12vw,9rem)_minmax(0,1fr)] overflow-hidden rounded-none border border-black/10 bg-white p-[clamp(2.25rem,5vw,4rem)] transition-transform duration-150 ease-out will-change-transform [counter-increment:cardstack] max-[50rem]:min-h-0 max-[50rem]:grid-cols-1 max-[50rem]:p-[clamp(2rem,8vw,3rem)]"
+	class="js-stack-cards__item sticky top-0 grid min-h-[clamp(24rem,75vh,32rem)] origin-top grid-cols-[clamp(5.5rem,12vw,9rem)_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-none border border-black/10 bg-white px-[clamp(2.25rem,5vw,4rem)] py-[clamp(1.5rem,4vw,2rem)] transition-transform duration-150 ease-out will-change-transform [counter-increment:cardstack] max-[50rem]:min-h-0 max-[50rem]:grid-cols-1 max-[50rem]:px-[clamp(2rem,8vw,3rem)] max-[50rem]:py-[clamp(1.25rem,6vw,2.5rem)]"
 >
 	<!-- Counter column -->
 	<!-- <div
@@ -33,45 +50,56 @@
 		</RollingText>
 	</div> -->
 
-	<div class="items-center self-start text-primary" aria-hidden="true"></div>
+	<div class="items-center self-start text-primary min-[50rem]:row-span-2" aria-hidden="true"></div>
+
+	{#if eyebrow}
+		<div
+			class="row-start-1 justify-self-start pb-4 text-left text-[0.9rem] font-semibold tracking-[0.12em] text-primary uppercase min-[50rem]:col-start-2"
+		>
+			{eyebrow}
+		</div>
+	{/if}
 
 	<!-- Content -->
-	<div class="grid grid-cols-1 gap-[clamp(1.25rem,2.5vw,2rem)]">
-		{#if eyebrow}
-			<p class="m-0 text-[0.9rem] font-semibold tracking-[0.12em] text-primary uppercase">
-				{eyebrow}
-			</p>
-		{/if}
-
-		<h3
-			class="m-0 text-[clamp(1.75rem,3.8vw,2.75rem)] leading-[1.1] font-bold tracking-[-0.015em] text-background"
-		>
-			{title}
-		</h3>
-
+	<div
+		class="grid gap-[clamp(1.25rem,2.5vw,2rem)] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-[clamp(1.75rem,4vw,3rem)] min-[50rem]:col-start-2 min-[50rem]:row-start-2"
+	>
 		{#if img}
-			<img src={img} alt={imgAlt} class="block max-h-50 w-full object-cover" />
+			<div class={`relative overflow-hidden max-[50rem]:hidden ${imageWrapperOrderClass}`}>
+				<img src={img} alt={imgAlt ?? ''} class="block h-full w-full object-cover" />
+			</div>
 		{/if}
 
-		{#if description}
-			<p class="m-0 text-[clamp(1rem,2vw,1.1rem)] leading-[1.7] text-[#31333f]">
-				{description}
-			</p>
-		{/if}
-
-		{@render children()}
-
-		{#if link}
-			<a
-				class="group inline-flex items-center gap-1 font-semibold text-[#12152b] no-underline"
-				href={link.href}
+		<div
+			class={`flex flex-col gap-[clamp(1rem,2vw,1.4rem)] ${img ? contentWrapperOrderClass : ''}`}
+		>
+			<h3
+				class="m-0 text-[clamp(1.75rem,3.8vw,2.75rem)] leading-[1.1] font-bold tracking-[-0.015em] text-background"
 			>
-				<RollingText>
-					{link.label}
-				</RollingText>
-				<span class="transition-transform duration-150 ease-out group-hover:translate-x-1">→</span>
-			</a>
-		{/if}
+				{title}
+			</h3>
+
+			{#if description}
+				<p class="m-0 text-[clamp(1rem,2vw,1.1rem)] leading-[1.7] text-[#31333f]">
+					{description}
+				</p>
+			{/if}
+
+			{@render children()}
+
+			{#if link}
+				<a
+					class="group inline-flex items-center gap-1 font-semibold text-[#12152b] no-underline"
+					href={link.href}
+				>
+					<RollingText>
+						{link.label}
+					</RollingText>
+					<span class="transition-transform duration-150 ease-out group-hover:translate-x-1">→</span
+					>
+				</a>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Shadow overlay that intensifies as the card falls back -->
