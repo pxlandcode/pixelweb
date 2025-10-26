@@ -16,7 +16,8 @@
 	const layer1Images = $derived(
 		Array.from({ length: 6 }, (_, i) => ({
 			src: images[i % images.length].src,
-			alt: images[i % images.length].alt
+			alt: images[i % images.length].alt,
+			text: images[i % images.length].text
 		}))
 	);
 
@@ -24,7 +25,8 @@
 	const layer2Images = $derived(
 		Array.from({ length: 6 }, (_, i) => ({
 			src: images[(i + 2) % images.length].src,
-			alt: images[(i + 2) % images.length].alt
+			alt: images[(i + 2) % images.length].alt,
+			text: images[(i + 2) % images.length].text
 		}))
 	);
 
@@ -32,7 +34,8 @@
 	const layer3Images = $derived(
 		Array.from({ length: 2 }, (_, i) => ({
 			src: images[(i + 1) % images.length].src,
-			alt: images[(i + 1) % images.length].alt
+			alt: images[(i + 1) % images.length].alt,
+			text: images[(i + 1) % images.length].text
 		}))
 	);
 
@@ -46,27 +49,45 @@
 			<!-- Layer 1: outer columns -->
 			<div class="layer">
 				{#each layer1Images as image}
-					<div><img src={image.src} alt={image.alt} loading="lazy" /></div>
+					<div>
+						<img src={image.src} alt={image.alt} loading="lazy" />
+						{#if image.text}
+							<p class="caption text-primary">{image.text}</p>
+						{/if}
+					</div>
 				{/each}
 			</div>
 
 			<!-- Layer 2: middle columns -->
 			<div class="layer">
 				{#each layer2Images as image}
-					<div><img src={image.src} alt={image.alt} loading="lazy" /></div>
+					<div>
+						<img src={image.src} alt={image.alt} loading="lazy" />
+						{#if image.text}
+							<p class="caption text-primary">{image.text}</p>
+						{/if}
+					</div>
 				{/each}
 			</div>
 
 			<!-- Layer 3: top and bottom center -->
 			<div class="layer">
 				{#each layer3Images as image}
-					<div><img src={image.src} alt={image.alt} loading="lazy" /></div>
+					<div>
+						<img src={image.src} alt={image.alt} loading="lazy" />
+						{#if image.text}
+							<p class="caption text-primary">{image.text}</p>
+						{/if}
+					</div>
 				{/each}
 			</div>
 
 			<!-- Center scaler image -->
 			<div class="scaler">
 				<img src={centerImage.src} alt={centerImage.alt} loading="lazy" />
+				{#if centerImage.text}
+					<p class="caption text-primary">{centerImage.text}</p>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -138,7 +159,11 @@
 	.grid > .layer > div {
 		background: white;
 		padding: clamp(0.5rem, 1vw, 0.75rem); /* White frame around image */
-		padding-bottom: clamp(2rem, 3vw, 3rem); /* Larger bottom padding like polaroid */
+		padding-bottom: clamp(0.8rem, 2.5vw, 1rem); /* Larger bottom padding like polaroid */
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: clamp(0.35rem, 0.8vw, 0.75rem);
 		box-shadow:
 			0 4px 6px rgba(0, 0, 0, 0.1),
 			0 10px 20px rgba(0, 0, 0, 0.15);
@@ -198,6 +223,10 @@
 		width: max-content;
 		height: max-content;
 		background: white;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: clamp(0.35rem, 0.8vw, 0.75rem);
 	}
 
 	.scaler img {
@@ -213,6 +242,24 @@
 		object-fit: cover;
 		display: block; /* Remove any gaps below image */
 		border-radius: 0; /* Remove border radius for polaroid look */
+	}
+
+	.caption {
+		font-family: var(--font-fave-script);
+		font-size: clamp(0.95rem, 1.6vw, 1.35rem);
+		line-height: 1.1;
+		text-align: center;
+		letter-spacing: 0.01em;
+		text-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+		transform: rotate(-1deg);
+	}
+
+	.grid > .layer > div:nth-child(3n + 2) .caption {
+		transform: rotate(0.5deg);
+	}
+
+	.grid > .layer > div:nth-child(3n + 3) .caption {
+		transform: rotate(-0.3deg);
 	}
 
 	/* Scroll animations */
@@ -267,7 +314,7 @@
 			/* Stay centered - the scaler is already absolutely positioned at center */
 			transform: translate(-50%, -50%);
 			padding: clamp(0.5rem, 1vw, 0.75rem); /* White frame around image */
-			padding-bottom: clamp(2rem, 3vw, 3rem); /* Larger bottom padding like polaroid */
+			padding-bottom: clamp(0.8rem, 2.5vw, 1rem); /* Larger bottom padding like polaroid */
 			box-shadow:
 				0 4px 6px rgba(0, 0, 0, 0.1),
 				0 10px 20px rgba(0, 0, 0, 0.15);

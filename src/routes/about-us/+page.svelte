@@ -7,10 +7,10 @@
 	import { ScrollGallery } from '$lib/components';
 
 	const galleryImages = [
-		{ src: asset, alt: 'Studio workspace' },
-		{ src: ecommerce, alt: 'E-commerce project' },
-		{ src: meetingRoom, alt: 'Meeting room' },
-		{ src: workLife, alt: 'Work life balance' }
+		{ src: asset, alt: 'Studio workspace', text: 'Our creative studio' },
+		{ src: ecommerce, alt: 'E-commerce project', text: 'E-commerce project' },
+		{ src: meetingRoom, alt: 'Meeting room', text: 'Collaborative meetings' },
+		{ src: workLife, alt: 'Work life balance', text: 'Work life balance' }
 	];
 
 	const stats = [
