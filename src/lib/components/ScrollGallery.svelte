@@ -2,6 +2,7 @@
 	type GalleryImage = {
 		src: string;
 		alt: string;
+		text?: string;
 	};
 
 	type Props = {
