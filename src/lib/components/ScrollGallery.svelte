@@ -133,6 +133,34 @@
 		grid-template-rows: subgrid;
 	}
 
+	/* Polaroid wrapper for grid images */
+	.grid > .layer > div {
+		background: white;
+		padding: clamp(0.5rem, 1vw, 0.75rem); /* White frame around image */
+		padding-bottom: clamp(2rem, 3vw, 3rem); /* Larger bottom padding like polaroid */
+		box-shadow:
+			0 4px 6px rgba(0, 0, 0, 0.1),
+			0 10px 20px rgba(0, 0, 0, 0.15);
+		border-radius: 2px;
+		transform: rotate(0deg);
+		transition: transform 0.3s ease;
+	}
+
+	.grid > .layer > div:hover {
+		transform: scale(1.05) rotate(0deg);
+	}
+
+	/* Add subtle random rotation to polaroids */
+	.grid > .layer > div:nth-child(3n + 1) {
+		transform: rotate(-2deg);
+	}
+	.grid > .layer > div:nth-child(3n + 2) {
+		transform: rotate(1.5deg);
+	}
+	.grid > .layer > div:nth-child(3n + 3) {
+		transform: rotate(-1deg);
+	}
+
 	/* Layer 1: columns 1 and 5 */
 	.grid > div:nth-of-type(1) div:nth-of-type(odd) {
 		grid-column: 1;
@@ -168,6 +196,7 @@
 		/* Let the image determine size */
 		width: max-content;
 		height: max-content;
+		background: white;
 	}
 
 	.scaler img {
@@ -181,7 +210,8 @@
 		width: 100%;
 		aspect-ratio: 4 / 5;
 		object-fit: cover;
-		border-radius: clamp(0.8rem, 2vw, 1.2rem);
+		display: block; /* Remove any gaps below image */
+		border-radius: 0; /* Remove border radius for polaroid look */
 	}
 
 	/* Scroll animations */
@@ -227,10 +257,20 @@
 		0%,
 		10% {
 			transform: translate(-50%, -50%);
+			padding: clamp(1rem, 2vw, 2rem);
+			padding-bottom: clamp(3rem, 4vw, 4rem);
+			box-shadow: none;
+			border-radius: 0;
 		}
 		100% {
 			/* Stay centered - the scaler is already absolutely positioned at center */
 			transform: translate(-50%, -50%);
+			padding: clamp(0.5rem, 1vw, 0.75rem); /* White frame around image */
+			padding-bottom: clamp(2rem, 3vw, 3rem); /* Larger bottom padding like polaroid */
+			box-shadow:
+				0 4px 6px rgba(0, 0, 0, 0.1),
+				0 10px 20px rgba(0, 0, 0, 0.15);
+			border-radius: 2px;
 		}
 	}
 
