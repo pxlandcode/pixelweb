@@ -5,13 +5,20 @@
 	import workLife from '$lib/images/work-life.jpg';
 	import { Button } from '@pixelcode_/blocks/components';
 	import { ScrollGallery } from '$lib/components';
+	import karaoke from '$lib/images/scrollgallery/karaoke.jpg';
+	import workhard from '$lib/images/scrollgallery/workhard.jpg';
 
 	const galleryImages = [
-		{ src: asset, alt: 'Studio workspace', text: 'Our creative studio' },
+		{ src: workhard, alt: 'Focused work', text: 'Getting things done' },
+		{ src: asset, alt: 'Our office', text: 'Pixel&Code Headquarters' },
 		{ src: ecommerce, alt: 'E-commerce project', text: 'E-commerce project' },
 		{ src: meetingRoom, alt: 'Meeting room', text: 'Collaborative meetings' },
-		{ src: workLife, alt: 'Work life balance', text: 'Work life balance' }
+		{ src: workLife, alt: 'Work life balance', text: 'Work life balance' },
+
+		{ src: karaoke, alt: 'Singing Karaoke', text: 'Karaoke Night' }
 	];
+
+	const galleryTitle = 'We work hard but there is more to this workplace than just work.';
 
 	const stats = [
 		{ value: '12+', label: 'Years in business' },
@@ -75,7 +82,7 @@
 	</section>
 
 	<!-- Scroll Gallery Section -->
-	<ScrollGallery images={galleryImages} />
+	<ScrollGallery images={galleryImages} title={galleryTitle} />
 
 	<!-- Culture Section -->
 	<section class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-24 md:px-12 lg:px-20">

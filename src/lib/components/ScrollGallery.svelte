@@ -8,9 +8,14 @@
 	type Props = {
 		images: GalleryImage[];
 		minHeight?: string;
+		title?: string;
 	};
 
-	let { images, minHeight = '240vh' }: Props = $props();
+	let {
+		images,
+		minHeight = '240vh',
+		title = 'We love hanging out together long after the laptops close.'
+	}: Props = $props();
 
 	// Layer 1: 6 images (positions 1 and 5 of each row)
 	const layer1Images = $derived(
@@ -39,7 +44,6 @@
 		}))
 	);
 
-	// Center image
 	const centerImage = $derived(images[0]);
 </script>
 
@@ -85,6 +89,17 @@
 			<!-- Center scaler image -->
 			<div class="scaler">
 				<img src={centerImage.src} alt={centerImage.alt} loading="lazy" />
+				{#if title}
+					<div class="scaler__overlay">
+						<div class="scaler__overlay-inner relative z-10 mx-auto max-w-6xl px-6 py-6">
+							<h2
+								class="m-0 mt-10 max-w-200 text-4xl leading-tight font-bold text-white sm:text-5xl md:text-6xl"
+							>
+								{title}
+							</h2>
+						</div>
+					</div>
+				{/if}
 				{#if centerImage.text}
 					<p class="caption text-primary">{centerImage.text}</p>
 				{/if}
@@ -222,7 +237,7 @@
 		/* Let the image determine size */
 		width: max-content;
 		height: max-content;
-		background: white;
+		background: transparent;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -234,6 +249,20 @@
 		object-fit: cover;
 		border-radius: clamp(0.8rem, 2vw, 1.2rem);
 		/* Dimensions controlled by animation */
+	}
+
+	.scaler__overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+		pointer-events: none;
+		z-index: 1;
+	}
+
+	.scaler__overlay-inner {
+		width: 100%;
 	}
 
 	.grid img {
@@ -305,10 +334,10 @@
 		0%,
 		10% {
 			transform: translate(-50%, -50%);
-			padding: clamp(1rem, 2vw, 2rem);
-			padding-bottom: clamp(3rem, 4vw, 4rem);
+			padding: 0;
 			box-shadow: none;
 			border-radius: 0;
+			background: transparent;
 		}
 		100% {
 			/* Stay centered - the scaler is already absolutely positioned at center */
@@ -319,6 +348,19 @@
 				0 4px 6px rgba(0, 0, 0, 0.1),
 				0 10px 20px rgba(0, 0, 0, 0.15);
 			border-radius: 2px;
+			background: white;
+		}
+	}
+
+	@keyframes scaler-headline-fade {
+		0%,
+		10% {
+			opacity: 1;
+			background-color: color-mix(in oklab, var(--color-background) /* #18191b */ 50%, transparent);
+		}
+		100% {
+			opacity: 0;
+			background-color: transparent;
 		}
 	}
 
@@ -352,6 +394,14 @@
 				animation-range: entry 100% exit 0%;
 			}
 
+			.scaler__overlay {
+				animation-name: scaler-headline-fade;
+				animation-fill-mode: both;
+				animation-timing-function: ease-out;
+				animation-timeline: --gallery-scroll;
+				animation-range: entry 100% exit -20%;
+			}
+
 			/* Stagger layers */
 			.grid .layer:nth-of-type(2) {
 				animation-range: entry 100% exit -10%;
@@ -367,6 +417,20 @@
 		.scaler img,
 		.grid .layer {
 			animation: none !important;
+		}
+
+		.scaler {
+			background: white;
+			padding: clamp(0.5rem, 1vw, 0.75rem);
+			padding-bottom: clamp(0.8rem, 2.5vw, 1rem);
+			box-shadow:
+				0 4px 6px rgba(0, 0, 0, 0.1),
+				0 10px 20px rgba(0, 0, 0, 0.15);
+			border-radius: 2px;
+		}
+
+		.scaler__overlay {
+			opacity: 1;
 		}
 	}
 </style>
