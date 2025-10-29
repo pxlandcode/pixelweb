@@ -1,9 +1,10 @@
-import { fail, type Actions } from '@sveltejs/kit';
+import { fail, type Actions, type PageServerLoad } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { sbAdmin } from '$lib/server/supabase';
 import { canRunBraveQuery } from '$lib/server/braveQuota';
 import type { LeadInput } from '$lib/types';
+import { fetchLinkedInPosts } from '$lib/server/linkedin';
 
 const LeadSchema = z.object({
         website_url: z
@@ -16,6 +17,11 @@ const LeadSchema = z.object({
 
 const mapZodError = (issues: z.ZodIssue[]): string =>
         issues[0]?.message ?? 'Kontrollera att alla fält är korrekt ifyllda.';
+
+export const load: PageServerLoad = async (event) => {
+        const news = await fetchLinkedInPosts({ fetch: event.fetch });
+        return { news };
+};
 
 export const actions: Actions = {
         default: async (event) => {

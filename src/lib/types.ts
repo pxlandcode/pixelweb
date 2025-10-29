@@ -17,3 +17,15 @@ export type CardstackEntry = {
 export type LeadInput = { website_url: string; email: string; consent: 'true' };
 
 export type QuotaInfo = { remaining: number };
+
+export type LinkedInPost = {
+	id: string;
+	title: string;
+	summary: string;
+	publishedAt: string;
+	link: string;
+	mediaUrl?: string;
+	mediaAlt?: string;
+	badge?: string;
+	ctaLabel?: string;
+};

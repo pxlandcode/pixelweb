@@ -4,7 +4,8 @@
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
-	import type { ActionData } from './$types';
+	import LinkedInNews from '$lib/components/LinkedInNews.svelte';
+	import type { ActionData, PageData } from './$types';
 
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
@@ -126,9 +127,12 @@
 	const bannerTitle =
 		'We design, build and support digital products that create real business value.';
 
+	export let data: PageData;
 	export let form: ActionData | undefined;
 
 	$: leadValues = form?.values ?? { website_url: '', email: '' };
+	$: newsPosts = data.news?.posts ?? [];
+	$: newsError = data.news?.error;
 </script>
 
 <svelte:window on:scroll={handleScroll} on:resize={handleResize} />
@@ -216,4 +220,5 @@
 			</CardstackItem>
 		{/each}
 	</Cardstack>
+	<LinkedInNews {newsPosts} error={newsError} />
 </main>
