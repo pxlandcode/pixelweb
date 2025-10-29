@@ -18,7 +18,7 @@
 		{ src: karaoke, alt: 'Singing Karaoke', text: 'Karaoke Night' }
 	];
 
-	const galleryTitle = 'We work hard but there is more to this workplace than just work.';
+	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 
 	const stats = [
 		{ value: '12+', label: 'Years in business' },
