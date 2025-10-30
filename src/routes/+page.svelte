@@ -220,5 +220,5 @@
 			</CardstackItem>
 		{/each}
 	</Cardstack>
-	<LinkedInNews {newsPosts} error={newsError} />
+	<LinkedInNews posts={newsPosts} error={newsError} />
 </main>

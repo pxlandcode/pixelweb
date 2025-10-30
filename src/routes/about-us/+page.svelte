@@ -18,7 +18,7 @@
 		{ src: karaoke, alt: 'Singing Karaoke', text: 'Karaoke Night' }
 	];
 
-	const galleryTitle = 'We work hard but there is more to this workplace than just work.';
+	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 
 	const stats = [
 		{ value: '12+', label: 'Years in business' },
@@ -52,17 +52,72 @@
 
 <main class="flex min-h-screen flex-col bg-background text-[#f5f5f5]">
 	<!-- Hero Section -->
-	<section
-		class="mx-auto flex w-full max-w-7xl flex-col items-center gap-8 px-6 pt-24 pb-16 text-center md:px-12 lg:px-20 lg:pt-32"
-	>
-		<h1 class="text-5xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl">
-			Are you our new colleague?
+	<section class="mx-auto flex w-full max-w-6xl flex-col items-center gap-12 bg-background px-6 pb-24 pt-24 text-center text-white md:px-12 lg:px-20 lg:pb-28 lg:pt-32">
+		<div class="inline-flex items-center gap-3 rounded-full border border-white/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.35em]">
+			<span class="inline-block h-2 w-2 rounded-full border border-white/60"></span>
+			<span>About</span>
+		</div>
+
+		<h1 class="text-balance text-4xl font-semibold leading-[1.05] md:text-6xl lg:text-7xl">
+			<span class="block font-bold">Revolutionizing B2B Marketing</span>
+			<span
+				class="mt-4 block text-5xl font-normal italic md:text-[64px]"
+				style="font-family: var(--font-fave-script);"
+			>
+				since 2019
+			</span>
 		</h1>
-		<p class="max-w-2xl text-lg leading-relaxed text-[#d4d4d8] md:text-xl">
-			We're looking for talented designers and developers who love to create beautiful,
-			user-friendly digital products.
+
+		<p class="max-w-2xl text-lg leading-relaxed">
+			Pixel&amp;Code is home to 25 passionate specialists with expertise across strategy, design, and
+			engineering—partners who bring clarity and momentum to every engagement.
 		</p>
-		<Button href="/#contact">Get in touch</Button>
+
+		<div class="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-end sm:gap-10">
+			<div class="hidden sm:block sm:translate-y-6">
+				<img
+					src={workLife}
+					alt="Pixel&Code teammates celebrating a launch"
+					class="aspect-[4/5] w-40 rounded-[1.75rem] border border-white/10 object-cover"
+				/>
+			</div>
+
+			<div class="mx-auto w-full max-w-md">
+				<img
+					src={asset}
+					alt="Inside the Pixel&Code studio"
+					class="aspect-[4/3] w-full rounded-[2.5rem] border border-white/10 object-cover"
+				/>
+			</div>
+
+			<div class="hidden sm:block sm:translate-y-6">
+				<img
+					src={meetingRoom}
+					alt="Collaborative workshop in progress"
+					class="aspect-[4/5] w-40 rounded-[1.75rem] border border-white/10 object-cover"
+				/>
+			</div>
+		</div>
+
+		<p class="max-w-xl text-base">
+			We collaborate across disciplines to transform ambitious ideas into measurable results for each
+			client we support.
+		</p>
+
+		<a
+			href="#culture"
+			class="inline-flex items-center gap-3 text-sm font-semibold"
+		>
+			<span>Discover more</span>
+			<svg
+				viewBox="0 0 24 24"
+				fill="none"
+				aria-hidden="true"
+				class="h-5 w-5 stroke-current"
+			>
+				<path d="M12 5v14m0 0-5-5m5 5 5-5" stroke-width="1.8" stroke-linecap="round" />
+			</svg>
+		</a>
 	</section>
 
 	<!-- Stats Section -->
@@ -85,7 +140,10 @@
 	<ScrollGallery images={galleryImages} title={galleryTitle} />
 
 	<!-- Culture Section -->
-	<section class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-24 md:px-12 lg:px-20">
+	<section
+		id="culture"
+		class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-24 md:px-12 lg:px-20"
+	>
 		<div class="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
 			<div class="flex flex-col gap-5">
 				<p class="text-xs font-semibold tracking-[0.35em] text-primary/70 uppercase">How we work</p>

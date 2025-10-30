@@ -1,6 +1,8 @@
+<!-- Global layout: initialize Lenis once so every route has smooth scrolling -->
 <script lang="ts">
 	import '../app.css';
 	import { fly } from 'svelte/transition';
+	import { onDestroy, onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import CurtainMenu from '$components/CurtainMenu.svelte';
 	import SiteFooter from '$components/SiteFooter.svelte';
@@ -11,10 +13,47 @@
 	import { curtainMenu } from '$lib/stores/curtainMenu';
 	import { floatingNavState } from '$lib/stores/floatingNav';
 	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import Lenis from 'lenis';
 
 	let { children } = $props();
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
+
+	let lenis: Lenis | undefined;
+	let rafId: number | null = null;
+
+	export const disableSmoothScroll = () => lenis?.stop();
+	export const enableSmoothScroll = () => lenis?.start();
+
+	onMount(() => {
+		if ('scrollRestoration' in history) {
+			history.scrollRestoration = 'manual';
+		}
+
+		lenis = new Lenis({
+			duration: 1.2,
+			easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+			smoothWheel: true,
+			syncTouch: true
+		});
+
+		const raf = (time: number) => {
+			lenis?.raf(time);
+			rafId = requestAnimationFrame(raf);
+		};
+
+		rafId = requestAnimationFrame(raf);
+	});
+
+	onDestroy(() => {
+		lenis?.destroy();
+		lenis = undefined;
+
+		if (rafId !== null) {
+			cancelAnimationFrame(rafId);
+			rafId = null;
+		}
+	});
 </script>
 
 <svelte:head>
