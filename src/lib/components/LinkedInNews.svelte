@@ -137,7 +137,7 @@
 	}));
 </script>
 
-<section class="news-section mt-24 bg-[#e6e6db] text-[#15150f]">
+<section class="news-section bg-[#e6e6db] text-[#15150f]">
 	<div class="mx-auto max-w-7xl px-6 pt-20 pb-4 sm:pt-24">
 		<header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 			<div class="space-y-3">
