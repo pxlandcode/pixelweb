@@ -123,7 +123,12 @@
 				// Draw a shorter, centered underline
 				const underlineWidth = gridSize * 0.6;
 				const offsetX = (gridSize - underlineWidth) / 2;
-				ctx.fillRect(px + offsetX, py + gridSize - underlineThickness, underlineWidth, underlineThickness);
+				ctx.fillRect(
+					px + offsetX,
+					py + gridSize - underlineThickness,
+					underlineWidth,
+					underlineThickness
+				);
 			}
 		}
 
