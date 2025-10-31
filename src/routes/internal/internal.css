@@ -1,0 +1,20 @@
+/* Internal admin overrides */
+
+.internal-root .news-table thead th,
+.internal-root .user-table thead th,
+.internal-root .news-table thead th :is(div, button),
+.internal-root .user-table thead th :is(div, button) {
+	color: rgb(17 24 39);
+	font-weight: 600;
+}
+
+.internal-root .news-table thead th svg,
+.internal-root .user-table thead th svg {
+	stroke: rgb(17 24 39);
+}
+
+.internal-root .news-table .flex.justify-center.p-2.text-sm.font-semibold,
+.internal-root .user-table .flex.justify-center.p-2.text-sm.font-semibold {
+	color: rgb(17 24 39);
+	opacity: 0.9;
+}

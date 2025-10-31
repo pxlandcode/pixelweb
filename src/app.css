@@ -158,6 +158,7 @@
 	--color-primary: #f35b3f;
 	--color-background: #18191b;
 	--color-foreground: #f5f6f8;
+    --color-text: #18191b;
 	--font-sans: 'Montserrat', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	--font-fave-script: 'Fave Script', 'Brush Script MT', cursive;
 }
