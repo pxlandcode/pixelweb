@@ -1,79 +1,145 @@
 <script lang="ts">
-        import type { PageData } from '../../../routes/internal/news/$types';
+	import {
+		Badge,
+		Button,
+		Card,
+		SuperTable,
+		TableHandler,
+		Row,
+		Cell,
+		type SuperTableHead
+	} from '@pixelcode_/blocks/components';
+	import type { PageData } from '../../../routes/internal/news/$types';
 
-        export type ArticleRow = PageData['articles'][number];
+	export type ArticleRow = PageData['articles'][number];
 
-        export let articles: ArticleRow[] = [];
-        export let onEdit: (article: ArticleRow) => void;
-        export let onDelete: (article: ArticleRow) => void;
+	export let articles: ArticleRow[] = [];
+	export let onEdit: (article: ArticleRow) => void;
+	export let onDelete: (article: ArticleRow) => void;
+
+	type TableRow = ArticleRow & {
+		source: ArticleRow;
+		kindLabel: string;
+		statusVariant: 'success' | 'warning';
+		internalUrl: string | null;
+		externalUrl: string | null;
+	};
+
+	const headings: SuperTableHead<TableRow>[] = [
+		{ heading: 'Title', sortable: 'title', width: 34 },
+		{ heading: 'Kind', sortable: 'kindLabel', width: 18 },
+		{ heading: 'Status', sortable: 'status', width: 16 },
+		{ heading: 'Preview', width: 16 },
+		{ heading: 'Actions', width: 16 }
+	];
+
+	const toRows = (items: ArticleRow[]): TableRow[] =>
+		items.map((article) => {
+			const internalUrl = article.slug ? `/news/${article.slug}` : null;
+			const externalUrl = article.linkedin_url ? article.linkedin_url : null;
+
+			return {
+				...article,
+				source: article,
+				kindLabel: article.kind_name ?? 'Unknown',
+				statusVariant: article.status === 'published' ? 'success' : 'warning',
+				internalUrl,
+				externalUrl
+			};
+		});
+
+	let tableRows: TableRow[] = toRows(articles);
+	let tableInstance = new TableHandler<TableRow>(
+		headings,
+		tableRows.map((row) => ({ ...row }))
+	);
+
+	$: tableRows = toRows(articles);
+	$: tableInstance = new TableHandler<TableRow>(
+		headings,
+		tableRows.map((row) => ({ ...row }))
+	);
 </script>
 
-<div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                        <tr>
-                                <th class="px-4 py-3 font-medium">Title</th>
-                                <th class="px-4 py-3 font-medium">Kind</th>
-                                <th class="px-4 py-3 font-medium">Status</th>
-                                <th class="px-4 py-3 font-medium">Link</th>
-                                <th class="px-4 py-3 font-medium text-right">Actions</th>
-                        </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                        {#if articles.length === 0}
-                                <tr>
-                                        <td class="px-4 py-4 text-center text-sm text-gray-500" colspan="5">
-                                                No articles published yet. Use the button above to create one.
-                                        </td>
-                                </tr>
-                        {/if}
-                        {#each articles as article}
-                                <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-3 text-gray-900">
-                                                <div class="font-medium">{article.title}</div>
-                                                {#if article.slug}
-                                                        <div class="text-xs text-gray-500">/{article.slug}</div>
-                                                {/if}
-                                        </td>
-                                        <td class="px-4 py-3 text-gray-600">{article.kind_name ?? 'Unknown'}</td>
-                                        <td class="px-4 py-3">
-                                                <span class={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
-                                                        article.status === 'published'
-                                                                ? 'bg-emerald-100 text-emerald-800'
-                                                                : 'bg-amber-100 text-amber-800'
-                                                }`}>
-                                                        {article.status}
-                                                </span>
-                                        </td>
-                                        <td class="px-4 py-3 text-gray-600">
-                                                {#if article.linkedin_url}
-                                                        <a href={article.linkedin_url} class="text-gray-900 underline" target="_blank" rel="noreferrer">LinkedIn</a>
-                                                {:else if article.slug}
-                                                        <span class="text-gray-500">Internal</span>
-                                                {:else}
-                                                        <span class="text-gray-400">—</span>
-                                                {/if}
-                                        </td>
-                                        <td class="px-4 py-3 text-right">
-                                                <div class="flex justify-end gap-2 text-sm">
-                                                        <button
-                                                                class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-                                                                type="button"
-                                                                on:click={() => onEdit(article)}
-                                                        >
-                                                                Edit
-                                                        </button>
-                                                        <button
-                                                                class="rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
-                                                                type="button"
-                                                                on:click={() => onDelete(article)}
-                                                        >
-                                                                Delete
-                                                        </button>
-                                                </div>
-                                        </td>
-                                </tr>
-                        {/each}
-                </tbody>
-        </table>
-</div>
+<Card class="space-y-4 border-border/20 bg-white p-4">
+	<SuperTable instance={tableInstance} selectable={false} class="news-table w-full">
+		{#each tableInstance.data as row (row.id)}
+			<Row.Root>
+				<Cell.Value class="align-top">
+					<div class="space-y-2">
+						<p class="text-sm font-semibold text-gray-900">{row.title}</p>
+						{#if row.slug}
+							<p class="text-xs font-medium text-gray-700">Slug: /{row.slug}</p>
+						{/if}
+					</div>
+				</Cell.Value>
+
+				<Cell.Value class="align-top">
+					<p class="text-sm font-medium text-gray-900">{row.kindLabel}</p>
+				</Cell.Value>
+
+				<Cell.Value class="align-top">
+					<Badge variant={row.statusVariant} size="xs" class="tracking-wide uppercase">
+						{row.status}
+					</Badge>
+				</Cell.Value>
+
+				<Cell.Value class="align-top">
+					<div class="flex flex-wrap gap-2">
+						{#if row.internalUrl}
+							<Button
+								variant="link"
+								size="sm"
+								href={row.internalUrl}
+								target="_blank"
+								rel="noreferrer"
+							>
+								Preview
+							</Button>
+						{/if}
+						{#if row.externalUrl}
+							<Button
+								variant="link"
+								size="sm"
+								href={row.externalUrl}
+								target="_blank"
+								rel="noreferrer"
+							>
+								LinkedIn
+							</Button>
+						{/if}
+						{#if !row.internalUrl && !row.externalUrl}
+							<span class="text-sm font-medium text-gray-700">Not set</span>
+						{/if}
+					</div>
+				</Cell.Value>
+
+				<Cell.Value class="flex justify-end gap-2">
+					<Button variant="outline" size="sm" type="button" onclick={() => onEdit(row.source)}>
+						Edit
+					</Button>
+					<Button
+						variant="destructive"
+						size="sm"
+						type="button"
+						onclick={() => onDelete(row.source)}
+					>
+						Delete
+					</Button>
+				</Cell.Value>
+			</Row.Root>
+		{/each}
+	</SuperTable>
+
+	{#if articles.length === 0}
+		<p class="text-sm font-medium text-gray-700">
+			No articles yet. Use Create post to publish your first update.
+		</p>
+	{/if}
+</Card>
+
+<style>
+        .news-table .flex.justify-center.p-2.text-sm.font-semibold {
+                display: none;
+        }
+</style>

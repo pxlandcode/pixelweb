@@ -101,11 +101,11 @@
 	<div class="w-full max-w-md space-y-6 rounded-lg border border-gray-200 bg-white p-8 shadow">
 		<header class="space-y-1 text-center">
 			<h1 class="text-xl font-semibold text-gray-900">Reset your password</h1>
-			<p class="text-sm text-gray-500">Choose a new password to regain access to PixelCMS.</p>
+			<p class="text-sm text-gray-700">Choose a new password to regain access to PixelCMS.</p>
 		</header>
 
 		{#if status === 'loading'}
-			<p class="text-sm text-gray-600">Validating your reset link…</p>
+			<p class="text-sm text-gray-700">Validating your reset link…</p>
 		{:else if status === 'error'}
 			<p class="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-600">
 				{errorMessage ?? 'We could not validate this reset link. Please request a new one.'}

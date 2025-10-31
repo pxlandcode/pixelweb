@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AdminLayout from '$lib/components/AdminLayout.svelte';
 	import { page } from '$app/stores';
+	import './internal.css';
 
 	const { data, children } = $props();
 
@@ -13,12 +14,14 @@
 		$page.url.searchParams.get('unauthorized')
 			? 'You do not have permission to view that section.'
 			: null}
-	<AdminLayout
-		profile={data.profile}
-		role={data.role}
-		userEmail={data.user?.email ?? null}
-		unauthorizedMessage={unauthorizedMessage}
-	>
-		{@render children?.()}
-	</AdminLayout>
+	<div class="internal-root">
+		<AdminLayout
+			profile={data.profile}
+			role={data.role}
+			userEmail={data.user?.email ?? null}
+			unauthorizedMessage={unauthorizedMessage}
+		>
+			{@render children?.()}
+		</AdminLayout>
+	</div>
 {/if}

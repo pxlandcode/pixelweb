@@ -1,4 +1,5 @@
 <script lang="ts">
+        import { Alert, Button, FormControl, Input, Select } from '@pixelcode_/blocks/components';
         import { createEventDispatcher } from 'svelte';
 
         export type UserRole = 'admin' | 'cms_admin' | 'employee';
@@ -47,99 +48,86 @@
 
 {#if open}
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 px-4 py-8">
-                <div class="relative w-full max-w-lg rounded-lg border border-gray-200 bg-white p-6 shadow-xl">
-                        <button
+                <div class="relative w-full max-w-lg rounded-2xl border border-border/20 bg-white p-6 shadow-xl">
+                        <Button
                                 type="button"
-                                class="absolute right-3 top-3 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-                                on:click={close}
+                                variant="ghost"
+                                size="xs"
+                                class="absolute right-3 top-3 text-gray-700"
                                 aria-label="Close"
+                                on:click={close}
                         >
-                                ×
-                        </button>
+                                <span aria-hidden="true">×</span>
+                        </Button>
 
                         <h2 class="text-lg font-semibold text-gray-900">Create user</h2>
-                        <p class="mt-1 text-sm text-gray-500">
+                        <p class="mt-1 text-sm text-gray-700">
                                 Provide the user details. Password and role will be forwarded to the edge function that provisions the account.
                         </p>
 
                         <form class="mt-6 space-y-4" on:submit={handleSubmit}>
                                 <div class="grid gap-4 sm:grid-cols-2">
-                                        <div class="space-y-1">
-                                                <label class="text-sm font-medium text-gray-700" for="first_name">First name</label>
-                                                <input
+                                        <FormControl label="First name" required class="gap-2 text-sm">
+                                                <Input
                                                         id="first_name"
                                                         name="first_name"
-                                                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
                                                         required
+                                                        class="bg-white text-gray-900"
                                                 />
-                                        </div>
-                                        <div class="space-y-1">
-                                                <label class="text-sm font-medium text-gray-700" for="last_name">Last name</label>
-                                                <input
+                                        </FormControl>
+
+                                        <FormControl label="Last name" required class="gap-2 text-sm">
+                                                <Input
                                                         id="last_name"
                                                         name="last_name"
-                                                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
                                                         required
+                                                        class="bg-white text-gray-900"
                                                 />
-                                        </div>
+                                        </FormControl>
                                 </div>
 
-                                <div class="space-y-1">
-                                        <label class="text-sm font-medium text-gray-700" for="email">Email</label>
-                                        <input
+                                <FormControl label="Email" required class="gap-2 text-sm">
+                                        <Input
                                                 id="email"
                                                 name="email"
                                                 type="email"
-                                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
                                                 required
+                                                class="bg-white text-gray-900"
                                         />
-                                </div>
+                                </FormControl>
 
-                                <div class="space-y-1">
-                                        <label class="text-sm font-medium text-gray-700" for="password">Password</label>
-                                        <input
+                                <FormControl label="Password" required class="gap-2 text-sm" bl="Minimum 6 characters.">
+                                        <Input
                                                 id="password"
                                                 name="password"
                                                 type="password"
                                                 minlength="6"
-                                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
                                                 required
+                                                class="bg-white text-gray-900"
                                         />
-                                </div>
+                                </FormControl>
 
-                                <div class="space-y-1">
-                                        <label class="text-sm font-medium text-gray-700" for="role">Role</label>
-                                        <select
-                                                id="role"
-                                                name="role"
-                                                class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
-                                                required
-                                        >
+                                <FormControl label="Role" required class="gap-2 text-sm">
+                                        <Select id="role" name="role" required>
                                                 <option value="admin">Admin</option>
                                                 <option value="cms_admin">CMS Admin</option>
                                                 <option value="employee">Employee</option>
-                                        </select>
-                                </div>
+                                        </Select>
+                                </FormControl>
 
                                 {#if error}
-                                        <p class="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-600">{error}</p>
+                                        <Alert variant="destructive" size="sm">
+                                                <p class="text-sm font-medium text-gray-900">{error}</p>
+                                        </Alert>
                                 {/if}
 
                                 <div class="flex justify-end gap-3">
-                                        <button
-                                                type="button"
-                                                class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-                                                on:click={close}
-                                        >
+                                        <Button variant="outline" type="button" on:click={close}>
                                                 Cancel
-                                        </button>
-                                        <button
-                                                type="submit"
-                                                class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
-                                                disabled={loading}
-                                        >
-                                                {loading ? 'Creating…' : 'Create user'}
-                                        </button>
+                                        </Button>
+                                        <Button variant="primary" type="submit" loading={loading} loading-text="Creating…">
+                                                Create user
+                                        </Button>
                                 </div>
                         </form>
                 </div>

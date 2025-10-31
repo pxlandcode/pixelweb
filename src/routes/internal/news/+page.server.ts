@@ -1,9 +1,26 @@
-import { fail, type Actions, type PageServerLoad, revalidatePath } from '@sveltejs/kit';
+import { fail, type Actions, type PageServerLoad } from '@sveltejs/kit';
 import { AUTH_COOKIE_NAMES, createSupabaseServerClient } from '$lib/server/supabase';
 
 type NewsActionResult = { type: 'create' | 'update' | 'delete'; ok: boolean; message: string };
 
 const parseString = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value.trim() : '');
+
+const parseTimestamp = (value: string) => {
+        if (!value) {
+                return { ok: true, value: null as string | null };
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+                return {
+                        ok: false,
+                        message: 'Publish date must use a valid YYYY-MM-DDTHH:MM format.'
+                } as const;
+        }
+
+        return { ok: true, value: date.toISOString() } as const;
+};
 
 const ensureAuthenticated = (cookies: import('@sveltejs/kit').Cookies) => {
         return createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
@@ -19,7 +36,7 @@ export const load: PageServerLoad = async ({ cookies }) => {
         const [{ data: articles }, { data: kinds }] = await Promise.all([
                 supabase
                         .from('articles')
-                        .select('id, title, slug, linkedin_url, kind_id, status, content, created_at')
+                        .select('id, title, slug, linkedin_url, kind_id, status, content, cover_image, published_at, created_at')
                         .order('created_at', { ascending: false }),
                 supabase.from('article_kinds').select('id, name').order('name')
         ]);
@@ -71,9 +88,13 @@ export const actions: Actions = {
                 const content = parseString(formData.get('content'));
                 const slug = parseString(formData.get('slug'));
                 const linkedinUrl = parseString(formData.get('linkedin_url'));
+                const coverImage = parseString(formData.get('cover_image'));
+                const publishedAtRaw = parseString(formData.get('published_at'));
                 const status = parseString(formData.get('status')) || 'draft';
 
                 const validation = validateLink(slug, linkedinUrl);
+
+                const publishDate = parseTimestamp(publishedAtRaw);
 
                 if (!title || !kindId) {
                         return fail(400, { type: 'create', ok: false, message: 'Title and kind are required.' });
@@ -83,12 +104,18 @@ export const actions: Actions = {
                         return fail(400, { type: 'create', ok: false, message: validation });
                 }
 
+                if (!publishDate.ok) {
+                        return fail(400, { type: 'create', ok: false, message: publishDate.message });
+                }
+
                 const { error } = await supabase.from('articles').insert({
                         title,
                         kind_id: kindId,
                         content: content || null,
                         slug: slug || null,
                         linkedin_url: linkedinUrl || null,
+                        cover_image: coverImage || null,
+                        published_at: publishDate.value,
                         status
                 });
 
@@ -96,7 +123,6 @@ export const actions: Actions = {
                         return fail(500, { type: 'create', ok: false, message: error.message });
                 }
 
-                revalidatePath('/internal/news');
                 return { type: 'create', ok: true, message: 'Article created successfully.' } satisfies NewsActionResult;
         },
         update: async ({ request, cookies }) => {
@@ -113,6 +139,8 @@ export const actions: Actions = {
                 const content = parseString(formData.get('content'));
                 const slug = parseString(formData.get('slug'));
                 const linkedinUrl = parseString(formData.get('linkedin_url'));
+                const coverImage = parseString(formData.get('cover_image'));
+                const publishedAtRaw = parseString(formData.get('published_at'));
                 const status = parseString(formData.get('status')) || 'draft';
 
                 if (!id) {
@@ -129,6 +157,12 @@ export const actions: Actions = {
                         return fail(400, { type: 'update', ok: false, message: validation });
                 }
 
+                const publishDate = parseTimestamp(publishedAtRaw);
+
+                if (!publishDate.ok) {
+                        return fail(400, { type: 'update', ok: false, message: publishDate.message });
+                }
+
                 const { error } = await supabase
                         .from('articles')
                         .update({
@@ -137,6 +171,8 @@ export const actions: Actions = {
                                 content: content || null,
                                 slug: slug || null,
                                 linkedin_url: linkedinUrl || null,
+                                cover_image: coverImage || null,
+                                published_at: publishDate.value,
                                 status
                         })
                         .eq('id', id);
@@ -145,7 +181,6 @@ export const actions: Actions = {
                         return fail(500, { type: 'update', ok: false, message: error.message });
                 }
 
-                revalidatePath('/internal/news');
                 return { type: 'update', ok: true, message: 'Article updated successfully.' } satisfies NewsActionResult;
         },
         delete: async ({ request, cookies }) => {
@@ -168,7 +203,6 @@ export const actions: Actions = {
                         return fail(500, { type: 'delete', ok: false, message: error.message });
                 }
 
-                revalidatePath('/internal/news');
                 return { type: 'delete', ok: true, message: 'Article deleted successfully.' } satisfies NewsActionResult;
         }
 };
