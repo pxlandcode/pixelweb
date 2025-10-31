@@ -14,6 +14,7 @@
 	import { floatingNavState } from '$lib/stores/floatingNav';
 	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import Lenis from 'lenis';
+	import { page } from '$app/stores';
 
 	let { children } = $props();
 
@@ -100,4 +101,6 @@
 {/if}
 
 {@render children?.()}
-<SiteFooter links={navLinks} ctaHref="#contact" />
+{#if !$page.url.pathname.startsWith('/internal')}
+	<SiteFooter links={navLinks} ctaHref="#contact" />
+{/if}

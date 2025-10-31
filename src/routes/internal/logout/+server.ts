@@ -3,5 +3,5 @@ import { clearAuthCookies } from '$lib/server/supabase';
 
 export const POST: RequestHandler = async ({ cookies }) => {
         clearAuthCookies(cookies);
-        throw redirect(303, '/admin/login');
+        throw redirect(303, '/internal/login');
 };

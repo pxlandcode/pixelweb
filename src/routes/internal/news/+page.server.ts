@@ -96,7 +96,7 @@ export const actions: Actions = {
                         return fail(500, { type: 'create', ok: false, message: error.message });
                 }
 
-                revalidatePath('/admin/news');
+                revalidatePath('/internal/news');
                 return { type: 'create', ok: true, message: 'Article created successfully.' } satisfies NewsActionResult;
         },
         update: async ({ request, cookies }) => {
@@ -145,7 +145,7 @@ export const actions: Actions = {
                         return fail(500, { type: 'update', ok: false, message: error.message });
                 }
 
-                revalidatePath('/admin/news');
+                revalidatePath('/internal/news');
                 return { type: 'update', ok: true, message: 'Article updated successfully.' } satisfies NewsActionResult;
         },
         delete: async ({ request, cookies }) => {
@@ -168,7 +168,7 @@ export const actions: Actions = {
                         return fail(500, { type: 'delete', ok: false, message: error.message });
                 }
 
-                revalidatePath('/admin/news');
+                revalidatePath('/internal/news');
                 return { type: 'delete', ok: true, message: 'Article deleted successfully.' } satisfies NewsActionResult;
         }
 };

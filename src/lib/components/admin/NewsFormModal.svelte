@@ -1,6 +1,6 @@
 <script lang="ts">
         import { createEventDispatcher } from 'svelte';
-        import type { PageData } from '../../../routes/admin/news/$types';
+        import type { PageData } from '../../../routes/internal/news/$types';
 
         type Article = PageData['articles'][number] | null;
         type Kind = PageData['kinds'][number];

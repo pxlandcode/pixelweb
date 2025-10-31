@@ -12,10 +12,10 @@ const cookieOptions = {
 };
 
 export const actions: Actions = {
-        default: async ({ request, cookies }) => {
-                const formData = await request.formData();
-                const email = formData.get('email');
-                const password = formData.get('password');
+	default: async ({ request, cookies }) => {
+		const formData = await request.formData();
+		const email = formData.get('email');
+		const password = formData.get('password');
 
                 if (typeof email !== 'string' || typeof password !== 'string') {
                         return fail(400, { message: 'Email and password are required.' });
@@ -28,13 +28,19 @@ export const actions: Actions = {
                         }
                 });
 
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+		const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-                if (error || !data.session) {
-                        return fail(400, { message: error?.message ?? 'Unable to sign in.' });
-                }
+		console.log('[internal/login] signInWithPassword response', {
+			email,
+			ok: !error,
+			error: error?.message ?? null
+		});
 
-                const { session } = data;
+		if (error || !data.session) {
+			return fail(400, { message: error?.message ?? 'Unable to sign in.' });
+		}
+
+		const { session } = data;
 
                 cookies.set(AUTH_COOKIE_NAMES.access, session.access_token, {
                         ...cookieOptions,
@@ -46,6 +52,6 @@ export const actions: Actions = {
                         maxAge: 60 * 60 * 24 * 30
                 });
 
-                throw redirect(303, '/admin');
-        }
+		throw redirect(303, '/internal');
+	}
 };

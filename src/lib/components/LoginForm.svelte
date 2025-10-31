@@ -1,53 +1,74 @@
 <script lang="ts">
-        import type { ActionData } from '../../routes/admin/login/$types';
-        import { dev } from '$app/environment';
+	import { dev } from '$app/environment';
+	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import { Button, FormControl, Input } from '@pixelcode_/blocks/components';
 
-        let { form = null, pending = false, ...rest } = $props();
+	const { form = null, ...rest } = $props();
+
+	let pending = $state(false);
+
+	const handleEnhance: SubmitFunction = async () => {
+		pending = true;
+
+		return async ({ update }) => {
+			pending = false;
+			await update();
+		};
+	};
 </script>
 
 <form
-        method="POST"
-        class="mx-auto w-full max-w-sm space-y-6 rounded-lg border border-gray-200 bg-white p-8 shadow"
-        {...rest}
+	method="POST"
+	class="mx-auto w-full max-w-sm space-y-6 rounded-lg border border-gray-200 bg-white p-8 shadow"
+	use:enhance={handleEnhance}
+	{...rest}
 >
-        <header class="space-y-1 text-center">
-                <h1 class="text-xl font-semibold text-gray-900">PixelCMS Admin</h1>
-                <p class="text-sm text-gray-500">Sign in with your work email to continue.</p>
-        </header>
+	<header class="space-y-1 text-center">
+		<h1 class="text-xl font-semibold text-gray-900">PixelCMS Admin</h1>
+		<p class="text-sm text-gray-500">Sign in with your work email to continue.</p>
+	</header>
 
-        <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700" for="email">Email</label>
-                <input
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                        type="email"
-                        id="email"
-                        name="email"
-                        required
-                        autocomplete="email"
-                />
-        </div>
+	<FormControl label="Email" required class="text-text gap-2">
+		<Input
+			id="email"
+			name="email"
+			type="email"
+			autocomplete="email"
+			class="text-gray-900 placeholder:text-gray-400 bg-white"
+			required
+		/>
+	</FormControl>
 
-        <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700" for="password">Password</label>
-                <input
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                        type="password"
-                        id="password"
-                        name="password"
-                        required
-                        autocomplete={dev ? 'off' : 'current-password'}
-                />
-        </div>
+	<FormControl label="Password" required class="text-text gap-2">
+		<Input
+			id="password"
+			name="password"
+			type="password"
+			class="text-gray-900 placeholder:text-gray-400 bg-white"
+			required
+			autocomplete={dev ? 'off' : 'current-password'}
+		/>
+	</FormControl>
 
-        {#if form?.message}
-                <p class="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-600">{form.message}</p>
-        {/if}
+	{#if form?.message}
+		<p class="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-600">{form.message}</p>
+	{/if}
 
-        <button
-                type="submit"
-                class="w-full rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
-                disabled={pending}
-        >
-                {pending ? 'Signing in…' : 'Sign in'}
-        </button>
+	<Button
+		type="submit"
+		class="w-full justify-center"
+		disabled={pending}
+	>
+		{pending ? 'Signing in…' : 'Sign in'}
+	</Button>
 </form>
+
+<style>
+	:global(input:-webkit-autofill),
+	:global(input:-webkit-autofill:hover),
+	:global(input:-webkit-autofill:focus) {
+		-webkit-text-fill-color: rgb(17 24 39);
+		transition: background-color 9999s ease-out 0s;
+	}
+</style>

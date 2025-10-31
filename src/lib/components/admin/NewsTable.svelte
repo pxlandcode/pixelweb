@@ -1,5 +1,5 @@
 <script lang="ts">
-        import type { PageData } from '../../../routes/admin/news/$types';
+        import type { PageData } from '../../../routes/internal/news/$types';
 
         export type ArticleRow = PageData['articles'][number];
 

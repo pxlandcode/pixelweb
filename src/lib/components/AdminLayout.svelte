@@ -18,9 +18,9 @@
 
         // Extend this list when new admin areas are added.
         const navItems = [
-                { label: 'Dashboard', href: '/admin', allowed: ['admin', 'cms_admin'] satisfies AdminRole[] },
-                { label: 'Users', href: '/admin/users', allowed: ['admin'] satisfies AdminRole[] },
-                { label: 'News', href: '/admin/news', allowed: ['admin', 'cms_admin'] satisfies AdminRole[] }
+                { label: 'Dashboard', href: '/internal', allowed: ['admin', 'cms_admin'] satisfies AdminRole[] },
+                { label: 'Users', href: '/internal/users', allowed: ['admin'] satisfies AdminRole[] },
+                { label: 'News', href: '/internal/news', allowed: ['admin', 'cms_admin'] satisfies AdminRole[] }
         ];
 
         $: activePath = $page.url.pathname;
@@ -71,7 +71,7 @@
                                                 <p class="text-xs uppercase tracking-wide text-gray-500">{role.replace('_', ' ')}</p>
                                         {/if}
                                 </div>
-                                <form method="POST" action="/admin/logout" class="hidden md:block">
+                                <form method="POST" action="/internal/logout" class="hidden md:block">
                                         <button
                                                 type="submit"
                                                 class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
@@ -80,7 +80,7 @@
                                                 Log out
                                         </button>
                                 </form>
-                                <form method="POST" action="/admin/logout" class="md:hidden">
+                                <form method="POST" action="/internal/logout" class="md:hidden">
                                         <button
                                                 type="submit"
                                                 class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"

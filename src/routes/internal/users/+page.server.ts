@@ -1,5 +1,10 @@
 import { fail, type Actions, type PageServerLoad } from '@sveltejs/kit';
-import { AUTH_COOKIE_NAMES, createSupabaseServerClient } from '$lib/server/supabase';
+import type { PostgrestError } from '@supabase/supabase-js';
+import {
+	AUTH_COOKIE_NAMES,
+	createSupabaseServerClient,
+	getSupabaseAdminClient
+} from '$lib/server/supabase';
 
 export const load: PageServerLoad = async ({ cookies }) => {
         const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
@@ -9,10 +14,30 @@ export const load: PageServerLoad = async ({ cookies }) => {
         }
 
         // Combine profile rows with role assignments until a database view is available.
-        const [{ data: profiles }, { data: roles }] = await Promise.all([
+        const adminClient = getSupabaseAdminClient();
+
+        const [{ data: profiles }, rolesResult] = await Promise.all([
                 supabase.from('profiles').select('id, first_name, last_name').order('last_name', { ascending: true }),
-                supabase.from('user_roles').select('user_id, role')
+                (async () => {
+                        if (!adminClient) {
+                                const fallbackError: PostgrestError = {
+                                        message: 'Admin client unavailable',
+                                        details: null,
+                                        hint: null,
+                                        code: 'PGRST'
+                                };
+                                return { data: null, error: fallbackError };
+                        }
+
+                        return adminClient.from('user_roles').select('user_id, role');
+                })()
         ]);
+
+        if (rolesResult.error) {
+                console.error('[users load] role fetch error', rolesResult.error);
+        }
+
+        const roles = rolesResult.data ?? [];
 
         const roleMap = new Map<string, string>();
         for (const row of roles ?? []) {
@@ -45,7 +70,17 @@ export const actions: Actions = {
                         return fail(400, { type: 'updateRole', ok: false, message: 'Invalid form submission.' });
                 }
 
-                const { error } = await supabase
+                const adminClient = getSupabaseAdminClient();
+
+                if (!adminClient) {
+                        return fail(500, {
+                                type: 'updateRole',
+                                ok: false,
+                                message: 'Server configuration missing Supabase service role key.'
+                        });
+                }
+
+                const { error } = await adminClient
                         .from('user_roles')
                         .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
 

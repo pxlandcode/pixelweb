@@ -105,7 +105,10 @@
 
 			if (kind === 0) {
 				ctx.fillStyle = squareColor;
-				ctx.fillRect(px, py, gridSize, gridSize);
+				// Draw a centered square dot at the bottom
+				const dotSize = gridSize / 3;
+				const offsetX = (gridSize - dotSize) / 2;
+				ctx.fillRect(px + offsetX, py + gridSize - dotSize, dotSize, dotSize);
 			} else if (kind === 1 && path2d) {
 				ctx.save();
 				ctx.translate(px + gridSize / 2, py + gridSize / 2);
@@ -117,7 +120,10 @@
 				ctx.restore();
 			} else {
 				ctx.fillStyle = squareColor;
-				ctx.fillRect(px, py + gridSize - underlineThickness, gridSize, underlineThickness);
+				// Draw a shorter, centered underline
+				const underlineWidth = gridSize * 0.6;
+				const offsetX = (gridSize - underlineWidth) / 2;
+				ctx.fillRect(px + offsetX, py + gridSize - underlineThickness, underlineWidth, underlineThickness);
 			}
 		}
 

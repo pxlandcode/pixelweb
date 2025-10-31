@@ -1,6 +1,6 @@
 <script lang="ts">
-        import type { PageData } from '../../../routes/admin/users/$types';
-        import type { ActionData } from '../../../routes/admin/users/$types';
+        import type { PageData } from '../../../routes/internal/users/$types';
+        import type { ActionData } from '../../../routes/internal/users/$types';
 
         export type UserRow = PageData['users'][number];
 

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
 let browserClient: SupabaseClient | null = null;
 
@@ -8,11 +8,20 @@ let browserClient: SupabaseClient | null = null;
  * The client keeps the session in local storage so subsequent requests remain authenticated.
  */
 export const getSupabaseClient = () => {
-        if (!browserClient) {
-                browserClient = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-                        auth: {
-                                persistSession: true,
-                                autoRefreshToken: true
+	const url = env.PUBLIC_SUPABASE_URL;
+	const anonKey = env.PUBLIC_SUPABASE_ANON_KEY;
+
+	if (!url || !anonKey) {
+		throw new Error(
+			'Missing PUBLIC_SUPABASE_URL or PUBLIC_SUPABASE_ANON_KEY env vars. Update your .env to include them.'
+		);
+	}
+
+	if (!browserClient) {
+		browserClient = createClient(url, anonKey, {
+			auth: {
+				persistSession: true,
+				autoRefreshToken: true
                         }
                 });
         }

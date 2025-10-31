@@ -1,9 +1,5 @@
 <script lang="ts">
-        import { page } from '$app/stores';
-
-        let { data } = $props();
-
-        $: unauthorized = $page.url.searchParams.get('unauthorized');
+        const { data } = $props();
 </script>
 
 <section class="space-y-6">
