@@ -7,6 +7,8 @@
 	import { ScrollGallery } from '$lib/components';
 	import karaoke from '$lib/images/scrollgallery/karaoke.jpg';
 	import workhard from '$lib/images/scrollgallery/workhard.jpg';
+	import AnimatedHeadline from '$components/animated-headline/AnimatedHeadline.svelte';
+	import DiscordCulture from '$components/discord-culture/DiscordCulture.svelte';
 
 	const galleryImages = [
 		{ src: workhard, alt: 'Focused work', text: 'Getting things done' },
@@ -52,13 +54,17 @@
 
 <main class="flex min-h-screen flex-col bg-background text-[#f5f5f5]">
 	<!-- Hero Section -->
-	<section class="mx-auto flex w-full max-w-6xl flex-col items-center gap-12 bg-background px-6 pb-24 pt-24 text-center text-white md:px-12 lg:px-20 lg:pb-28 lg:pt-32">
-		<div class="inline-flex items-center gap-3 rounded-full border border-white/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.35em]">
+	<section
+		class="mx-auto flex w-full max-w-6xl flex-col items-center gap-12 bg-background px-6 pt-24 pb-24 text-center text-white md:px-12 lg:px-20 lg:pt-32 lg:pb-28"
+	>
+		<div
+			class="inline-flex items-center gap-3 rounded-full border border-white/20 px-5 py-2 text-xs font-semibold tracking-[0.35em] uppercase"
+		>
 			<span class="inline-block h-2 w-2 rounded-full border border-white/60"></span>
 			<span>About</span>
 		</div>
 
-		<h1 class="text-balance text-4xl font-semibold leading-[1.05] md:text-6xl lg:text-7xl">
+		<h1 class="text-4xl leading-[1.05] font-semibold text-balance md:text-6xl lg:text-7xl">
 			<span class="block font-bold">Revolutionizing B2B Marketing</span>
 			<span
 				class="mt-4 block text-5xl font-normal italic md:text-[64px]"
@@ -69,11 +75,13 @@
 		</h1>
 
 		<p class="max-w-2xl text-lg leading-relaxed">
-			Pixel&amp;Code is home to 25 passionate specialists with expertise across strategy, design, and
-			engineering—partners who bring clarity and momentum to every engagement.
+			Pixel&amp;Code is home to 25 passionate specialists with expertise across strategy, design,
+			and engineering—partners who bring clarity and momentum to every engagement.
 		</p>
 
-		<div class="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-end sm:gap-10">
+		<div
+			class="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-end sm:gap-10"
+		>
 			<div class="hidden sm:block sm:translate-y-6">
 				<img
 					src={workLife}
@@ -100,21 +108,13 @@
 		</div>
 
 		<p class="max-w-xl text-base">
-			We collaborate across disciplines to transform ambitious ideas into measurable results for each
-			client we support.
+			We collaborate across disciplines to transform ambitious ideas into measurable results for
+			each client we support.
 		</p>
 
-		<a
-			href="#culture"
-			class="inline-flex items-center gap-3 text-sm font-semibold"
-		>
+		<a href="#culture" class="inline-flex items-center gap-3 text-sm font-semibold">
 			<span>Discover more</span>
-			<svg
-				viewBox="0 0 24 24"
-				fill="none"
-				aria-hidden="true"
-				class="h-5 w-5 stroke-current"
-			>
+			<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="h-5 w-5 stroke-current">
 				<path d="M12 5v14m0 0-5-5m5 5 5-5" stroke-width="1.8" stroke-linecap="round" />
 			</svg>
 		</a>
@@ -139,7 +139,11 @@
 	<!-- Scroll Gallery Section -->
 	<ScrollGallery images={galleryImages} title={galleryTitle} />
 
-	<!-- Culture Section -->
+	<div class="mt-[-200px]">
+		<AnimatedHeadline text="And our Discord is always alive." />
+		<DiscordCulture />
+	</div>
+
 	<section
 		id="culture"
 		class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-24 md:px-12 lg:px-20"
