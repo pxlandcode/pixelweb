@@ -5,14 +5,17 @@
 
 	let { data, form } = $props();
 
-	let isModalOpen = $state(false);
-	let activeArticle = $state<(typeof data.articles)[number] | null>(null);
-	let modalAction = $state<'create' | 'update'>('create');
-	let modalError = $state<string | null>(null);
+let isModalOpen = $state(false);
+let activeArticle = $state<(typeof data.articles)[number] | null>(null);
+let modalAction = $state<'create' | 'update'>('create');
+let modalError = $state<string | null>(null);
 	// Swap this feedback block with your toast system when available.
-	let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
-	let deleteForm = $state<HTMLFormElement | null>(null);
-	let deleteInput = $state<HTMLInputElement | null>(null);
+let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+let deleteForm = $state<HTMLFormElement | null>(null);
+let deleteInput = $state<HTMLInputElement | null>(null);
+let publishForm = $state<HTMLFormElement | null>(null);
+let publishInput = $state<HTMLInputElement | null>(null);
+let publishStatusInput = $state<HTMLInputElement | null>(null);
 
 	const openCreateModal = () => {
 		modalAction = 'create';
@@ -39,6 +42,16 @@
 
 		deleteForm?.requestSubmit();
 	};
+
+const handlePublish = (article: (typeof data.articles)[number]) => {
+	if (publishInput) {
+		publishInput.value = String(article.id);
+	}
+	if (publishStatusInput) {
+		publishStatusInput.value = article.status === 'draft' ? 'published' : article.status;
+	}
+	publishForm?.requestSubmit();
+};
 
 	$effect(() => {
 		if (!form?.type) return;
@@ -76,11 +89,16 @@
 {/if}
 
 <div class="mt-6">
-	<NewsTable articles={data.articles} onEdit={openEditModal} onDelete={handleDelete} />
+	<NewsTable articles={data.articles} onEdit={openEditModal} onDelete={handleDelete} onPublish={handlePublish} />
 </div>
 
 <form method="POST" action="?/delete" class="hidden" bind:this={deleteForm}>
 	<input type="hidden" name="id" bind:this={deleteInput} />
+</form>
+
+<form method="POST" action="?/publish" class="hidden" bind:this={publishForm}>
+	<input type="hidden" name="id" bind:this={publishInput} />
+	<input type="hidden" name="status" value="published" bind:this={publishStatusInput} />
 </form>
 
 <NewsFormModal

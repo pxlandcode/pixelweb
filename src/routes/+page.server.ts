@@ -4,8 +4,8 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import { sbAdmin } from '$lib/server/supabase';
 import { canRunBraveQuery } from '$lib/server/braveQuota';
 import type { LeadInput } from '$lib/types';
-import { fetchLinkedInPosts } from '$lib/server/linkedin';
-import { mockLinkedInPosts } from '$lib/mockdata/linkedinPosts';
+import { fetchNewsPosts } from '$lib/server/news';
+import { mockNewsPosts } from '$lib/mockdata/newsPosts';
 import { dev } from '$app/environment';
 
 const LeadSchema = z.object({
@@ -20,26 +20,20 @@ const LeadSchema = z.object({
 const mapZodError = (issues: z.ZodIssue[]): string =>
 	issues[0]?.message ?? 'Kontrollera att alla fält är korrekt ifyllda.';
 
-export const load: PageServerLoad = async (event) => {
-	// Use mock data in development or when LinkedIn API is not available
+export const load: PageServerLoad = async (_event) => {
+	// Always try to fetch from Supabase first so CMS content is the source of truth.
+	const news = await fetchNewsPosts();
+
+	if (news.posts.length > 0 || !news.error) {
+		return { news };
+	}
+
+	// Fall back to mock posts only when explicitly in dev mode and nothing was returned.
 	if (dev) {
 		return {
 			news: {
-				posts: mockLinkedInPosts,
-				error: undefined
-			}
-		};
-	}
-
-	// Try to fetch from LinkedIn API in production
-	const news = await fetchLinkedInPosts({ fetch: event.fetch });
-
-	// Fall back to mock data if API fails
-	if (news.error && news.posts.length === 0) {
-		return {
-			news: {
-				posts: mockLinkedInPosts,
-				error: undefined
+				posts: mockNewsPosts,
+				error: news.error
 			}
 		};
 	}

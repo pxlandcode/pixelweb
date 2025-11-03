@@ -18,3 +18,21 @@
 	color: rgb(17 24 39);
 	opacity: 0.9;
 }
+
+.internal-root .news-table a {
+	color: #f35b3f;
+	font-weight: 500;
+}
+
+.internal-root .news-table a:hover {
+	color: #d84f36;
+}
+
+.internal-root .news-table .flex.justify-end a {
+	color: #f35b3f;
+	font-weight: 500;
+}
+
+.internal-root .news-table .flex.justify-end a:hover {
+	color: #d84f36;
+}

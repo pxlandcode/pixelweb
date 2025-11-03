@@ -1,5 +1,9 @@
 import { fail, type Actions, type PageServerLoad } from '@sveltejs/kit';
-import { AUTH_COOKIE_NAMES, createSupabaseServerClient } from '$lib/server/supabase';
+import {
+	AUTH_COOKIE_NAMES,
+	createSupabaseServerClient,
+	getSupabaseAdminClient
+} from '$lib/server/supabase';
 
 type NewsActionResult = { type: 'create' | 'update' | 'delete'; ok: boolean; message: string };
 
@@ -33,12 +37,21 @@ export const load: PageServerLoad = async ({ cookies }) => {
                 return { articles: [], kinds: [] };
         }
 
+        const adminSupabase = getSupabaseAdminClient();
+
+        if (!adminSupabase) {
+                console.error('[admin/news] Service role client is not configured.');
+                return { articles: [], kinds: [] };
+        }
+
         const [{ data: articles }, { data: kinds }] = await Promise.all([
-                supabase
+                adminSupabase
                         .from('articles')
-                        .select('id, title, slug, linkedin_url, kind_id, status, content, cover_image, published_at, created_at')
+                        .select(
+                                'id, title, slug, linkedin_url, kind_id, status, content, cover_image, published_at, created_at'
+                        )
                         .order('created_at', { ascending: false }),
-                supabase.from('article_kinds').select('id, name').order('name')
+                adminSupabase.from('article_kinds').select('id, name').order('name')
         ]);
 
         const kindMap = new Map<string, string>();
@@ -71,16 +84,27 @@ const validateLink = (slug: string, linkedinUrl: string) => {
 };
 
 export const actions: Actions = {
-        create: async ({ request, cookies }) => {
-                const supabase = ensureAuthenticated(cookies);
+		create: async ({ request, cookies }) => {
+			const supabase = ensureAuthenticated(cookies);
 
-                if (!supabase) {
-                        return fail(401, {
-                                type: 'create',
-                                ok: false,
-                                message: 'You are not authenticated.'
-                        } satisfies NewsActionResult);
-                }
+			if (!supabase) {
+				return fail(401, {
+					type: 'create',
+					ok: false,
+					message: 'You are not authenticated.'
+				} satisfies NewsActionResult);
+			}
+
+			const adminSupabase = getSupabaseAdminClient();
+
+			if (!adminSupabase) {
+				console.error('[admin/news] Service role client is not configured.');
+				return fail(500, {
+					type: 'create',
+					ok: false,
+					message: 'Uploads are temporarily unavailable. Please contact an administrator.'
+				});
+			}
 
                 const formData = await request.formData();
                 const title = parseString(formData.get('title'));
@@ -108,12 +132,12 @@ export const actions: Actions = {
                         return fail(400, { type: 'create', ok: false, message: publishDate.message });
                 }
 
-                const { error } = await supabase.from('articles').insert({
-                        title,
-                        kind_id: kindId,
-                        content: content || null,
-                        slug: slug || null,
-                        linkedin_url: linkedinUrl || null,
+				const { error } = await adminSupabase.from('articles').insert({
+					title,
+					kind_id: kindId,
+					content: content || null,
+					slug: slug || null,
+					linkedin_url: linkedinUrl || null,
                         cover_image: coverImage || null,
                         published_at: publishDate.value,
                         status
@@ -125,12 +149,23 @@ export const actions: Actions = {
 
                 return { type: 'create', ok: true, message: 'Article created successfully.' } satisfies NewsActionResult;
         },
-        update: async ({ request, cookies }) => {
-                const supabase = ensureAuthenticated(cookies);
+		update: async ({ request, cookies }) => {
+			const supabase = ensureAuthenticated(cookies);
 
-                if (!supabase) {
-                        return fail(401, { type: 'update', ok: false, message: 'You are not authenticated.' });
-                }
+			if (!supabase) {
+				return fail(401, { type: 'update', ok: false, message: 'You are not authenticated.' });
+			}
+
+			const adminSupabase = getSupabaseAdminClient();
+
+			if (!adminSupabase) {
+				console.error('[admin/news] Service role client is not configured.');
+				return fail(500, {
+					type: 'update',
+					ok: false,
+					message: 'Updates are temporarily unavailable. Please contact an administrator.'
+				});
+			}
 
                 const formData = await request.formData();
                 const id = parseString(formData.get('id'));
@@ -163,11 +198,11 @@ export const actions: Actions = {
                         return fail(400, { type: 'update', ok: false, message: publishDate.message });
                 }
 
-                const { error } = await supabase
-                        .from('articles')
-                        .update({
-                                title,
-                                kind_id: kindId,
+				const { error } = await adminSupabase
+					.from('articles')
+					.update({
+						title,
+						kind_id: kindId,
                                 content: content || null,
                                 slug: slug || null,
                                 linkedin_url: linkedinUrl || null,
@@ -183,12 +218,23 @@ export const actions: Actions = {
 
                 return { type: 'update', ok: true, message: 'Article updated successfully.' } satisfies NewsActionResult;
         },
-        delete: async ({ request, cookies }) => {
-                const supabase = ensureAuthenticated(cookies);
+		delete: async ({ request, cookies }) => {
+			const supabase = ensureAuthenticated(cookies);
 
-                if (!supabase) {
-                        return fail(401, { type: 'delete', ok: false, message: 'You are not authenticated.' });
-                }
+			if (!supabase) {
+				return fail(401, { type: 'delete', ok: false, message: 'You are not authenticated.' });
+			}
+
+			const adminSupabase = getSupabaseAdminClient();
+
+			if (!adminSupabase) {
+				console.error('[admin/news] Service role client is not configured.');
+				return fail(500, {
+					type: 'delete',
+					ok: false,
+					message: 'Deletes are temporarily unavailable. Please contact an administrator.'
+				});
+			}
 
                 const formData = await request.formData();
                 const id = parseString(formData.get('id'));
@@ -197,12 +243,49 @@ export const actions: Actions = {
                         return fail(400, { type: 'delete', ok: false, message: 'Missing article identifier.' });
                 }
 
-                const { error } = await supabase.from('articles').delete().eq('id', id);
+				const { error } = await adminSupabase.from('articles').delete().eq('id', id);
 
                 if (error) {
                         return fail(500, { type: 'delete', ok: false, message: error.message });
                 }
 
                 return { type: 'delete', ok: true, message: 'Article deleted successfully.' } satisfies NewsActionResult;
-        }
+        },
+		publish: async ({ request, cookies }) => {
+			const supabase = ensureAuthenticated(cookies);
+
+			if (!supabase) {
+				return fail(401, { type: 'update', ok: false, message: 'You are not authenticated.' });
+			}
+
+			const adminSupabase = getSupabaseAdminClient();
+
+			if (!adminSupabase) {
+				console.error('[admin/news] Service role client is not configured.');
+				return fail(500, {
+					type: 'update',
+					ok: false,
+					message: 'Publishing is temporarily unavailable. Please contact an administrator.'
+				});
+			}
+
+			const formData = await request.formData();
+			const id = parseString(formData.get('id'));
+			const status = parseString(formData.get('status')) || 'published';
+
+			if (!id) {
+				return fail(400, { type: 'update', ok: false, message: 'Missing article identifier.' });
+			}
+
+			const { error } = await adminSupabase
+				.from('articles')
+				.update({ status })
+				.eq('id', id);
+
+			if (error) {
+				return fail(500, { type: 'update', ok: false, message: error.message });
+			}
+
+			return { type: 'update', ok: true, message: 'Article published.' } satisfies NewsActionResult;
+		}
 };
