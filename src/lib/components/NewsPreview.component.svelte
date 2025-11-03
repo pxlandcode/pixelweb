@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { NewsPreviewItem } from '$lib/types';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	type FormattedNewsPost = NewsPreviewItem & { displaySummary: string };
 
@@ -8,6 +8,7 @@
 	export let error: string | undefined;
 
 	let scrollContainer: HTMLDivElement;
+	let observerTarget: HTMLDivElement;
 	let isDragging = false;
 	let startX = 0;
 	let scrollLeft = 0;
@@ -16,6 +17,11 @@
 	let velocity = 0;
 	let animationFrame: number | null = null;
 	let isScrolling = false;
+	let isLoadingMore = false;
+	let hasMore = true;
+	let allPosts: NewsPreviewItem[] = [...posts];
+	let observer: IntersectionObserver | null = null;
+	let imageLoadingStates = new Map<string, boolean>();
 
 	const clampText = (value: string | null | undefined, length = 180): string => {
 		if (!value) return '';
@@ -129,9 +135,74 @@
 		}
 	};
 
+	const loadMorePosts = async () => {
+		if (isLoadingMore || !hasMore) return;
+
+		isLoadingMore = true;
+
+		try {
+			const offset = allPosts.length;
+			const response = await fetch(`/api/news?offset=${offset}&limit=8`);
+
+			if (!response.ok) {
+				throw new Error('Failed to load more posts');
+			}
+
+			const data = await response.json();
+
+			if (data.posts && data.posts.length > 0) {
+				// Mark new posts as loading
+				data.posts.forEach((post: NewsPreviewItem) => {
+					if (post.coverImageUrl) {
+						imageLoadingStates.set(post.id, true);
+					}
+				});
+				allPosts = [...allPosts, ...data.posts];
+			}
+
+			// If we got fewer posts than requested, we've reached the end
+			if (!data.posts || data.posts.length < 8) {
+				hasMore = false;
+			}
+		} catch (err) {
+			console.error('Error loading more posts:', err);
+			hasMore = false;
+		} finally {
+			isLoadingMore = false;
+		}
+	};
+
+	const handleImageLoad = (postId: string) => {
+		imageLoadingStates.set(postId, false);
+		imageLoadingStates = imageLoadingStates;
+	};
+
+	onMount(() => {
+		if (!observerTarget) return;
+
+		observer = new IntersectionObserver(
+			(entries) => {
+				const [entry] = entries;
+				if (entry.isIntersecting && !isLoadingMore && hasMore) {
+					loadMorePosts();
+				}
+			},
+			{
+				root: null,
+				rootMargin: '200px',
+				threshold: 0.1
+			}
+		);
+
+		observer.observe(observerTarget);
+	});
+
 	onDestroy(() => {
 		if (animationFrame) {
 			cancelAnimationFrame(animationFrame);
+		}
+		if (observer) {
+			observer.disconnect();
 		}
 	});
 
@@ -141,7 +212,7 @@
 		return Number.isNaN(time) ? 0 : time;
 	};
 
-	$: sortedPosts = [...posts].sort(
+	$: sortedPosts = [...allPosts].sort(
 		(a, b) => getPublishedTime(b.publishedAt) - getPublishedTime(a.publishedAt)
 	);
 	$: formattedPosts = sortedPosts.map((post) => ({
@@ -164,7 +235,7 @@
 	{#if error}
 		<div class="mx-auto max-w-7xl px-6">
 			<p
-				class="mt-8 rounded-2xl border border-[#d3d2c1] bg-white/70 px-5 py-4 text-sm text-[#703636]"
+				class="mt-8 rounded-2xl border border-background/50 bg-white px-5 py-4 text-sm text-[#703636]"
 			>
 				{error}
 			</p>
@@ -190,17 +261,30 @@
 						<div class="flex h-full flex-col">
 							<div class="relative overflow-hidden rounded-lg">
 								{#if post.coverImageUrl}
+									<!-- Loading skeleton overlay -->
+									{#if imageLoadingStates.get(post.id)}
+										<div
+											class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-primary bg-background text-white"
+										>
+											<div
+												class="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"
+											></div>
+											<p class="text-sm font-medium">Loading image...</p>
+										</div>
+									{/if}
 									<img
 										src={post.coverImageUrl}
 										alt={post.coverImageAlt ?? post.title}
 										loading="lazy"
 										decoding="async"
 										draggable="false"
+										on:load={() => handleImageLoad(post.id)}
 										class="aspect-square w-full object-cover will-change-transform"
+										class:opacity-0={imageLoadingStates.get(post.id)}
 									/>
 								{:else}
 									<div
-										class="flex aspect-square w-full items-center justify-center bg-[#d2d1c2] text-sm text-[#424233]"
+										class="text-s flex aspect-square w-full items-center justify-center bg-background text-sm"
 									>
 										Image not available
 									</div>
@@ -246,7 +330,53 @@
 						</div>
 					</article>
 				{/each}
+
+				<!-- Loading skeleton cards -->
+				{#if isLoadingMore}
+					{#each Array(4) as _, i (i)}
+						<article class="group flex max-w-[380px] min-w-[380px] flex-col">
+							<div class="flex h-full flex-col">
+								<div
+									class="relative overflow-hidden rounded-lg border-2 border-dashed border-primary bg-background"
+								>
+									<div
+										class="flex aspect-square w-full flex-col items-center justify-center gap-3 text-white"
+									>
+										<div
+											class="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"
+										></div>
+										<p class="text-sm font-medium">Loading more news...</p>
+									</div>
+								</div>
+								<div class="mt-4 flex flex-1 flex-col gap-2">
+									<div class="h-3 w-20 animate-pulse rounded bg-[#d2d1c2]"></div>
+									<div class="h-6 w-3/4 animate-pulse rounded bg-[#d2d1c2]"></div>
+									<div class="space-y-2">
+										<div class="h-4 w-full animate-pulse rounded bg-[#d2d1c2]"></div>
+										<div class="h-4 w-full animate-pulse rounded bg-[#d2d1c2]"></div>
+										<div class="h-4 w-2/3 animate-pulse rounded bg-[#d2d1c2]"></div>
+									</div>
+								</div>
+							</div>
+						</article>
+					{/each}
+				{/if}
+
+				<!-- Intersection observer target for infinite scroll -->
+				<div bind:this={observerTarget} class="observer-target min-w-[1px]"></div>
 			</div>
+
+			<!-- Loading indicator -->
+			{#if isLoadingMore}
+				<div class="mt-8 flex justify-center">
+					<div class="flex items-center gap-2 text-sm text-text/70">
+						<div
+							class="h-5 w-5 animate-spin rounded-full border-2 border-text/20 border-t-text/70"
+						></div>
+						<span>Loading more posts...</span>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="mx-auto max-w-7xl px-6">

@@ -13,7 +13,7 @@ type FetchNewsResult = {
 	error?: string;
 };
 
-export const fetchNewsPosts = async (): Promise<FetchNewsResult> => {
+export const fetchNewsPosts = async (limit = 8, offset = 0): Promise<FetchNewsResult> => {
 	const admin = getSupabaseAdminClient();
 
 	if (!admin) {
@@ -32,7 +32,7 @@ export const fetchNewsPosts = async (): Promise<FetchNewsResult> => {
 			.eq('status', 'published')
 			.order('published_at', { ascending: false, nullsFirst: false })
 			.order('created_at', { ascending: false })
-			.limit(8);
+			.range(offset, offset + limit - 1);
 
 		if (error) {
 			throw error;
@@ -49,7 +49,7 @@ export const fetchNewsPosts = async (): Promise<FetchNewsResult> => {
 					cover_image: coverImageUrl,
 					published_at: publishedAt,
 					created_at: createdAt,
-					article_kinds: kind
+					article_kinds: kinds
 				} = article as {
 					id: string;
 					title: string;
@@ -59,23 +59,26 @@ export const fetchNewsPosts = async (): Promise<FetchNewsResult> => {
 					cover_image: string | null;
 					published_at: string | null;
 					created_at: string | null;
-					article_kinds: { name: string } | null;
+					article_kinds: { name: string }[] | { name: string } | null;
 				};
 
-				const href = slug ? `/news/${slug}` : linkedinUrl ?? '#';
-			const ctaLabel = slug ? 'Read article' : linkedinUrl ? 'View on LinkedIn' : 'Learn more';
+				// Handle both array and single object responses
+				const kind = Array.isArray(kinds) ? kinds[0] : kinds;
 
-			return {
-				id: String(id),
-				title,
-				summary: clampText(content, 210),
-				publishedAt: publishedAt ?? createdAt ?? null,
-				href,
-				ctaLabel,
-				coverImageUrl,
-				coverImageAlt: title,
-				badge: kind?.name ?? null
-			} satisfies NewsPreviewItem;
+				const href = slug ? `/news/${slug}` : (linkedinUrl ?? '#');
+				const ctaLabel = slug ? 'Read article' : linkedinUrl ? 'View on LinkedIn' : 'Learn more';
+
+				return {
+					id: String(id),
+					title,
+					summary: clampText(content, 210),
+					publishedAt: publishedAt ?? createdAt ?? null,
+					href,
+					ctaLabel,
+					coverImageUrl,
+					coverImageAlt: title,
+					badge: kind?.name ?? null
+				} satisfies NewsPreviewItem;
 			}) ?? [];
 
 		return { posts };

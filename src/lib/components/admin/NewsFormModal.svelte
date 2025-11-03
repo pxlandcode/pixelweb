@@ -377,9 +377,9 @@
 				<div class="flex flex-col gap-3">
 					{#if previewUrl}
 						<div class="flex flex-col gap-3">
-							<div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-								<img src={previewUrl} alt="Cover image preview" class="h-48 w-full object-cover" />
-							</div>
+					<div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+						<img src={previewUrl} alt="Cover image preview" class="aspect-square w-full object-cover" />
+					</div>
 
 							<div class="flex flex-wrap items-center gap-2">
 								<Button
