@@ -140,7 +140,7 @@
 	<ScrollGallery images={galleryImages} title={galleryTitle} />
 
 	<div class="mt-[-200px]">
-		<AnimatedHeadline text="And our Discord is always alive." />
+		<AnimatedHeadline text="And our Discord is always buzzing." />
 		<DiscordCulture />
 	</div>
 

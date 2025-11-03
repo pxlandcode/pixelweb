@@ -4,50 +4,70 @@
 	export let messages = [
 		{
 			user: 'Oliver',
-			text: 'Anyone tried the new SvelteKit release yet?',
+			text: 'Anyone tried the new SvelteKit release yet? 🤔',
 			reactions: [
-				{ emoji: '🚀', count: 1 },
-				{ emoji: '🔥', count: 3 }
+				{ emoji: '🚀', count: 5 },
+				{ emoji: '🔥', count: 8 },
+				{ emoji: '👀', count: 3 }
 			]
 		},
 		{
 			user: 'Emilia',
-			text: 'Friday fika remote edition ☕️',
+			text: 'Friday fika remote edition! ☕️🍰',
 			reactions: [
-				{ emoji: '✅', count: 4 },
-				{ emoji: '☕️', count: 5 }
+				{ emoji: '✅', count: 7 },
+				{ emoji: '☕️', count: 9 },
+				{ emoji: '🙌', count: 4 }
 			]
 		},
 		{
 			user: 'Linus',
-			text: 'Are you ready for this fridays vibe playlist?',
+			text: 'Are you ready for this fridays vibe playlist? 🎵',
 			reactions: [
-				{ emoji: '🎤', count: 4 },
-				{ emoji: '🎸', count: 3 }
+				{ emoji: '🎤', count: 6 },
+				{ emoji: '🎸', count: 5 },
+				{ emoji: '🔊', count: 4 }
 			]
 		},
 		{
 			user: 'Ernst',
-			text: 'Gooooood morning Pixel&Code👋',
+			text: 'Gooooood morning Pixel&Code! 👋☀️',
 			gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2ZkNzZ5OWJ4bGV2djZjODRhcnRzN3p2dng3Z2g4ODlsOHA2dWMzNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JYMDARH3gR27e/giphy.gif',
 			reactions: [
-				{ emoji: '❤️', count: 6 },
+				{ emoji: '❤️', count: 8 },
 				{ emoji: '😴', count: 3 },
-				{ emoji: '🌅', count: 1 }
+				{ emoji: '🌅', count: 5 },
+				{ emoji: '💪', count: 4 }
 			]
 		},
 		{
 			user: 'Nicklas',
-			text: 'We should totally make a movie night channel.',
+			text: 'We should totally make a movie night channel! 🍿',
 			reactions: [
-				{ emoji: '🎬', count: 2 },
-				{ emoji: '🙋', count: 4 }
+				{ emoji: '🎬', count: 6 },
+				{ emoji: '🙋', count: 8 },
+				{ emoji: '👍', count: 5 }
 			]
 		},
 		{
 			user: 'Pierre',
-			text: 'Just pushed the new client dashboard build 🚀',
-			reactions: [{ emoji: '🔥', count: 6 }]
+			text: 'Just pushed the new client dashboard build! 🚀✨',
+			reactions: [
+				{ emoji: '🔥', count: 10 },
+				{ emoji: '💯', count: 7 },
+				{ emoji: '👏', count: 6 }
+			]
+		},
+		{
+			user: 'Andreas',
+			text: 'Want to be part of our community? Join our Discord and talk to us!',
+			link: 'https://discord.gg/Cpy8bFsT',
+			linkText: 'Join now',
+			reactions: [
+				{ emoji: '🧡', count: 15 },
+				{ emoji: '💬', count: 10 },
+				{ emoji: '🎉', count: 12 }
+			]
 		}
 	];
 </script>
@@ -59,7 +79,14 @@
 				<div class="avatar"></div>
 				<div class="bubble">
 					<div class="name">{msg.user}</div>
-					<p class="text">{msg.text}</p>
+					<p class="text">
+						{msg.text}
+						{#if msg.link}
+							<a href={msg.link} target="_blank" rel="noopener noreferrer" class="discord-link">
+								{msg.linkText || msg.link}
+							</a>
+						{/if}
+					</p>
 
 					{#if msg.gif}
 						<img class="gif" src={msg.gif} alt="GIF" loading="lazy" />
@@ -138,6 +165,19 @@
 		line-height: 1.4;
 		margin: 0;
 		color: white;
+	}
+
+	.discord-link {
+		color: #5865f2;
+		text-decoration: none;
+		font-weight: 500;
+		transition: color 0.2s ease;
+		margin-left: 0.25rem;
+	}
+
+	.discord-link:hover {
+		color: #7289da;
+		text-decoration: underline;
 	}
 
 	.gif {
