@@ -213,17 +213,15 @@
 									</p>
 								{/if}
 								{#if post.badge}
-									<p
-										class="text-badge text-xs font-semibold tracking-wide text-[#4a4b39] uppercase"
-									>
+									<p class="text-badge text-xs font-semibold tracking-wide text-text/70 uppercase">
 										{post.badge}
 									</p>
 								{/if}
-								<h3 class="text-title text-lg leading-tight font-semibold text-[#222217]">
+								<h3 class="text-title text-lg leading-tight font-semibold text-text">
 									{post.title}
 								</h3>
 								{#if post.displaySummary}
-									<p class="text-summary text-sm leading-relaxed text-[#3d3d2e]">
+									<p class="text-summary text-sm leading-relaxed text-text">
 										{post.displaySummary}
 									</p>
 								{/if}
@@ -232,7 +230,7 @@
 										href={post.href}
 										target={post.href.startsWith('http') ? '_blank' : undefined}
 										rel={post.href.startsWith('http') ? 'noreferrer noopener' : undefined}
-										class="text-link mt-auto pt-2 text-sm text-[#676851] underline transition hover:text-[#3d3d2e]"
+										class="text-link hover:text-primary-hover mt-auto pt-2 text-sm text-primary transition hover:underline"
 										on:click={(e) => {
 											if (isDragging) e.preventDefault();
 										}}
@@ -240,7 +238,7 @@
 										{post.ctaLabel ?? 'Read article'}
 									</a>
 								{:else}
-									<span class="mt-auto pt-2 text-sm text-[#676851]">
+									<span class="mt-auto pt-2 text-sm text-text/70">
 										{post.ctaLabel ?? 'More details coming soon'}
 									</span>
 								{/if}
