@@ -54,3 +54,11 @@ export const clearAuthCookies = (cookies: Cookies) => {
         cookies.delete(AUTH_COOKIE_NAMES.access, { path: '/' });
         cookies.delete(AUTH_COOKIE_NAMES.refresh, { path: '/' });
 };
+
+export const sbAdmin = (() => {
+        const client = getSupabaseAdminClient();
+        if (!client) {
+                throw new Error('[supabase] Service role key is not configured.');
+        }
+        return client;
+})();

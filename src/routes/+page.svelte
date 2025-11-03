@@ -4,7 +4,7 @@
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
-	import LinkedInNews from '$lib/components/LinkedInNews.svelte';
+import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
@@ -220,5 +220,5 @@
 			</CardstackItem>
 		{/each}
 	</Cardstack>
-	<LinkedInNews posts={newsPosts} error={newsError} />
+	<NewsPreview posts={newsPosts} error={newsError} />
 </main>

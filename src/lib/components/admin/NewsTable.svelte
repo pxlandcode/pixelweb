@@ -16,6 +16,7 @@
 	export let articles: ArticleRow[] = [];
 	export let onEdit: (article: ArticleRow) => void;
 	export let onDelete: (article: ArticleRow) => void;
+	export let onPublish: (article: ArticleRow) => void;
 
 	type TableRow = ArticleRow & {
 		source: ArticleRow;
@@ -28,9 +29,9 @@
 	const headings: SuperTableHead<TableRow>[] = [
 		{ heading: 'Title', sortable: 'title', width: 34 },
 		{ heading: 'Kind', sortable: 'kindLabel', width: 18 },
-		{ heading: 'Status', sortable: 'status', width: 16 },
-		{ heading: 'Preview', width: 16 },
-		{ heading: 'Actions', width: 16 }
+		{ heading: 'Status', sortable: 'status', width: 10 },
+		{ heading: 'Preview', width: 18 },
+		{ heading: 'Actions', width: 22 }
 	];
 
 	const toRows = (items: ArticleRow[]): TableRow[] =>
@@ -114,7 +115,18 @@
 					</div>
 				</Cell.Value>
 
-				<Cell.Value class="flex justify-end gap-2">
+				<Cell.Value class="flex flex-wrap justify-end gap-2">
+					{#if row.status === 'draft'}
+						<Button
+							variant="primary"
+							size="sm"
+							type="button"
+							class="bg-emerald-500 text-white hover:bg-emerald-600"
+							onclick={() => onPublish(row.source)}
+						>
+							Publish
+						</Button>
+					{/if}
 					<Button variant="outline" size="sm" type="button" onclick={() => onEdit(row.source)}>
 						Edit
 					</Button>

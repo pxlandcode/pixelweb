@@ -1,23 +1,25 @@
 <script lang="ts">
-        import { Alert, Button, Drawer, FormControl, Input, Select, TextArea } from '@pixelcode_/blocks/components';
-        import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-        import '@uppy/core/dist/style.min.css';
-        import '@uppy/dashboard/dist/style.min.css';
-        import Uppy from '@uppy/core';
-        import Dashboard from '@uppy/dashboard';
-        import XHRUpload from '@uppy/xhr-upload';
-        import { env } from '$env/dynamic/public';
-        import { getSupabaseClient } from '$lib/supabaseClient';
+	import {
+		Alert,
+		Button,
+		Drawer,
+		FormControl,
+		Input,
+		Select,
+		TextArea
+	} from '@pixelcode_/blocks/components';
+        import { createEventDispatcher, onDestroy, tick } from 'svelte';
+	import Uppy from '@uppy/core';
+	import Dashboard from '@uppy/dashboard';
+	import XHRUpload from '@uppy/xhr-upload';
+	import type { UppyFile } from '@uppy/utils/lib/UppyFile';
 	import type { PageData } from '../../../routes/internal/news/$types';
 
 	type Article = PageData['articles'][number] | null;
 	type Kind = PageData['kinds'][number];
+	type AnyUppyFile = UppyFile<Record<string, unknown>, unknown>;
 
-        const dispatch = createEventDispatcher<{ close: void }>();
-
-        type UppyMeta = {
-                supabasePath?: string;
-        };
+	const dispatch = createEventDispatcher<{ close: void }>();
 
 	let {
 		open = $bindable(false),
@@ -35,266 +37,247 @@
 		errorMessage?: string | null;
 	}>();
 
-        const modalTitle = $derived(article ? 'Edit article' : 'Create article');
-        const submitLabel = $derived(action === 'update' ? 'Save changes' : 'Create article');
+	const modalTitle = $derived(article ? 'Edit article' : 'Create article');
+	const submitLabel = $derived(action === 'update' ? 'Save changes' : 'Create article');
 
-        const supabaseUrl = env.PUBLIC_SUPABASE_URL ?? '';
+	const uploadEndpoint = '/internal/api/news/upload';
 
-        const supabase = $state(getSupabaseClient());
-        let sessionToken = $state<string | null>(null);
-        let authUnsubscribe: (() => void) | null = null;
+	type UppyInstance = InstanceType<typeof Uppy>;
 
-        type UppyInstance = ReturnType<typeof Uppy>;
+	let uppy: UppyInstance | null = null;
+	let uppyContainer: HTMLDivElement | null = null;
 
-        let uppy: UppyInstance | null = null;
-        let uppyContainer: HTMLDivElement | null = null;
+	let coverImageUrl = $state(article?.cover_image ?? '');
+	let previewUrl = $state(coverImageUrl);
+	let uploadError = $state<string | null>(null);
+	let isUploading = $state(false);
+	let copied = $state(false);
+	let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+	let tempObjectUrl: string | null = null;
 
-        let coverImageUrl = $state(article?.cover_image ?? '');
-        let previewUrl = $state(coverImageUrl);
-        let uploadError = $state<string | null>(null);
-        let isUploading = $state(false);
-        let copied = $state(false);
-        let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+	const showUploader = $derived(!previewUrl);
 
-        const showUploader = $derived(!previewUrl);
+	const revokeTempObjectUrl = () => {
+		if (tempObjectUrl) {
+			URL.revokeObjectURL(tempObjectUrl);
+			tempObjectUrl = null;
+		}
+	};
 
-        const base64Encode = (value: string) => {
-                return btoa(unescape(encodeURIComponent(value)));
-        };
+	const setPreviewFromLocalFile = (file: AnyUppyFile) => {
+		const blob = file.data as Blob | undefined;
+		if (!blob) return;
 
-        const ensureSessionToken = async () => {
-                if (sessionToken) return sessionToken;
+		revokeTempObjectUrl();
+		tempObjectUrl = URL.createObjectURL(blob);
+		previewUrl = tempObjectUrl;
+	};
 
-                const { data, error } = await supabase.auth.getSession();
+	const resetUploaderState = () => {
+		if (!uppy) {
+			return;
+		}
 
-                if (error) {
-                        throw error;
-                }
+		uppy.cancelAll();
+		uppy.resetProgress();
+		revokeTempObjectUrl();
+	};
 
-                sessionToken = data.session?.access_token ?? null;
+	const destroyUppy = () => {
+		if (!uppy) {
+			return;
+		}
 
-                return sessionToken;
-        };
+		console.log('[NewsFormModal] Destroying Uppy instance');
+		uppy.cancelAll();
+		uppy.destroy();
+		if (uppyContainer) {
+			uppyContainer.innerHTML = '';
+		}
+		uppy = null;
+		revokeTempObjectUrl();
+	};
 
-        const handleReplaceImage = () => {
-                coverImageUrl = '';
-                previewUrl = '';
-                copied = false;
-                if (copyTimeout) {
-                        clearTimeout(copyTimeout);
-                        copyTimeout = null;
-                }
-                uploadError = null;
-                isUploading = false;
-                uppy?.reset();
-        };
+	const handleReplaceImage = () => {
+		coverImageUrl = '';
+		previewUrl = '';
+		copied = false;
+		if (copyTimeout) {
+			clearTimeout(copyTimeout);
+			copyTimeout = null;
+		}
+		uploadError = null;
+		isUploading = false;
+		resetUploaderState();
+	};
 
-        const copyImageUrl = async () => {
-                if (!coverImageUrl) return;
+	const copyImageUrl = async () => {
+		if (!coverImageUrl) return;
 
-                try {
-                        await navigator.clipboard.writeText(coverImageUrl);
-                        copied = true;
-                        if (copyTimeout) {
-                                clearTimeout(copyTimeout);
-                        }
-                        copyTimeout = setTimeout(() => {
-                                copied = false;
-                                copyTimeout = null;
-                        }, 2000);
-                } catch (error) {
-                        console.error('Failed to copy cover image URL', error);
-                }
-        };
+		try {
+			await navigator.clipboard.writeText(coverImageUrl);
+			copied = true;
+			if (copyTimeout) {
+				clearTimeout(copyTimeout);
+			}
+			copyTimeout = setTimeout(() => {
+				copied = false;
+				copyTimeout = null;
+			}, 2000);
+		} catch (error) {
+			console.error('Failed to copy cover image URL', error);
+		}
+	};
 
-        const initializeUppy = () => {
-                if (!uppyContainer) {
-                        return;
-                }
+	const initializeUppy = () => {
+		if (uppy || !uppyContainer) {
+			console.log('[NewsFormModal] Skipping Uppy init', {
+				hasInstance: Boolean(uppy),
+				hasContainer: Boolean(uppyContainer)
+			});
+			return;
+		}
 
-                if (!supabaseUrl) {
-                        uploadError =
-                                'Missing PUBLIC_SUPABASE_URL. Please configure the Supabase environment variables to enable uploads.';
-                        return;
-                }
+		console.log('[NewsFormModal] Initializing Uppy', { container: uppyContainer });
 
-                uppy = new Uppy({
-                        autoProceed: true,
-                        allowMultipleUploads: false,
-                        restrictions: {
-                                maxNumberOfFiles: 1,
-                                allowedFileTypes: ['image/*']
-                        }
-                });
+		uppy = new Uppy({
+			autoProceed: true,
+			allowMultipleUploads: false,
+			restrictions: {
+				maxNumberOfFiles: 1,
+				allowedFileTypes: ['image/*']
+			}
+		});
 
-                uppy.use(Dashboard, {
-                        target: uppyContainer,
-                        inline: true,
-                        proudlyDisplayPoweredByUppy: false,
-                        showRemoveButtonAfterComplete: true,
-                        note: 'PNG, JPG, GIF up to 10MB'
-                });
+		uppy.use(Dashboard, {
+			target: uppyContainer,
+			inline: true,
+			proudlyDisplayPoweredByUppy: false,
+			showRemoveButtonAfterComplete: true,
+			note: 'PNG, JPG, GIF up to 10MB'
+		});
 
-                uppy.use(XHRUpload, {
-                        limit: 1,
-                        formData: false,
-                        allowedMetaFields: ['supabasePath'],
-                        getUploadParameters: async (file) => {
-                                isUploading = true;
-                                uploadError = null;
+		uppy.use(XHRUpload, {
+			endpoint: uploadEndpoint,
+			fieldName: 'file',
+			formData: true,
+			withCredentials: true,
+			limit: 1,
+			allowedMetaFields: []
+		});
 
-                                const token = await ensureSessionToken();
+		uppy.on('file-added', (file) => {
+			console.log('[NewsFormModal] Uppy file added', file);
+			setPreviewFromLocalFile(file as AnyUppyFile);
+		});
 
-                                if (!token) {
-                                        throw new Error('No Supabase session found. Please sign in again.');
-                                }
+		uppy.on('file-removed', (file, reason) => {
+			console.log('[NewsFormModal] Uppy file removed', { file, reason });
+			revokeTempObjectUrl();
+			if (!coverImageUrl) {
+				previewUrl = '';
+			}
+		});
 
-                                const filePath = `images/${Date.now()}-${file.name}`;
-                                (file.meta as UppyMeta).supabasePath = filePath;
+		uppy.on('upload', () => {
+			isUploading = true;
+			uploadError = null;
+			console.log('[NewsFormModal] Upload started');
+		});
 
-                                const metadata = [
-                                        ['bucketId', 'news'],
-                                        ['objectName', filePath],
-                                        ['contentType', file.type || 'application/octet-stream']
-                                ]
-                                        .map(([key, value]) => `${key} ${base64Encode(value)}`)
-                                        .join(',');
+		uppy.on('upload-error', (_file, error) => {
+			isUploading = false;
+			uploadError = error?.message ?? 'Upload failed. Please try again.';
+			console.error('[NewsFormModal] Upload error', error);
+		});
 
-                                const createResponse = await fetch(`${supabaseUrl}/storage/v1/upload/resumable`, {
-                                        method: 'POST',
-                                        headers: {
-                                                Authorization: `Bearer ${token}`,
-                                                'Tus-Resumable': '1.0.0',
-                                                'Upload-Metadata': metadata,
-                                                'Upload-Length': `${file.data.size}`,
-                                                'x-upsert': 'false'
-                                        }
-                                });
+		uppy.on('upload-success', (file, response) => {
+			isUploading = false;
+			uploadError = null;
+			console.log('[NewsFormModal] Upload success', response);
 
-                                if (!createResponse.ok) {
-                                        const message = await createResponse.text();
-                                        throw new Error(message || 'Failed to create Supabase upload session.');
-                                }
+			const url = response?.body?.url as string | undefined;
+			const path = response?.body?.path as string | undefined;
 
-                                const uploadUrl =
-                                        createResponse.headers.get('location') ??
-                                        createResponse.headers.get('Location');
+			if (!url) {
+				console.warn('[NewsFormModal] Upload response missing URL', response);
+				uploadError = 'Upload succeeded but no URL was returned.';
+				return;
+			}
 
-                                if (!uploadUrl) {
-                                        throw new Error('Supabase upload session is missing the upload URL.');
-                                }
+			revokeTempObjectUrl();
+			coverImageUrl = url;
+			previewUrl = url;
+			copied = false;
+			console.log('[NewsFormModal] Stored upload info', { url, path, fileName: file.name });
+		});
 
-                                return {
-                                        method: 'PATCH',
-                                        url: uploadUrl,
-                                        headers: {
-                                                Authorization: `Bearer ${token}`,
-                                                'Tus-Resumable': '1.0.0',
-                                                'Upload-Offset': '0',
-                                                'Content-Type': 'application/offset+octet-stream'
-                                        }
-                                };
-                        }
-                });
+		uppy.on('complete', () => {
+			isUploading = false;
+			console.log('[NewsFormModal] Upload complete');
+		});
+	};
 
-                uppy.on('upload', () => {
-                        isUploading = true;
-                        uploadError = null;
-                });
+	$effect(() => {
+		if (open) {
+			void (async () => {
+				await tick();
+				if (!open) {
+					console.log('[NewsFormModal] Drawer closed before Uppy init, skipping');
+					return;
+				}
+				if (uppyContainer && !uppy) {
+					console.log('[NewsFormModal] Drawer opened, initializing Uppy after tick');
+					initializeUppy();
+				}
+			})();
+		} else {
+			destroyUppy();
+		}
+	});
 
-                uppy.on('upload-error', (_file, error) => {
-                        isUploading = false;
-                        uploadError = error?.message ?? 'Upload failed. Please try again.';
-                });
+	onDestroy(() => {
+		destroyUppy();
+		if (copyTimeout) {
+			clearTimeout(copyTimeout);
+		}
+	});
 
-                uppy.on('upload-success', (file) => {
-                        isUploading = false;
-                        uploadError = null;
+	let lastArticleId = $state(article?.id ?? null);
 
-                        const path = (file.meta as UppyMeta).supabasePath;
+	$effect(() => {
+		const currentArticleId = article?.id ?? null;
 
-                        if (!path) {
-                                return;
-                        }
+		if (currentArticleId !== lastArticleId) {
+			coverImageUrl = article?.cover_image ?? '';
+			previewUrl = coverImageUrl;
+			uploadError = null;
+			copied = false;
+			if (copyTimeout) {
+				clearTimeout(copyTimeout);
+				copyTimeout = null;
+			}
+			isUploading = false;
+			resetUploaderState();
 
-                        coverImageUrl = `${supabaseUrl}/storage/v1/object/public/news/${path}`;
-                        previewUrl = coverImageUrl;
-                        copied = false;
-                });
+			lastArticleId = currentArticleId;
+		}
+	});
 
-                uppy.on('complete', () => {
-                        isUploading = false;
-                });
-        };
-
-        onMount(() => {
-                let mounted = true;
-
-                ensureSessionToken().catch((error) => {
-                        console.error('Failed to resolve Supabase session', error);
-                });
-
-                const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-                        if (!mounted) return;
-                        sessionToken = session?.access_token ?? null;
-                });
-
-                if (data?.subscription) {
-                        authUnsubscribe = () => {
-                                data.subscription.unsubscribe();
-                        };
-                }
-
-                initializeUppy();
-
-                return () => {
-                        mounted = false;
-                };
-        });
-
-        onDestroy(() => {
-                uppy?.close({ reason: 'unmount' });
-                authUnsubscribe?.();
-                if (copyTimeout) {
-                        clearTimeout(copyTimeout);
-                }
-        });
-
-        let lastArticleId = $state(article?.id ?? null);
-
-        $effect(() => {
-                const currentArticleId = article?.id ?? null;
-
-                if (currentArticleId !== lastArticleId) {
-                        coverImageUrl = article?.cover_image ?? '';
-                        previewUrl = coverImageUrl;
-                        uploadError = null;
-                        copied = false;
-                        if (copyTimeout) {
-                                clearTimeout(copyTimeout);
-                                copyTimeout = null;
-                        }
-                        isUploading = false;
-                        uppy?.reset();
-
-                        lastArticleId = currentArticleId;
-                }
-        });
-
-        $effect(() => {
-                if (!open) {
-                        uppy?.reset();
-                        uploadError = null;
-                        isUploading = false;
-                        copied = false;
-                        if (copyTimeout) {
-                                clearTimeout(copyTimeout);
-                                copyTimeout = null;
-                        }
-                        coverImageUrl = article?.cover_image ?? '';
-                        previewUrl = coverImageUrl;
-                }
-        });
+	$effect(() => {
+		if (!open) {
+			resetUploaderState();
+			uploadError = null;
+			isUploading = false;
+			copied = false;
+			if (copyTimeout) {
+				clearTimeout(copyTimeout);
+				copyTimeout = null;
+			}
+			coverImageUrl = article?.cover_image ?? '';
+			previewUrl = coverImageUrl;
+		}
+	});
 
 	const toLocalDatetimeValue = (value: string | null | undefined) => {
 		if (!value) return '';
@@ -335,7 +318,11 @@
 	class="mr-0 w-full max-w-2xl"
 	dismissable
 >
-	<form method="POST" action={`?/${action}`} class="flex flex-1 flex-col gap-6 overflow-y-auto pb-16">
+	<form
+		method="POST"
+		action={`?/${action}`}
+		class="flex flex-1 flex-col gap-6 overflow-y-auto pb-16"
+	>
 		{#if article}
 			<input type="hidden" name="id" value={article.id} />
 		{/if}
@@ -381,84 +368,82 @@
 				</Select>
 			</FormControl>
 
-                        <FormControl
-                                label="Cover image"
-                                class="gap-2 text-sm"
-                                bl="Upload a new image or keep the existing cover."
-                        >
-                                <div class="flex flex-col gap-3">
-                                        {#if previewUrl}
-                                                <div class="flex flex-col gap-3">
-                                                        <div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                                                                <img
-                                                                        src={previewUrl}
-                                                                        alt="Cover image preview"
-                                                                        class="h-48 w-full object-cover"
-                                                                />
-                                                        </div>
+				<FormControl
+					label="Cover image"
+					class="gap-2 text-sm"
+					bl="Upload a new image or keep the existing cover."
+					tag="div"
+				>
+				<div class="flex flex-col gap-3">
+					{#if previewUrl}
+						<div class="flex flex-col gap-3">
+							<div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+								<img src={previewUrl} alt="Cover image preview" class="h-48 w-full object-cover" />
+							</div>
 
-                                                        <div class="flex flex-wrap items-center gap-2">
-                                                                <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        class="border-gray-300 text-gray-700 hover:bg-gray-50"
-                                                                        on:click={handleReplaceImage}
-                                                                        disabled={isUploading}
-                                                                >
-                                                                        Replace image
-                                                                </Button>
+							<div class="flex flex-wrap items-center gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									class="border-gray-300 text-gray-700 hover:bg-gray-50"
+									onclick={handleReplaceImage}
+									disabled={isUploading}
+								>
+									Replace image
+								</Button>
 
-                                                                {#if coverImageUrl}
-                                                                        <Button
-                                                                                type="button"
-                                                                                variant="ghost"
-                                                                                class="text-gray-700 hover:bg-gray-100"
-                                                                                on:click={copyImageUrl}
-                                                                                disabled={isUploading}
-                                                                        >
-                                                                                Copy image URL
-                                                                        </Button>
-                                                                {/if}
+								{#if coverImageUrl}
+									<Button
+										type="button"
+										variant="ghost"
+										class="text-gray-700 hover:bg-gray-100"
+										onclick={copyImageUrl}
+										disabled={isUploading}
+									>
+										Copy image URL
+									</Button>
+								{/if}
 
-                                                                {#if copied}
-                                                                        <span class="text-xs font-medium text-emerald-600">
-                                                                                Copied!
-                                                                        </span>
-                                                                {/if}
-                                                        </div>
-                                                </div>
-                                        {/if}
+								{#if copied}
+									<span class="text-xs font-medium text-emerald-600"> Copied! </span>
+								{/if}
+							</div>
+						</div>
+					{/if}
 
-                                        <div
-                                                class:hidden={!showUploader}
-                                                class="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-2"
-                                        >
-                                                <div bind:this={uppyContainer} class="uppy-container" />
-                                        </div>
+					<div
+						class:hidden={!showUploader}
+						class="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-1.5"
+					>
+							<div bind:this={uppyContainer} class="uppy-container h-44 w-full" />
+					</div>
 
-                                        {#if uploadError}
-                                                <Alert variant="destructive" size="sm">
-                                                        <p class="text-sm font-medium text-gray-900">{uploadError}</p>
-                                                </Alert>
-                                        {/if}
+					{#if uploadError}
+						<Alert variant="destructive" size="sm">
+							<p class="text-sm font-medium text-gray-900">{uploadError}</p>
+						</Alert>
+					{/if}
 
-                                        {#if isUploading}
-                                                <p class="text-xs font-medium text-gray-600">Uploading…</p>
-                                        {/if}
+					{#if isUploading}
+						<p class="text-xs font-medium text-gray-600">Uploading…</p>
+					{/if}
 
-                                        {#if !previewUrl}
-                                                <p class="text-xs text-gray-500">
-                                                        Images are uploaded to Supabase Storage and automatically linked to this
-                                                        article.
-                                                </p>
-                                        {/if}
-                                </div>
+					{#if !previewUrl}
+						<p class="text-xs text-gray-500">
+							Images are uploaded to Supabase Storage and automatically linked to this article.
+						</p>
+					{/if}
+				</div>
 
-                                <input type="hidden" id="cover_image" name="cover_image" value={coverImageUrl} />
-                        </FormControl>
-                </div>
+				<input type="hidden" id="cover_image" name="cover_image" value={coverImageUrl} />
+			</FormControl>
+		</div>
 
-		<FormControl label="Content" class="gap-2 text-sm" bl="Leave empty for LinkedIn-only announcements.">
+		<FormControl
+			label="Content"
+			class="gap-2 text-sm"
+			bl="Leave empty for LinkedIn-only announcements."
+		>
 			<TextArea
 				id="content"
 				name="content"
@@ -513,12 +498,14 @@
 			</Alert>
 		{/if}
 
-		<div class="sticky bottom-0 flex flex-wrap justify-end gap-3 border-t border-gray-200 bg-white pt-4">
+		<div
+			class="sticky bottom-0 flex flex-wrap justify-end gap-3 border-t border-gray-200 bg-white pt-4"
+		>
 			<Button
 				type="button"
 				variant="outline"
 				class="border-gray-300 text-gray-700 hover:bg-gray-50"
-				on:click={close}
+				onclick={close}
 			>
 				Cancel
 			</Button>
@@ -534,3 +521,21 @@
 		</div>
 	</form>
 </Drawer>
+
+<style>
+	:global(.uppy-container .uppy-Dashboard) {
+		height: 100%;
+		background: transparent;
+		border: none;
+		box-shadow: none;
+	}
+
+	:global(.uppy-container .uppy-Dashboard-inner) {
+		min-height: 180px;
+		max-height: 180px;
+	}
+
+	:global(.uppy-container .uppy-Dashboard-AddFiles) {
+		min-height: 160px;
+	}
+</style>

@@ -1,6 +1,8 @@
 @source "../node_modules/@pixelcode_/blocks/**/*.{js,ts,svelte}";
-@import '@pixelcode_/blocks/app.css';
 @import 'tailwindcss';
+@import '@pixelcode_/blocks/app.css';
+@import '@uppy/core/dist/style.min.css';
+@import '@uppy/dashboard/dist/style.min.css';
 
 @font-face {
 	font-family: 'Montserrat';

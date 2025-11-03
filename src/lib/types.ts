@@ -18,14 +18,14 @@ export type LeadInput = { website_url: string; email: string; consent: 'true' };
 
 export type QuotaInfo = { remaining: number };
 
-export type LinkedInPost = {
+export type NewsPreviewItem = {
 	id: string;
 	title: string;
-	summary: string;
-	publishedAt: string;
-	link: string;
-	mediaUrl?: string;
-	mediaAlt?: string;
-	badge?: string;
+	summary: string | null;
+	publishedAt: string | null;
+	href: string;
 	ctaLabel?: string;
+	coverImageUrl?: string | null;
+	coverImageAlt?: string | null;
+	badge?: string | null;
 };

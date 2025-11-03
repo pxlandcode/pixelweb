@@ -1,8 +1,10 @@
 <script lang="ts">
-	import type { LinkedInPost } from '$lib/types';
+	import type { NewsPreviewItem } from '$lib/types';
 	import { onDestroy } from 'svelte';
 
-	export let posts: LinkedInPost[] = [];
+	type FormattedNewsPost = NewsPreviewItem & { displaySummary: string };
+
+	export let posts: NewsPreviewItem[] = [];
 	export let error: string | undefined;
 
 	let scrollContainer: HTMLDivElement;
@@ -13,14 +15,19 @@
 	let lastTime = 0;
 	let velocity = 0;
 	let animationFrame: number | null = null;
-	let isScrolling = false; // Track if content is still moving
+	let isScrolling = false;
 
-	const clampText = (value: string, length = 180) => {
-		if (!value) return value;
-		return value.length > length ? `${value.slice(0, length - 1).trimEnd()}…` : value;
+	const clampText = (value: string | null | undefined, length = 180): string => {
+		if (!value) return '';
+		const normalized = value.replace(/\s+/g, ' ').trim();
+		if (!normalized) return '';
+		return normalized.length > length
+			? `${normalized.slice(0, length - 1).trimEnd()}…`
+			: normalized;
 	};
 
-	const formatDate = (value: string): string => {
+	const formatDate = (value: string | null | undefined): string => {
+		if (!value) return '';
 		const date = new Date(value);
 		if (Number.isNaN(date.getTime())) return '';
 		const day = `${date.getDate()}`.padStart(2, '0');
@@ -128,31 +135,29 @@
 		}
 	});
 
+	const getPublishedTime = (value: string | null | undefined): number => {
+		if (!value) return 0;
+		const time = new Date(value).getTime();
+		return Number.isNaN(time) ? 0 : time;
+	};
+
 	$: sortedPosts = [...posts].sort(
-		(a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+		(a, b) => getPublishedTime(b.publishedAt) - getPublishedTime(a.publishedAt)
 	);
 	$: formattedPosts = sortedPosts.map((post) => ({
 		...post,
-		summary: post.summary ? clampText(post.summary) : ''
-	}));
+		displaySummary: clampText(post.summary)
+	})) satisfies FormattedNewsPost[];
+	$: primaryCta = formattedPosts.find((post) => post.href && post.href !== '#');
 </script>
 
-<section class="news-section bg-[#e6e6db] text-[#15150f]">
+<section class="news-section bg-white text-text">
 	<div class="mx-auto max-w-7xl px-6 pt-20 pb-4 sm:pt-24">
 		<header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 			<div class="space-y-3">
-				<p class="text-sm font-medium tracking-[0.3em] text-[#5c5d4c] uppercase">LinkedIn</p>
-				<h2 class="text-4xl leading-none font-semibold text-[#10120a] sm:text-5xl">What's New</h2>
+				<p class="text-sm font-medium tracking-[0.3em] text-text/70 uppercase">News</p>
+				<h2 class="text-4xl leading-none font-semibold text-text sm:text-5xl">What's New</h2>
 			</div>
-			<a
-				class="inline-flex items-center gap-2 self-start rounded-full border border-[#bcbca9] bg-white/60 px-5 py-2 text-sm font-semibold text-[#2c2d21] transition hover:bg-white hover:text-[#0f0f0c]"
-				href="https://www.linkedin.com/company/90364210/"
-				target="_blank"
-				rel="noreferrer noopener"
-			>
-				Follow on LinkedIn
-				<span aria-hidden="true">-></span>
-			</a>
 		</header>
 	</div>
 
@@ -184,10 +189,10 @@
 					<article class="group flex max-w-[380px] min-w-[380px] flex-col">
 						<div class="flex h-full flex-col">
 							<div class="relative overflow-hidden rounded-lg">
-								{#if post.mediaUrl}
+								{#if post.coverImageUrl}
 									<img
-										src={post.mediaUrl}
-										alt={post.mediaAlt ?? post.title}
+										src={post.coverImageUrl}
+										alt={post.coverImageAlt ?? post.title}
 										loading="lazy"
 										decoding="async"
 										draggable="false"
@@ -203,29 +208,42 @@
 							</div>
 							<div class="mt-4 flex flex-1 flex-col gap-2">
 								{#if post.publishedAt}
-									<p class="text-date text-xs text-[#676851]">
+									<p class="text-date text-xs text-text/70">
 										{formatDate(post.publishedAt)}
+									</p>
+								{/if}
+								{#if post.badge}
+									<p
+										class="text-badge text-xs font-semibold tracking-wide text-[#4a4b39] uppercase"
+									>
+										{post.badge}
 									</p>
 								{/if}
 								<h3 class="text-title text-lg leading-tight font-semibold text-[#222217]">
 									{post.title}
 								</h3>
-								{#if post.summary}
+								{#if post.displaySummary}
 									<p class="text-summary text-sm leading-relaxed text-[#3d3d2e]">
-										{post.summary}
+										{post.displaySummary}
 									</p>
 								{/if}
-								<a
-									href={post.link}
-									target="_blank"
-									rel="noreferrer noopener"
-									class="text-link mt-auto pt-2 text-sm text-[#676851] underline transition hover:text-[#3d3d2e]"
-									on:click={(e) => {
-										if (isDragging) e.preventDefault();
-									}}
-								>
-									{post.ctaLabel ?? 'View post'}
-								</a>
+								{#if post.href && post.href !== '#'}
+									<a
+										href={post.href}
+										target={post.href.startsWith('http') ? '_blank' : undefined}
+										rel={post.href.startsWith('http') ? 'noreferrer noopener' : undefined}
+										class="text-link mt-auto pt-2 text-sm text-[#676851] underline transition hover:text-[#3d3d2e]"
+										on:click={(e) => {
+											if (isDragging) e.preventDefault();
+										}}
+									>
+										{post.ctaLabel ?? 'Read article'}
+									</a>
+								{:else}
+									<span class="mt-auto pt-2 text-sm text-[#676851]">
+										{post.ctaLabel ?? 'More details coming soon'}
+									</span>
+								{/if}
 							</div>
 						</div>
 					</article>
@@ -237,7 +255,7 @@
 			<div
 				class="mt-12 rounded-3xl border border-dashed border-[#c7c6b2] bg-[#f7f4e7] px-8 py-16 text-center text-base text-[#474738]"
 			>
-				<p>No LinkedIn posts are available right now. Follow us on LinkedIn to stay in the loop.</p>
+				<p>No news articles are published yet. Check back soon for the latest updates.</p>
 			</div>
 		</div>
 	{/if}
@@ -268,6 +286,7 @@
 
 	/* Individual text elements with different lag amounts */
 	.text-date,
+	.text-badge,
 	.text-title,
 	.text-summary,
 	.text-link {
@@ -276,6 +295,7 @@
 	}
 
 	.scrollbar-hide:not(.is-scrolling) .text-date,
+	.scrollbar-hide:not(.is-scrolling) .text-badge,
 	.scrollbar-hide:not(.is-scrolling) .text-title,
 	.scrollbar-hide:not(.is-scrolling) .text-summary,
 	.scrollbar-hide:not(.is-scrolling) .text-link {
@@ -287,6 +307,11 @@
 		.scrollbar-hide.is-scrolling .text-date {
 			transform: translateX(calc(var(--scroll-direction) * var(--velocity-intensity) * -8px));
 			transition: transform 0.05s linear;
+		}
+
+		.scrollbar-hide.is-scrolling .text-badge {
+			transform: translateX(calc(var(--scroll-direction) * var(--velocity-intensity) * -12px));
+			transition: transform 0.055s linear;
 		}
 
 		.scrollbar-hide.is-scrolling .text-title {
