@@ -1,22 +1,74 @@
-<!-- Global layout: initialize Lenis once so every route has smooth scrolling -->
 <script lang="ts">
 	import '../app.css';
 	import { fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import CurtainMenu from '$components/CurtainMenu.svelte';
+	import SiteHeader from '$components/SiteHeader.svelte';
 	import SiteFooter from '$components/SiteFooter.svelte';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 	import { navLinks } from '$lib/navlinks';
 	import { curtainMenu } from '$lib/stores/curtainMenu';
-	import { floatingNavState } from '$lib/stores/floatingNav';
+	import {
+		floatingNavState,
+		resetFloatingNavState,
+		setFloatingNavState
+	} from '$lib/stores/floatingNav';
+	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import Lenis from 'lenis';
 	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
 
 	let { children } = $props();
+
+	let headerHeight = 0;
+	let currentParallaxOffset = 0;
+	let isHomeRoute = get(page).url.pathname === '/';
+	let headerWrapper: HTMLDivElement | null = null;
+	let headerResizeObserver: ResizeObserver | null = null;
+	let headerResizeHandler: (() => void) | null = null;
+	let scrollHandler: (() => void) | null = null;
+
+	const updateFloatingNavFromLayout = () => {
+		if (isHomeRoute || typeof window === 'undefined') {
+			return;
+		}
+		const hideDistance = headerHeight ? headerHeight + 120 : 220;
+		const scrollY = window.scrollY || 0;
+		const headerProgress = Math.min(scrollY / hideDistance, 1);
+		const parallaxOffset = headerHeight
+			? Math.min(headerProgress * headerHeight, headerHeight)
+			: Math.min(headerProgress * 80, 80);
+		if (Math.abs(parallaxOffset - currentParallaxOffset) > 0.25) {
+			updateSiteHeaderState({ parallaxOffset });
+		}
+		const headerFullyHidden =
+			headerHeight > 0 ? parallaxOffset >= headerHeight - 4 : headerProgress >= 0.95;
+		setFloatingNavState({ active: headerFullyHidden, showCta: false });
+	};
+
+	const unsubscribeHeader = siteHeaderState.subscribe((state) => {
+		// Keep layout-aware fallback nav behaviour in sync with latest measurements.
+		headerHeight = state.height;
+		currentParallaxOffset = state.parallaxOffset;
+		if (!isHomeRoute) {
+			queueMicrotask(updateFloatingNavFromLayout);
+		}
+	});
+	const unsubscribePage = page.subscribe(($page) => {
+		isHomeRoute = $page.url.pathname === '/';
+		if (isHomeRoute) {
+			// Allow the home page to take over the floating nav behaviour.
+			return;
+		}
+		// Reset CTA visibility when entering non-home routes.
+		resetFloatingNavState();
+		updateSiteHeaderState({ parallaxOffset: 0 });
+		queueMicrotask(updateFloatingNavFromLayout);
+	});
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 
@@ -25,6 +77,13 @@
 
 	export const disableSmoothScroll = () => lenis?.stop();
 	export const enableSmoothScroll = () => lenis?.start();
+
+	const syncHeaderMetrics = () => {
+		if (!headerWrapper) {
+			return;
+		}
+		updateSiteHeaderState({ height: headerWrapper.offsetHeight });
+	};
 
 	onMount(() => {
 		if ('scrollRestoration' in history) {
@@ -44,6 +103,19 @@
 		};
 
 		rafId = requestAnimationFrame(raf);
+
+		syncHeaderMetrics();
+
+		if (typeof ResizeObserver !== 'undefined' && headerWrapper) {
+			headerResizeObserver = new ResizeObserver(() => syncHeaderMetrics());
+			headerResizeObserver.observe(headerWrapper);
+		}
+
+		headerResizeHandler = () => syncHeaderMetrics();
+		window.addEventListener('resize', headerResizeHandler);
+
+		scrollHandler = () => updateFloatingNavFromLayout();
+		window.addEventListener('scroll', scrollHandler, { passive: true });
 	});
 
 	onDestroy(() => {
@@ -54,6 +126,24 @@
 			cancelAnimationFrame(rafId);
 			rafId = null;
 		}
+
+		if (headerResizeObserver) {
+			headerResizeObserver.disconnect();
+			headerResizeObserver = null;
+		}
+
+		if (headerResizeHandler) {
+			window.removeEventListener('resize', headerResizeHandler);
+			headerResizeHandler = null;
+		}
+
+		if (scrollHandler) {
+			window.removeEventListener('scroll', scrollHandler);
+			scrollHandler = null;
+		}
+
+		unsubscribeHeader();
+		unsubscribePage();
 	});
 </script>
 
@@ -62,6 +152,14 @@
 </svelte:head>
 
 <CurtainMenu links={navLinks} logoSrc={pixelLogoUrl} />
+
+<div
+	class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
+	bind:this={headerWrapper}
+	style:transform={`translate3d(0, ${-$siteHeaderState.parallaxOffset}px, 0)`}
+>
+	<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
+</div>
 
 {#if $floatingNavState.active}
 	<div

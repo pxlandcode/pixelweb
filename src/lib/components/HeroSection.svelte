@@ -23,7 +23,7 @@
 
 	const clampFont = 'clamp(1.9rem, 10vw, 5.5rem)';
 
-	const workStatements = [
+	const DEFAULT_WORK_STATEMENTS = [
 		'Code Crafters',
 		'Product Builders',
 		'UX Thinkers',
@@ -37,7 +37,7 @@
 		'Friendly'
 	];
 
-	const cultureStatements = [
+	const DEFAULT_CULTURE_STATEMENTS = [
 		'Movie Lovers',
 		'Pixel Artists',
 		'Coffee Nerds',
@@ -51,6 +51,9 @@
 		'Book worms'
 	];
 
+	export let workStatements: string[] = DEFAULT_WORK_STATEMENTS;
+	export let cultureStatements: string[] = DEFAULT_CULTURE_STATEMENTS;
+
 	let displayCount = 0;
 	let headlineKey = 0;
 	let timer: ReturnType<typeof setInterval> | undefined;
@@ -62,6 +65,10 @@
 	let previousWorkSignature = '';
 	let previousCultureSignature = '';
 	let brandHoldRemaining = 0;
+	let shouldAnimate = true;
+	let mounted = false;
+	let previousShouldAnimate: boolean | null = null;
+	let currentIntervalMs = intervalMs;
 
 	$: normalizedWorkStatements = workStatements
 		.map((value) => value?.trim() ?? '')
@@ -71,9 +78,21 @@
 		.map((value) => value?.trim() ?? '')
 		.filter((value) => value.length > 0);
 
-	$: measurementTexts = Array.from(
-		new Set([...normalizedWorkStatements, ...normalizedCultureStatements])
-	);
+	$: shouldAnimate =
+		(normalizedWorkStatements.length > 0 || normalizedCultureStatements.length > 0) &&
+		intervalMs > 0;
+
+	$: measurementTexts = (() => {
+		const combined = Array.from(
+			new Set([...normalizedWorkStatements, ...normalizedCultureStatements])
+		);
+
+		if (!combined.length && brandText) {
+			return [brandText];
+		}
+
+		return combined;
+	})();
 
 	$: {
 		if (measurementRefs.length !== measurementTexts.length) {
@@ -200,6 +219,37 @@
 		advance();
 	}
 
+	function showBrand() {
+		currentItem = { type: 'brand', text: brandText, logo: brandLogo };
+		headlineKey += 1;
+		displayCount = 0;
+		brandHoldRemaining = 0;
+	}
+
+	function stopTimer() {
+		if (timer) {
+			clearInterval(timer);
+			timer = undefined;
+		}
+	}
+
+	function startTimer(interval: number) {
+		if (!shouldAnimate) {
+			stopTimer();
+			return;
+		}
+
+		if (timer && currentIntervalMs === interval) {
+			return;
+		}
+
+		stopTimer();
+		currentIntervalMs = interval;
+		timer = setInterval(() => {
+			tickHeadline();
+		}, interval);
+	}
+
 	function registerMeasurement(node: HTMLElement, index: number) {
 		let currentIndex = index;
 
@@ -240,27 +290,48 @@
 		}
 	}
 
+	$: if (
+		!shouldAnimate &&
+		(currentItem.type !== 'brand' ||
+			currentItem.text !== brandText ||
+			currentItem.logo !== brandLogo)
+	) {
+		currentItem = { type: 'brand', text: brandText, logo: brandLogo };
+	}
+
+	$: if (mounted && shouldAnimate !== previousShouldAnimate) {
+		if (shouldAnimate) {
+			displayCount = 0;
+			advance();
+			startTimer(intervalMs);
+		} else {
+			stopTimer();
+			showBrand();
+		}
+		previousShouldAnimate = shouldAnimate;
+	}
+
+	$: if (mounted && shouldAnimate) {
+		startTimer(intervalMs);
+	}
+
 	onMount(() => {
-		advance();
+		mounted = true;
 		void measureHeadlineHeight();
 
 		const resizeHandler = () => void measureHeadlineHeight();
 		window.addEventListener('resize', resizeHandler);
 		const remeasure = setTimeout(() => void measureHeadlineHeight(), 80);
 
-		timer = setInterval(() => {
-			tickHeadline();
-		}, intervalMs);
-
 		return () => {
-			if (timer) clearInterval(timer);
+			stopTimer();
 			window.removeEventListener('resize', resizeHandler);
 			clearTimeout(remeasure);
 		};
 	});
 
 	onDestroy(() => {
-		if (timer) clearInterval(timer);
+		stopTimer();
 	});
 
 	$: measurementSignature = JSON.stringify([measurementTexts, clampFont]);
@@ -272,19 +343,39 @@
 		<p class="text-xs tracking-[0.4em] text-white/55 uppercase md:text-sm">{eyebrow}</p>
 		<div
 			class="grid place-items-center overflow-hidden"
-			style={`min-height: ${headlineHeightPx ? `${headlineHeightPx}px` : '0px'};`}
+			style={`min-height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont};`}
 		>
-			{#key headlineKey}
+			{#if shouldAnimate}
+				{#key headlineKey}
+					<h1
+						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-5 leading-[1.05] font-semibold tracking-[0.04em] whitespace-nowrap uppercase"
+						style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
+						in:fly={{ x: 760, duration: 520, easing: quintOut }}
+						out:fly={{ x: -760, duration: 520, easing: quintOut }}
+					>
+						{#if currentItem.type === 'brand' && currentItem.logo}
+							<span class="sr-only">{brandText}</span>
+							<img
+								class="h-full w-auto object-contain opacity-90"
+								style={`max-height: ${clampFont};`}
+								src={currentItem.logo}
+								alt={brandText}
+							/>
+						{:else}
+							{currentItem.text}
+						{/if}
+					</h1>
+				{/key}
+			{:else}
 				<h1
-					class="col-start-1 row-start-1 inline-flex items-center justify-center gap-5 leading-[1.05] font-bold tracking-[0.08em] whitespace-nowrap uppercase"
-					style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : 'auto'}; font-size: ${clampFont};`}
-					in:fly={{ x: 760, duration: 520, easing: quintOut }}
-					out:fly={{ x: -760, duration: 520, easing: quintOut }}
+					class="col-start-1 row-start-1 inline-flex items-center justify-center gap-5 leading-[1.05] font-semibold tracking-[0.04em] whitespace-nowrap uppercase"
+					style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
 				>
 					{#if currentItem.type === 'brand' && currentItem.logo}
 						<span class="sr-only">{brandText}</span>
 						<img
 							class="h-full w-auto object-contain opacity-90"
+							style={`max-height: ${clampFont};`}
 							src={currentItem.logo}
 							alt={brandText}
 						/>
@@ -292,7 +383,7 @@
 						{currentItem.text}
 					{/if}
 				</h1>
-			{/key}
+			{/if}
 		</div>
 		<p class="max-w-xl text-base leading-relaxed text-white/65 md:text-lg">{description}</p>
 	</div>

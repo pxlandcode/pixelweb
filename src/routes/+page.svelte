@@ -4,15 +4,14 @@
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
-import NewsPreview from '$lib/components/NewsPreview.component.svelte';
+	import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 	import type { ActionData, PageData } from './$types';
 
-	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 
 	import { Button } from '@pixelcode_/blocks/components';
-	import { navLinks } from '$lib/navlinks';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
+	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import { cardstackEntries } from '$lib/mockdata';
 	import ImageHeadline from '$components/ImageHeadline.svelte';
@@ -21,9 +20,6 @@ import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 	import asset from '$lib/images/asset.jpg';
 	import workLife from '$lib/images/work-life.jpg';
 	import meetingRoom from '$lib/images/meeting-room.jpg';
-	import InteractiveBackground from '$components/backgrounds/InteractiveBackground.svelte';
-	import SnakeBackground from '$components/backgrounds/SnakeBackground.svelte';
-	import PixelAndCodeTrailBackground from '$components/backgrounds/PixelAndCodeTrailBackground.svelte';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -37,7 +33,6 @@ import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 
 	const logos = (discoveredLogos.length ? [...discoveredLogos].sort() : []) satisfies string[];
 
-	let headerWrapper: HTMLDivElement | null = null;
 	let firstFoldSection: HTMLElement | null = null;
 	let heroSectionEl: HTMLDivElement | null = null;
 	let marqueeEl: HTMLDivElement | null = null;
@@ -52,10 +47,13 @@ import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 	const HERO_PARALLAX_DISTANCE = 280;
 	const HERO_PARALLAX_MULTIPLIER = 0.45;
 
+	$: headerHeight = $siteHeaderState.height;
 	$: headerHideDistance = headerHeight ? headerHeight + 120 : 220;
 	$: headerProgress = Math.min(scrollY / headerHideDistance, 1);
 	$: parallaxOffset = headerHeight ? headerProgress * headerHeight : headerProgress * 80;
-	$: headerFullyHidden = headerProgress >= 0.2;
+	$: updateSiteHeaderState({ parallaxOffset });
+	$: headerFullyHidden =
+		headerHeight > 0 ? parallaxOffset >= headerHeight - 4 : headerProgress >= 0.2;
 	$: heroButtonShouldFloat = heroButtonBottom <= 96;
 	$: floatingNavActive = headerFullyHidden;
 	$: showFloatingCta = floatingNavActive && heroButtonShouldFloat;
@@ -66,11 +64,14 @@ import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 		heroParallaxLimit
 	);
 	$: setFloatingNavState({ active: floatingNavActive, showCta: showFloatingCta });
+	$: firstFoldMinHeight =
+		headerHeight && heroSectionHeight
+			? `max(calc(100dvh - ${Math.round(headerHeight)}px), ${heroSectionHeight}px)`
+			: heroSectionHeight
+				? `${heroSectionHeight}px`
+				: '100dvh';
 
 	function recalcMeasurements() {
-		if (headerWrapper) {
-			headerHeight = headerWrapper.offsetHeight;
-		}
 		if (firstFoldSection) {
 			const rect = firstFoldSection.getBoundingClientRect();
 			const progress = Math.max(0, Math.min(rect.height, -rect.top));
@@ -113,6 +114,7 @@ import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 
 	onDestroy(() => {
 		resetFloatingNavState();
+		updateSiteHeaderState({ parallaxOffset: 0 });
 	});
 	const leadTitle =
 		"We don't believe in making things complicated.\nWe strive for simplicity, and focus on results.";
@@ -140,19 +142,9 @@ import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 <main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
 	<section
 		class="first-fold relative flex min-h-screen flex-col overflow-hidden"
+		style:min-height={firstFoldMinHeight}
 		bind:this={firstFoldSection}
 	>
-		<!-- <PixelAndCodeTrailBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" /> -->
-
-		<!-- <SnakeBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" /> -->
-		<!-- <InteractiveBackground squareColor="rgba(255,255,255,0.9)" pathColor="#F1674A" /> -->
-		<div
-			class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
-			bind:this={headerWrapper}
-			style:transform={`translate3d(0, ${-parallaxOffset}px, 0)`}
-		>
-			<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
-		</div>
 		<div
 			class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10"
 			style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}

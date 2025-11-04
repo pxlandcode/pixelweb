@@ -5,10 +5,13 @@
 	import workLife from '$lib/images/work-life.jpg';
 	import { Button } from '@pixelcode_/blocks/components';
 	import { ScrollGallery } from '$lib/components';
+	import HeroSection from '$lib/components/HeroSection.svelte';
 	import karaoke from '$lib/images/scrollgallery/karaoke.jpg';
 	import workhard from '$lib/images/scrollgallery/workhard.jpg';
 	import AnimatedHeadline from '$components/animated-headline/AnimatedHeadline.svelte';
 	import DiscordCulture from '$components/discord-culture/DiscordCulture.svelte';
+	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import peopleAndCultureLogoUrl from '$lib/assets/peopleandculturelogo.svg?url';
 
 	const galleryImages = [
 		{ src: workhard, alt: 'Focused work', text: 'Getting things done' },
@@ -54,86 +57,42 @@
 
 <main class="flex min-h-screen flex-col bg-background text-[#f5f5f5]">
 	<!-- Hero Section -->
-	<section
-		class="mx-auto flex w-full max-w-6xl flex-col items-center gap-12 bg-background px-6 pt-24 pb-24 text-center text-white md:px-12 lg:px-20 lg:pt-32 lg:pb-28"
-	>
+	<section class="first-fold relative flex min-h-screen flex-col overflow-hidden bg-background">
 		<div
-			class="inline-flex items-center gap-3 rounded-full border border-white/20 px-5 py-2 text-xs font-semibold tracking-[0.35em] uppercase"
+			class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10 px-6 pt-24 pb-16 md:px-24 md:pt-32"
 		>
-			<span class="inline-block h-2 w-2 rounded-full border border-white/60"></span>
-			<span>About</span>
+			<div class="first-fold__hero flex w-full flex-col items-center gap-6">
+				<HeroSection
+					eyebrow="WE VALUE"
+					description="And we are always looking for curious people who want to grow with us."
+					brandText="People & Culture"
+					brandLogo={peopleAndCultureLogoUrl}
+					workStatements={[]}
+					cultureStatements={[]}
+				/>
+				<div class="flex transform-gpu justify-center pt-2">
+					<Button size="lg" variant="primary" href="/#contact">
+						<RollingText>Get in touch</RollingText>
+					</Button>
+				</div>
+			</div>
 		</div>
-
-		<h1 class="text-4xl leading-[1.05] font-semibold text-balance md:text-6xl lg:text-7xl">
-			<span class="block font-bold">Revolutionizing B2B Marketing</span>
-			<span
-				class="mt-4 block text-5xl font-normal italic md:text-[64px]"
-				style="font-family: var(--font-fave-script);"
+		<div class="first-fold__marquee relative z-20 w-full bg-background">
+			<ul
+				class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-8 border-t border-white/10 px-6 py-8 text-center text-xs tracking-[0.35em] text-white/60 uppercase md:flex-nowrap md:gap-16 md:px-12 md:text-sm"
+				role="list"
+				aria-label="Team statistics"
 			>
-				since 2019
-			</span>
-		</h1>
-
-		<p class="max-w-2xl text-lg leading-relaxed">
-			Pixel&amp;Code is home to 25 passionate specialists with expertise across strategy, design,
-			and engineering—partners who bring clarity and momentum to every engagement.
-		</p>
-
-		<div
-			class="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-end sm:gap-10"
-		>
-			<div class="hidden sm:block sm:translate-y-6">
-				<img
-					src={workLife}
-					alt="Pixel&Code teammates celebrating a launch"
-					class="aspect-[4/5] w-40 rounded-[1.75rem] border border-white/10 object-cover"
-				/>
-			</div>
-
-			<div class="mx-auto w-full max-w-md">
-				<img
-					src={asset}
-					alt="Inside the Pixel&Code studio"
-					class="aspect-[4/3] w-full rounded-[2.5rem] border border-white/10 object-cover"
-				/>
-			</div>
-
-			<div class="hidden sm:block sm:translate-y-6">
-				<img
-					src={meetingRoom}
-					alt="Collaborative workshop in progress"
-					class="aspect-[4/5] w-40 rounded-[1.75rem] border border-white/10 object-cover"
-				/>
-			</div>
+				{#each stats as stat}
+					<li class="flex flex-col items-center gap-1">
+						<span class="text-3xl font-semibold tracking-normal text-white md:text-4xl">
+							{stat.value}
+						</span>
+						<span>{stat.label}</span>
+					</li>
+				{/each}
+			</ul>
 		</div>
-
-		<p class="max-w-xl text-base">
-			We collaborate across disciplines to transform ambitious ideas into measurable results for
-			each client we support.
-		</p>
-
-		<a href="#culture" class="inline-flex items-center gap-3 text-sm font-semibold">
-			<span>Discover more</span>
-			<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="h-5 w-5 stroke-current">
-				<path d="M12 5v14m0 0-5-5m5 5 5-5" stroke-width="1.8" stroke-linecap="round" />
-			</svg>
-		</a>
-	</section>
-
-	<!-- Stats Section -->
-	<section class="mx-auto w-full max-w-7xl px-6 py-16 md:px-12 lg:px-20">
-		<ul
-			class="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12"
-			role="list"
-			aria-label="Company statistics"
-		>
-			{#each stats as stat}
-				<li class="flex flex-col gap-2 text-center">
-					<span class="text-4xl font-bold text-primary md:text-5xl">{stat.value}</span>
-					<span class="text-sm text-[#a1a1aa] md:text-base">{stat.label}</span>
-				</li>
-			{/each}
-		</ul>
 	</section>
 
 	<!-- Scroll Gallery Section -->
