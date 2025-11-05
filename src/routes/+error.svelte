@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import InteractiveBackground from '$lib/components/backgrounds/InteractiveBackground.svelte';
 	import { PixelButton } from '$lib/components/pixel-button';
 	import { Drawer, Input, FormControl } from '@pixelcode_/blocks/components';
 	import { ampersandPath } from '$lib/graphics/ampersand';
 	import { onDestroy, onMount, tick } from 'svelte';
 
-	export let error: Error & { message?: string };
-	export let status: number;
+	let status = $derived(page.status);
+	let error = $derived(page.error);
+
+	console.log('Error page - status:', status, 'type:', typeof status);
+	console.log('Error page - error:', error);
 
 	type Vec = { x: number; y: number };
 	type HighScoreEntry = {
@@ -35,29 +39,29 @@
 	let stepDuration = INITIAL_STEP;
 	let pausedProgress = 0;
 
-	let snake: Vec[] = [];
+	let snake: Vec[] = $state([]);
 	let lastSnake: Vec[] = [];
 	let direction: Vec = { x: 1, y: 0 };
 	let queuedDirection: Vec | null = null;
 	let food: Vec = { x: 0, y: 0 };
-	let running = false;
-	let paused = false;
-	let gameOver = false;
+	let running = $state(false);
+	let paused = $state(false);
+	let gameOver = $state(false);
 	let awaitingRestart = true;
 
-	let score = 0;
-	let sessionBest = 0;
-	let pendingSubmissionScore: number | null = null;
+	let score = $state(0);
+	let sessionBest = $state(0);
+	let pendingSubmissionScore: number | null = $state(null);
 
-	let leaderboardState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
-	let leaderboard: HighScoreEntry[] = [];
-	let leaderboardError = '';
+	let leaderboardState: 'idle' | 'loading' | 'ready' | 'error' = $state('idle');
+	let leaderboard: HighScoreEntry[] = $state([]);
+	let leaderboardError = $state('');
 
-	let playerName = '';
-	let submissionState: 'idle' | 'sending' | 'success' | 'error' = 'idle';
-	let submissionMessage = '';
-	let showSubmissionForm = false;
-	let showLeaderboard = false;
+	let playerName = $state('');
+	let submissionState: 'idle' | 'sending' | 'success' | 'error' = $state('idle');
+	let submissionMessage = $state('');
+	let showSubmissionForm = $state(false);
+	let showLeaderboard = $state(false);
 
 	let isMobileDevice = false;
 
@@ -640,12 +644,14 @@
 		}
 	});
 
-	$: if (showSubmissionForm) {
-		tick().then(() => {
-			nameInput?.focus();
-			nameInput?.select();
-		});
-	}
+	$effect(() => {
+		if (showSubmissionForm) {
+			tick().then(() => {
+				nameInput?.focus();
+				nameInput?.select();
+			});
+		}
+	});
 </script>
 
 <svelte:head>
@@ -664,9 +670,11 @@
 
 	<div class="content">
 		<header class="intro">
-			<p class="status">Error {status}</p>
-			<h1>{headline}</h1>
-			<p class="detail">{detail}</p>
+			<p class="status">{status || '404'}</p>
+			<h1>Lost in the grid.</h1>
+			<p class="detail">
+				While you are here, take a quick break with Snake, and try to beat the highscore.
+			</p>
 		</header>
 
 		<div class="layout">
@@ -697,7 +705,7 @@
 				>
 					<canvas bind:this={canvas} class="game-canvas" aria-hidden="true"></canvas>
 
-					{#if !running && awaitingRestart && !gameOver}
+					{#if !running && !gameOver}
 						<div class="overlay hint">
 							{#if isMobileDevice}
 								<p>Tap any side of the board to start moving.</p>
@@ -744,7 +752,7 @@
 			</section>
 		</div>
 
-		<a class="home-link" href="/">Take me back</a>
+		<a class="home-link" href="/">Take me home</a>
 	</div>
 </div>
 
@@ -775,8 +783,8 @@
 					<li>
 						<span class="rank">#{index + 1}</span>
 						<span class="name">{entry.player_name}</span>
-						<span class="score">{entry.score}</span>
 						<span class="date">{formatDate(entry.created_at)}</span>
+						<span class="score">{entry.score}</span>
 					</li>
 				{/each}
 			</ol>
@@ -1168,40 +1176,43 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.5rem;
 	}
 
 	.leaderboard-list li {
-		display: grid;
-		grid-template-columns: auto 1fr auto;
-		gap: 0.6rem 0.85rem;
+		display: flex;
 		align-items: baseline;
-		background: var(--color-message-bg, #2a2a2a);
-		padding: 0.75rem 1rem;
-		border-radius: 8px;
-		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+		gap: 0.75rem;
+		padding: 0.5rem 0;
+		border-bottom: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+	}
+
+	.leaderboard-list li:last-child {
+		border-bottom: none;
 	}
 
 	.leaderboard-list .rank {
 		font-weight: 600;
 		color: var(--accent-orange);
+		min-width: 2rem;
 	}
 
 	.leaderboard-list .name {
 		font-weight: 500;
 		color: rgba(248, 250, 252, 0.92);
-	}
-
-	.leaderboard-list .score {
-		justify-self: end;
-		font-weight: 600;
-		color: rgba(248, 250, 252, 0.9);
+		flex: 1;
 	}
 
 	.leaderboard-list .date {
-		grid-column: 2 / span 2;
-		font-size: 0.75rem;
-		color: rgba(148, 163, 184, 0.75);
+		font-size: 0.85rem;
+		color: rgba(148, 163, 184, 0.6);
+	}
+
+	.leaderboard-list .score {
+		font-weight: 600;
+		color: rgba(248, 250, 252, 0.9);
+		min-width: 3rem;
+		text-align: right;
 	}
 
 	.fallback-list {
