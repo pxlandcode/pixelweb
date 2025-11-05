@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	export let messages = [
+export let minHeight = 'clamp(160vh, 200vh + 5vw, 220vh)';
+export let paddingTop = 'min(12vh, 8rem)';
+export let paddingBottom = 'min(10vh, 6rem)';
+
+export let messages = [
 		{
 			user: 'Oliver',
 			text: 'Anyone tried the new SvelteKit release yet? 🤔',
@@ -72,7 +76,12 @@
 	];
 </script>
 
-<section class="discord-sim mt-[-580px] text-white">
+<section
+	class="discord-sim text-white"
+	style:--section-min-height={minHeight}
+	style:--section-padding-top={paddingTop}
+	style:--section-padding-bottom={paddingBottom}
+>
 	<div class="chat-wrapper">
 		{#each messages as msg, i}
 			<div class="message" style={`--i:${i};`}>
@@ -108,12 +117,13 @@
 
 <style>
 	.discord-sim {
-		min-height: 260vh;
+		min-height: var(--section-min-height, clamp(180vh, 220vh + 5vw, 260vh));
 		view-timeline: --discord-scroll;
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
-		padding-top: 15vh;
+		padding-top: var(--section-padding-top, min(12vh, 8rem));
+		padding-bottom: var(--section-padding-bottom, min(10vh, 6rem));
 	}
 
 	.chat-wrapper {

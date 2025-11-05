@@ -10,23 +10,23 @@
 
 	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 
-	// const culturePillars = [
-	// 	{
-	// 		title: 'Continuous Learning',
-	// 		description:
-	// 			'We invest in skills, tools, and curiosity. Every project is a chance to grow individually and as a team.'
-	// 	},
-	// 	{
-	// 		title: 'Transparent Communication',
-	// 		description:
-	// 			'We work out loud, share context generously, and solve problems together. No hidden agendas.'
-	// 	},
-	// 	{
-	// 		title: 'Ownership & Impact',
-	// 		description:
-	// 			'We trust you to lead, make decisions, and shape outcomes that matter for clients and the business.'
-	// 	}
-	// ];
+	const culturePillars = [
+		{
+			title: 'Continuous Learning',
+			description:
+				'We invest in skills, tools, and curiosity. Every project is a chance to grow individually and as a team.'
+		},
+		{
+			title: 'Transparent Communication',
+			description:
+				'We work out loud, share context generously, and solve problems together. No hidden agendas.'
+		},
+		{
+			title: 'Ownership & Impact',
+			description:
+				'We trust you to lead, make decisions, and shape outcomes that matter for clients and the business.'
+		}
+	];
 
 	const logos = Object.values(cultureLogos).sort();
 
@@ -46,15 +46,27 @@
 
 <main class="flex min-h-screen flex-col bg-background text-[#f5f5f5]">
 	<HeroFirstFold {logos} heroProps={heroSectionProps} />
-	<AnimatedHeadline text="People. Culture. & Code." />
 
 	<!-- Scroll Gallery Section -->
 	<ScrollGallery images={galleryImages} title={galleryTitle} />
 
-	<div class="mt-[-200px]">
-		<AnimatedHeadline text="And our Discord is always buzzing." />
-		<DiscordCulture />
-	</div>
+	<AnimatedHeadline
+		text="And our Discord is always buzzing."
+		minHeight="clamp(120vh, 150vh + 4vw, 180vh)"
+		stickyMinHeight="clamp(15vh, 20vh, 90vh)"
+		stickAt="50vh"
+	/>
+	<DiscordCulture
+		minHeight="clamp(130vh, 160vh + 4vw, 190vh)"
+		paddingTop="min(8vh, 5rem)"
+		paddingBottom="min(8vh, 5rem)"
+	/>
+	<AnimatedHeadline
+		text="People. Culture. & Code."
+		minHeight="clamp(130vh, 165vh + 4vw, 200vh)"
+		stickyMinHeight="clamp(65vh, 80vh, 90vh)"
+		stickAt="50vh"
+	/>
 
 	<section
 		id="culture"
@@ -74,14 +86,14 @@
 			</div>
 
 			<div class="grid gap-6">
-				<!-- {#each culturePillars as pillar}
+				{#each culturePillars as pillar}
 					<article
 						class="rounded-3xl border border-white/5 bg-white/[0.02] p-6 shadow-[0_25px_60px_rgba(8,8,18,0.45)]"
 					>
 						<h3 class="text-xl font-semibold text-white">{pillar.title}</h3>
 						<p class="mt-2 text-[#cbd5f5]">{pillar.description}</p>
 					</article>
-				{/each} -->
+				{/each}
 			</div>
 		</div>
 	</section>

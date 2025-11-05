@@ -1,9 +1,16 @@
 <script lang="ts">
-	export let text = 'Our Discord is always alive';
+export let text = 'Our Discord is always alive';
+export let minHeight = 'clamp(160vh, 210vh, 250vh)';
+export let stickyMinHeight = 'clamp(80vh, 92vh, 100vh)';
+export let stickAt = '50vh';
 </script>
 
-<section class="scroll-headline bg-background">
-	<div class="content">
+<section
+	class="scroll-headline bg-background"
+	style:--min-height={minHeight}
+	style:--stick-at={stickAt}
+>
+	<div class="content" style:--sticky-min-height={stickyMinHeight}>
 		<h1
 			class="headline text-center text-5xl font-semibold tracking-tight select-none md:text-6xl"
 			aria-label={text}
@@ -28,17 +35,18 @@
 
 <style>
 	.scroll-headline {
-		min-height: 250vh; /* ⬆️ wait a bit longer before scroll exits */
+		min-height: var(--min-height, 250vh); /* ⬆️ wait a bit longer before scroll exits */
 		view-timeline: --headline-scroll;
+		position: relative;
 	}
 
 	.content {
-		min-height: 100vh;
+		min-height: var(--sticky-min-height, 100vh);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		position: sticky;
-		top: 0;
+		top: calc(var(--stick-at, 0) - (var(--sticky-min-height, 100vh) / 2));
 		overflow: hidden;
 	}
 
