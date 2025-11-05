@@ -57,6 +57,7 @@
 	let submissionState: 'idle' | 'sending' | 'success' | 'error' = 'idle';
 	let submissionMessage = '';
 	let showSubmissionForm = false;
+	let showLeaderboard = false;
 
 	let isMobileDevice = false;
 
@@ -337,6 +338,7 @@
 			showSubmissionForm = false;
 			pendingSubmissionScore = null;
 			await loadLeaderboard();
+			showLeaderboard = true;
 		} catch (error) {
 			submissionState = 'error';
 			submissionMessage =
@@ -678,6 +680,9 @@
 						<span class="label">Session best</span>
 						<span class="value">{sessionBest}</span>
 					</div>
+					<button class="highscore-link" on:click={() => (showLeaderboard = true)}>
+						Show Highscore
+					</button>
 				</div>
 
 				<div
@@ -737,54 +742,60 @@
 					{/if}
 				</div>
 			</section>
-
-			<aside class="card leaderboard-card">
-				<h2>Top scores</h2>
-				{#if leaderboardState === 'loading'}
-					<p class="muted">Loading the hall of fame…</p>
-				{:else if leaderboardState === 'error'}
-					<p class="muted">
-						{leaderboardError}
-					</p>
-					<ul class="fallback-list">
-						<li>
-							<span class="name">Session best</span>
-							<span class="score">{sessionBest}</span>
-						</li>
-					</ul>
-				{:else if leaderboard.length === 0}
-					<p class="muted">The leaderboard is empty! Be the first to claim glory!</p>
-				{:else}
-					<ol>
-						{#each leaderboard as entry, index}
-							<li>
-								<span class="rank">#{index + 1}</span>
-								<span class="name">{entry.player_name}</span>
-								<span class="score">{entry.score}</span>
-								<span class="date">{formatDate(entry.created_at)}</span>
-							</li>
-						{/each}
-					</ol>
-				{/if}
-
-				{#if submissionMessage}
-					<p class={`submission-feedback ${submissionState}`} aria-live="polite">
-						{submissionMessage}
-					</p>
-				{/if}
-			</aside>
 		</div>
 
 		<a class="home-link" href="/">Take me back</a>
 	</div>
 </div>
 
+<Drawer
+	bind:open={showLeaderboard}
+	variant={isMobileDevice ? 'bottom' : 'right'}
+	title="Top Scores"
+	dismissable
+>
+	<div class="leaderboard-drawer">
+		{#if leaderboardState === 'loading'}
+			<p class="muted">Loading the hall of fame…</p>
+		{:else if leaderboardState === 'error'}
+			<p class="muted">
+				{leaderboardError}
+			</p>
+			<ul class="fallback-list">
+				<li>
+					<span class="name">Session best</span>
+					<span class="score">{sessionBest}</span>
+				</li>
+			</ul>
+		{:else if leaderboard.length === 0}
+			<p class="muted">The leaderboard is empty! Be the first to claim glory!</p>
+		{:else}
+			<ol class="leaderboard-list">
+				{#each leaderboard as entry, index}
+					<li>
+						<span class="rank">#{index + 1}</span>
+						<span class="name">{entry.player_name}</span>
+						<span class="score">{entry.score}</span>
+						<span class="date">{formatDate(entry.created_at)}</span>
+					</li>
+				{/each}
+			</ol>
+		{/if}
+
+		{#if submissionMessage}
+			<p class={`submission-feedback ${submissionState}`} aria-live="polite">
+				{submissionMessage}
+			</p>
+		{/if}
+	</div>
+</Drawer>
+
 <Drawer bind:open={showSubmissionForm} variant="bottom" title="Save your score" dismissable>
 	<form class="score-drawer-form" on:submit|preventDefault={submitScore}>
 		<FormControl label="Your name" required class="gap-2">
 			<Input
 				id="player-name"
-				bind:element={nameInput}
+				bind:node={nameInput}
 				bind:value={playerName}
 				name="player-name"
 				maxlength={64}
@@ -895,12 +906,8 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(1.5rem, 3vw, 2.5rem);
 		align-items: start;
-	}
-
-	@media (min-width: 960px) {
-		.layout {
-			grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-		}
+		max-width: 800px;
+		margin: 0 auto;
 	}
 
 	.card {
@@ -930,6 +937,25 @@
 		justify-content: space-between;
 		gap: 1rem;
 		flex-wrap: wrap;
+	}
+
+	.highscore-link {
+		appearance: none;
+		background: none;
+		border: none;
+		color: var(--color-primary);
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+		transition: opacity 0.2s ease;
+		margin-left: auto;
+	}
+
+	.highscore-link:hover {
+		opacity: 0.8;
 	}
 
 	.score-block {
@@ -1129,20 +1155,14 @@
 		color: rgba(148, 163, 184, 0.8);
 	}
 
-	.leaderboard-card {
+	.leaderboard-drawer {
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
+		padding: 0.5rem 0;
 	}
 
-	.leaderboard-card h2 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: var(--accent-light);
-	}
-
-	.leaderboard-card ol,
-	.leaderboard-card ul {
+	.leaderboard-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -1151,7 +1171,7 @@
 		gap: 0.75rem;
 	}
 
-	.leaderboard-card li {
+	.leaderboard-list li {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
 		gap: 0.6rem 0.85rem;
@@ -1162,26 +1182,35 @@
 		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
 	}
 
-	.leaderboard-card .rank {
+	.leaderboard-list .rank {
 		font-weight: 600;
 		color: var(--accent-orange);
 	}
 
-	.leaderboard-card .name {
+	.leaderboard-list .name {
 		font-weight: 500;
 		color: rgba(248, 250, 252, 0.92);
 	}
 
-	.leaderboard-card .score {
+	.leaderboard-list .score {
 		justify-self: end;
 		font-weight: 600;
 		color: rgba(248, 250, 252, 0.9);
 	}
 
-	.leaderboard-card .date {
+	.leaderboard-list .date {
 		grid-column: 2 / span 2;
 		font-size: 0.75rem;
 		color: rgba(148, 163, 184, 0.75);
+	}
+
+	.fallback-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
 	.fallback-list li {
