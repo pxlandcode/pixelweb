@@ -1,0 +1,13 @@
+export { default as AfterWork } from './afterWork.svg';
+export { default as Brainstorming } from './brainstorming.svg';
+export { default as ContinuesLearning } from './continuesLearning.svg';
+export { default as Fika } from './fika.svg';
+export { default as FreedomResponsibility } from './freedomResponsibility.svg';
+export { default as FriendsFamily } from './friendsFamily.svg';
+export { default as Listening } from './listening.svg';
+export { default as Music } from './music.svg';
+export { default as Together } from './together.svg';
+export { default as TransparentSaleryModel } from './transparentSaleryModel.svg';
+export { default as Trust } from './trust.svg';
+export { default as VideoGames } from './videoGames.svg';
+export { default as WorkLifeBalance } from './workLifeBalance.svg';

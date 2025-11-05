@@ -1,25 +1,17 @@
 <script lang="ts">
-	import { onDestroy, onMount, tick } from 'svelte';
 	import Cardstack from '$lib/components/Cardstack.svelte';
 	import CardstackItem from '$lib/components/CardstackItem.svelte';
-	import HeroSection from '$lib/components/HeroSection.svelte';
-	import LogoMarquee from '$lib/components/LogoMarquee.svelte';
+	import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
 	import NewsPreview from '$lib/components/NewsPreview.component.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 
-	import { Button } from '@pixelcode_/blocks/components';
-	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
-	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
-	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import { cardstackEntries } from '$lib/mockdata';
 	import ImageHeadline from '$components/ImageHeadline.svelte';
 	import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
 
-	import asset from '$lib/images/asset.jpg';
-	import workLife from '$lib/images/work-life.jpg';
-	import meetingRoom from '$lib/images/meeting-room.jpg';
+	import { soloImages } from '$lib/images/manifest';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -32,90 +24,6 @@
 	const discoveredLogos = Object.values(logoImports) as string[];
 
 	const logos = (discoveredLogos.length ? [...discoveredLogos].sort() : []) satisfies string[];
-
-	let firstFoldSection: HTMLElement | null = null;
-	let heroSectionEl: HTMLDivElement | null = null;
-	let marqueeEl: HTMLDivElement | null = null;
-	let heroButtonContainer: HTMLDivElement | null = null;
-	let scrollY = 0;
-	let headerHeight = 0;
-	let heroButtonBottom = Number.POSITIVE_INFINITY;
-	let firstFoldScrollProgress = 0;
-	let heroSectionHeight = 0;
-	let marqueeHeight = 0;
-
-	const HERO_PARALLAX_DISTANCE = 280;
-	const HERO_PARALLAX_MULTIPLIER = 0.45;
-
-	$: headerHeight = $siteHeaderState.height;
-	$: headerHideDistance = headerHeight ? headerHeight + 120 : 220;
-	$: headerProgress = Math.min(scrollY / headerHideDistance, 1);
-	$: parallaxOffset = headerHeight ? headerProgress * headerHeight : headerProgress * 80;
-	$: updateSiteHeaderState({ parallaxOffset });
-	$: headerFullyHidden =
-		headerHeight > 0 ? parallaxOffset >= headerHeight - 4 : headerProgress >= 0.2;
-	$: heroButtonShouldFloat = heroButtonBottom <= 96;
-	$: floatingNavActive = headerFullyHidden;
-	$: showFloatingCta = floatingNavActive && heroButtonShouldFloat;
-	$: heroButtonHidden = floatingNavActive;
-	$: heroParallaxLimit = Math.max(heroSectionHeight + marqueeHeight * 0.7, HERO_PARALLAX_DISTANCE);
-	$: heroParallaxOffset = Math.min(
-		firstFoldScrollProgress * HERO_PARALLAX_MULTIPLIER,
-		heroParallaxLimit
-	);
-	$: setFloatingNavState({ active: floatingNavActive, showCta: showFloatingCta });
-	$: firstFoldMinHeight =
-		headerHeight && heroSectionHeight
-			? `max(calc(100dvh - ${Math.round(headerHeight)}px), ${heroSectionHeight}px)`
-			: heroSectionHeight
-				? `${heroSectionHeight}px`
-				: '100dvh';
-
-	function recalcMeasurements() {
-		if (firstFoldSection) {
-			const rect = firstFoldSection.getBoundingClientRect();
-			const progress = Math.max(0, Math.min(rect.height, -rect.top));
-			firstFoldScrollProgress = progress;
-		} else {
-			firstFoldScrollProgress = 0;
-		}
-		if (heroSectionEl) {
-			heroSectionHeight = heroSectionEl.offsetHeight;
-		} else {
-			heroSectionHeight = 0;
-		}
-		if (marqueeEl) {
-			marqueeHeight = marqueeEl.offsetHeight;
-		} else {
-			marqueeHeight = 0;
-		}
-		if (heroButtonContainer) {
-			const rect = heroButtonContainer.getBoundingClientRect();
-			heroButtonBottom = rect.bottom;
-		} else {
-			heroButtonBottom = Number.POSITIVE_INFINITY;
-		}
-	}
-
-	function handleScroll() {
-		scrollY = window.scrollY || 0;
-		recalcMeasurements();
-	}
-
-	function handleResize() {
-		recalcMeasurements();
-	}
-
-	onMount(async () => {
-		await tick();
-		recalcMeasurements();
-		scrollY = window.scrollY || 0;
-	});
-
-	onDestroy(() => {
-		resetFloatingNavState();
-		updateSiteHeaderState({ parallaxOffset: 0 });
-	});
 	const leadTitle =
 		"We don't believe in making things complicated.\nWe strive for simplicity, and focus on results.";
 
@@ -137,58 +45,20 @@
 	$: newsError = data.news?.error;
 </script>
 
-<svelte:window on:scroll={handleScroll} on:resize={handleResize} />
-
 <main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
-	<section
-		class="first-fold relative flex min-h-screen flex-col overflow-hidden"
-		style:min-height={firstFoldMinHeight}
-		bind:this={firstFoldSection}
-	>
-		<div
-			class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10"
-			style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}
-		>
-			<div
-				class="first-fold__hero flex w-full flex-col items-center gap-6"
-				bind:this={heroSectionEl}
-			>
-				<HeroSection brandLogo={pixelLogoUrl} />
-				<div
-					class="flex transform-gpu justify-center pt-2 transition-all duration-200 ease-in-out"
-					bind:this={heroButtonContainer}
-					class:opacity-0={heroButtonHidden}
-					class:translate-y-8={heroButtonHidden}
-					class:pointer-events-none={heroButtonHidden}
-				>
-					<Button
-						size="lg"
-						variant="primary"
-						href="#contact"
-						aria-hidden={heroButtonHidden ? 'true' : undefined}
-						tabindex={heroButtonHidden ? -1 : undefined}
-					>
-						<RollingText>Get in touch</RollingText>
-					</Button>
-				</div>
-			</div>
-		</div>
-		<div class="first-fold__marquee relative z-20 w-full bg-background" bind:this={marqueeEl}>
-			<LogoMarquee {logos} />
-		</div>
-	</section>
+	<HeroFirstFold {logos} heroProps={{ brandLogo: pixelLogoUrl }} />
 	<ImageFeaturePair
 		{leadTitle}
 		{leftTitle}
 		{leftBody}
-		leftImageSrc={workLife}
+		leftImageSrc={soloImages.workLife.src}
 		{rightTitle}
 		{rightBody}
-		rightImageSrc={asset}
+		rightImageSrc={soloImages.asset.src}
 	/>
 
 	<!-- Parallax banner -->
-	<ImageHeadline imageSrc={meetingRoom} title={bannerTitle} parallax={0.25} />
+	<ImageHeadline imageSrc={soloImages.meetingRoom.src} title={bannerTitle} parallax={0.25} />
 
 	<Cardstack>
 		{#each cardstackEntries as entry (entry.title)}

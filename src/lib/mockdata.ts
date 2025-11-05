@@ -1,7 +1,4 @@
-import ecommerceImg from '$lib/images/ecommerce.png';
-import worklifeImg from '$lib/images/work-life.jpg';
-import assetImg from '$lib/images/asset.jpg';
-import meetingRoomImg from '$lib/images/meeting-room.jpg';
+import { soloImages } from '$lib/images/manifest';
 import type { CardstackEntry } from '$types';
 
 export const cardstackEntries: CardstackEntry[] = [
@@ -15,8 +12,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Implemented autoscaling infrastructure on AWS',
 			'Increased conversion rates by 18% during seasonal campaigns'
 		],
-		img: ecommerceImg,
-		imgAlt: 'E-commerce case image',
+		img: soloImages.ecommerce.src,
+		imgAlt: soloImages.ecommerce.alt,
 		imagePosition: 'left'
 	},
 	{
@@ -29,8 +26,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Accessible, mobile-first design tested with real patients',
 			'Integration with national e-prescription APIs'
 		],
-		img: worklifeImg,
-		imgAlt: 'Healthcare case image',
+		img: soloImages.workLife.src,
+		imgAlt: soloImages.workLife.alt,
 		imagePosition: 'right'
 	},
 	{
@@ -43,8 +40,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Conflict-free scheduling with repeat bookings',
 			'Analytics dashboard that reduced idle time by 23%'
 		],
-		img: assetImg,
-		imgAlt: 'Mobility case image',
+		img: soloImages.asset.src,
+		imgAlt: soloImages.asset.alt,
 		imagePosition: 'left'
 	},
 	{
@@ -57,8 +54,8 @@ export const cardstackEntries: CardstackEntry[] = [
 			'Seamless Stripe integration for recurring payments',
 			'Gamified challenges that boosted retention'
 		],
-		img: meetingRoomImg,
-		imgAlt: 'Fitness case image',
+		img: soloImages.meetingRoom.src,
+		imgAlt: soloImages.meetingRoom.alt,
 		imagePosition: 'right'
 	}
 ];

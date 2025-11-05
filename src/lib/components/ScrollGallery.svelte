@@ -1,110 +1,193 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
+
 	type GalleryImage = {
 		src: string;
 		alt: string;
 		text?: string;
+		srcset?: string;
+		fallbackSrc?: string;
 	};
 
-	type Props = {
-		images: GalleryImage[];
-		minHeight?: string;
-		title?: string;
+	export let images: GalleryImage[] = [];
+	export let minHeight = '240vh';
+	export let title = 'We love hanging out together long after the laptops close.';
+
+	const LAYER_1_COUNT = 6;
+	const LAYER_2_COUNT = 6;
+	const LAYER_3_COUNT = 2;
+	const TOTAL_REQUIRED = LAYER_1_COUNT + LAYER_2_COUNT + LAYER_3_COUNT + 1;
+	const layerImageSizes = '(min-width: 1024px) 18vw, (min-width: 640px) 32vw, 80vw';
+	const centerImageSizes = '(min-width: 1024px) 60vw, 100vw';
+
+	let normalizedImages: GalleryImage[] = [];
+	let layer1Images: GalleryImage[] = [];
+	let layer2Images: GalleryImage[] = [];
+	let layer3Images: GalleryImage[] = [];
+	let centerImage: GalleryImage | undefined;
+	let hasImages = false;
+
+	let sectionEl: HTMLElement | null = null;
+	let observer: IntersectionObserver | null = null;
+	let galleryVisible = !browser;
+
+	const computeNormalizedImages = (source: GalleryImage[]) => {
+		const list = Array.isArray(source) ? source : [];
+		if (!list.length) return [];
+		if (list.length >= TOTAL_REQUIRED) return list.slice(0, TOTAL_REQUIRED);
+		return Array.from({ length: TOTAL_REQUIRED }, (_, index) => list[index % list.length]);
 	};
 
-	let {
-		images,
-		minHeight = '240vh',
-		title = 'We love hanging out together long after the laptops close.'
-	}: Props = $props();
+	function handleImageError(event: Event, fallback?: string) {
+		if (!fallback) return;
+		const element = event.currentTarget as HTMLImageElement | null;
+		if (!element || element.dataset.fallbackApplied === 'true') return;
+		element.src = fallback;
+		element.removeAttribute('srcset');
+		element.dataset.fallbackApplied = 'true';
+	}
 
-	// Layer 1: 6 images (positions 1 and 5 of each row)
-	const layer1Images = $derived(
-		Array.from({ length: 6 }, (_, i) => ({
-			src: images[i % images.length].src,
-			alt: images[i % images.length].alt,
-			text: images[i % images.length].text
-		}))
-	);
+	function activateGallery() {
+		galleryVisible = true;
+		if (observer) {
+			observer.disconnect();
+			observer = null;
+		}
+	}
 
-	// Layer 2: 6 images (positions 2 and 4 of each row)
-	const layer2Images = $derived(
-		Array.from({ length: 6 }, (_, i) => ({
-			src: images[(i + 2) % images.length].src,
-			alt: images[(i + 2) % images.length].alt,
-			text: images[(i + 2) % images.length].text
-		}))
-	);
+	onMount(() => {
+		if (!browser || galleryVisible) {
+			return;
+		}
 
-	// Layer 3: 2 images (position 3 of rows 1 and 3)
-	const layer3Images = $derived(
-		Array.from({ length: 2 }, (_, i) => ({
-			src: images[(i + 1) % images.length].src,
-			alt: images[(i + 1) % images.length].alt,
-			text: images[(i + 1) % images.length].text
-		}))
-	);
+		if ('IntersectionObserver' in globalThis) {
+			observer = new IntersectionObserver(
+				(entries) => {
+					if (entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0)) {
+						activateGallery();
+					}
+				},
+				{ rootMargin: '200px 0px' }
+			);
 
-	const centerImage = $derived(images[0]);
+			if (sectionEl) {
+				observer.observe(sectionEl);
+			}
+		} else {
+			activateGallery();
+		}
+
+		return () => {
+			if (observer) {
+				observer.disconnect();
+				observer = null;
+			}
+		};
+	});
+
+	$: normalizedImages = computeNormalizedImages(images);
+	$: layer1Images = normalizedImages.slice(0, LAYER_1_COUNT);
+	$: layer2Images = normalizedImages.slice(LAYER_1_COUNT, LAYER_1_COUNT + LAYER_2_COUNT);
+	$: layer3Images = normalizedImages.slice(LAYER_1_COUNT + LAYER_2_COUNT, TOTAL_REQUIRED - 1);
+	$: centerImage = normalizedImages.length
+		? normalizedImages[normalizedImages.length - 1]
+		: undefined;
+	$: hasImages = Boolean(centerImage);
+	$: if (observer && sectionEl && !galleryVisible) {
+		observer.disconnect();
+		observer.observe(sectionEl);
+	}
 </script>
 
-<section class="scroll-gallery" style:--min-height={minHeight}>
+<section class="scroll-gallery" style:--min-height={minHeight} bind:this={sectionEl}>
 	<div class="content">
-		<div class="grid">
-			<!-- Layer 1: outer columns -->
-			<div class="layer">
-				{#each layer1Images as image}
-					<div>
-						<img src={image.src} alt={image.alt} loading="lazy" />
-						{#if image.text}
-							<p class="caption text-primary">{image.text}</p>
-						{/if}
-					</div>
-				{/each}
-			</div>
-
-			<!-- Layer 2: middle columns -->
-			<div class="layer">
-				{#each layer2Images as image}
-					<div>
-						<img src={image.src} alt={image.alt} loading="lazy" />
-						{#if image.text}
-							<p class="caption text-primary">{image.text}</p>
-						{/if}
-					</div>
-				{/each}
-			</div>
-
-			<!-- Layer 3: top and bottom center -->
-			<div class="layer">
-				{#each layer3Images as image}
-					<div>
-						<img src={image.src} alt={image.alt} loading="lazy" />
-						{#if image.text}
-							<p class="caption text-primary">{image.text}</p>
-						{/if}
-					</div>
-				{/each}
-			</div>
-
-			<!-- Center scaler image -->
-			<div class="scaler">
-				<img src={centerImage.src} alt={centerImage.alt} loading="lazy" />
-				{#if title}
-					<div class="scaler__overlay">
-						<div class="scaler__overlay-inner relative z-10 mx-auto max-w-6xl px-6 py-6">
-							<h2
-								class="m-0 mt-10 max-w-200 text-4xl leading-tight font-bold text-white sm:text-5xl md:text-6xl"
-							>
-								{title}
-							</h2>
+		{#if galleryVisible && hasImages && centerImage}
+			<div class="grid">
+				<!-- Layer 1: outer columns -->
+				<div class="layer">
+					{#each layer1Images as image}
+						<div>
+							<img
+								src={image.src}
+								alt={image.alt}
+								loading="lazy"
+								srcset={image.srcset}
+								sizes={image.srcset ? layerImageSizes : undefined}
+								on:error={(event) => handleImageError(event, image.fallbackSrc)}
+							/>
+							{#if image.text}
+								<p class="caption text-primary">{image.text}</p>
+							{/if}
 						</div>
-					</div>
-				{/if}
-				{#if centerImage.text}
-					<p class="caption text-primary">{centerImage.text}</p>
-				{/if}
+					{/each}
+				</div>
+
+				<!-- Layer 2: middle columns -->
+				<div class="layer">
+					{#each layer2Images as image}
+						<div>
+							<img
+								src={image.src}
+								alt={image.alt}
+								loading="lazy"
+								srcset={image.srcset}
+								sizes={image.srcset ? layerImageSizes : undefined}
+								on:error={(event) => handleImageError(event, image.fallbackSrc)}
+							/>
+							{#if image.text}
+								<p class="caption text-primary">{image.text}</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				<!-- Layer 3: top and bottom center -->
+				<div class="layer">
+					{#each layer3Images as image}
+						<div>
+							<img
+								src={image.src}
+								alt={image.alt}
+								loading="lazy"
+								srcset={image.srcset}
+								sizes={image.srcset ? layerImageSizes : undefined}
+								on:error={(event) => handleImageError(event, image.fallbackSrc)}
+							/>
+							{#if image.text}
+								<p class="caption text-primary">{image.text}</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				<!-- Center scaler image -->
+				<div class="scaler">
+					<img
+						src={centerImage.src}
+						alt={centerImage.alt}
+						loading="lazy"
+						srcset={centerImage.srcset}
+						sizes={centerImage.srcset ? centerImageSizes : undefined}
+						on:error={(event) => handleImageError(event, centerImage.fallbackSrc)}
+					/>
+					{#if title}
+						<div class="scaler__overlay">
+							<div class="scaler__overlay-inner relative z-10 mx-auto max-w-6xl px-6 py-6">
+								<h2
+									class="scaler__headline m-0 mt-10 max-w-200 text-4xl leading-tight font-bold text-white sm:text-5xl md:text-6xl"
+								>
+									<span class="scaler__headline-text">{title}</span>
+								</h2>
+							</div>
+						</div>
+					{/if}
+					{#if centerImage.text}
+						<p class="caption text-primary">{centerImage.text}</p>
+					{/if}
+				</div>
 			</div>
-		</div>
+		{/if}
 	</div>
 </section>
 
@@ -254,15 +337,28 @@
 	.scaler__overlay {
 		position: absolute;
 		inset: 0;
-		display: flex;
-		align-items: flex-start;
-		justify-content: center;
+		display: block;
 		pointer-events: none;
 		z-index: 1;
 	}
 
 	.scaler__overlay-inner {
 		width: 100%;
+		display: inline-block;
+		margin-left: 0;
+		margin-right: auto;
+	}
+
+	.scaler__headline {
+		display: inline-block;
+		transform-origin: top left;
+	}
+
+	.scaler__headline-text {
+		display: inline-block;
+		transform-origin: top left;
+		transform: scale(1);
+		will-change: transform;
 	}
 
 	.grid img {
@@ -364,6 +460,16 @@
 		}
 	}
 
+	@keyframes scaler-headline-scale {
+		0%,
+		10% {
+			transform: scale(1);
+		}
+		100% {
+			transform: scale(0.001);
+		}
+	}
+
 	@media (prefers-reduced-motion: no-preference) {
 		@supports (animation-timeline: scroll()) {
 			.scroll-gallery {
@@ -396,6 +502,14 @@
 
 			.scaler__overlay {
 				animation-name: scaler-headline-fade;
+				animation-fill-mode: both;
+				animation-timing-function: ease-out;
+				animation-timeline: --gallery-scroll;
+				animation-range: entry 100% exit -20%;
+			}
+
+			.scaler__headline-text {
+				animation-name: scaler-headline-scale;
 				animation-fill-mode: both;
 				animation-timing-function: ease-out;
 				animation-timeline: --gallery-scroll;
