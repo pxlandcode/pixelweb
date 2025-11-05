@@ -23,6 +23,26 @@
 	let observer: IntersectionObserver | null = null;
 	let imageLoadingStates = new Map<string, boolean>();
 
+	const newsImageSizes = '(min-width: 1024px) 380px, (min-width: 640px) 50vw, 90vw';
+
+	const transformSupabaseImageUrl = (url: string | null | undefined, width = 500): string => {
+		if (!url) return '';
+
+		// Transform /storage/v1/object/public/ to /storage/v1/render/image/public/
+		// and add width and resize parameters
+		const transformed = url.replace(
+			'/storage/v1/object/public/',
+			'/storage/v1/render/image/public/'
+		);
+
+		// Add query parameters if not already present
+		if (transformed.includes('?')) {
+			return transformed;
+		}
+
+		return `${transformed}?width=${width}&height=${width}&resize=cover`;
+	};
+
 	const clampText = (value: string | null | undefined, length = 180): string => {
 		if (!value) return '';
 		const normalized = value.replace(/\s+/g, ' ').trim();
@@ -177,6 +197,16 @@
 		imageLoadingStates = imageLoadingStates;
 	};
 
+	function handleImageError(event: Event, fallback?: string) {
+		const element = event.currentTarget as HTMLImageElement | null;
+		if (!element || element.dataset.fallbackApplied === 'true') return;
+		if (fallback) {
+			element.src = fallback;
+			element.removeAttribute('srcset');
+			element.dataset.fallbackApplied = 'true';
+		}
+	}
+
 	onMount(() => {
 		if (!observerTarget) return;
 
@@ -273,12 +303,16 @@
 										</div>
 									{/if}
 									<img
-										src={post.coverImageUrl}
+										src={transformSupabaseImageUrl(post.coverImageUrl)}
 										alt={post.coverImageAlt ?? post.title}
 										loading="lazy"
 										decoding="async"
 										draggable="false"
+										sizes={newsImageSizes}
+										width="380"
+										height="380"
 										on:load={() => handleImageLoad(post.id)}
+										on:error={(event) => handleImageError(event)}
 										class="aspect-square w-full object-cover will-change-transform"
 										class:opacity-0={imageLoadingStates.get(post.id)}
 									/>

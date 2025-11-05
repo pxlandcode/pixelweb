@@ -8,7 +8,7 @@
 </script>
 
 <header
-	class="flex flex-row items-center justify-between gap-6 px-6 pt-10 pb-6 text-xs font-medium tracking-[0.04em] uppercase md:px-16 md:text-sm"
+	class="flex flex-row items-center justify-between gap-6 px-6 pt-10 pb-6 text-xs font-medium tracking-[0.04em] uppercase md:flex-row-reverse md:px-16 md:text-sm"
 >
 	<a class="inline-flex items-center" href="/" aria-label="Pixel & Code">
 		<RollingText>
