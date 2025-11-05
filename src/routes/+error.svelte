@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import InteractiveBackground from '$lib/components/backgrounds/InteractiveBackground.svelte';
 	import { PixelButton } from '$lib/components/pixel-button';
+	import { Drawer, Input, FormControl } from '@pixelcode_/blocks/components';
 	import { ampersandPath } from '$lib/graphics/ampersand';
 	import { onDestroy, onMount, tick } from 'svelte';
 
@@ -56,6 +57,8 @@
 	let submissionState: 'idle' | 'sending' | 'success' | 'error' = 'idle';
 	let submissionMessage = '';
 	let showSubmissionForm = false;
+
+	let isMobileDevice = false;
 
 	let ampersandPath2D: Path2D | null = null;
 	let ampersandColor = '#f35b3f';
@@ -252,9 +255,6 @@
 			case 'arrowright':
 			case 'd':
 				queueDirection({ x: 1, y: 0 });
-				break;
-			case ' ':
-				togglePause();
 				break;
 			case 'enter':
 				if (gameOver) {
@@ -495,8 +495,69 @@
 	let resizeHandler: (() => void) | null = null;
 	let visibilityHandler: (() => void) | null = null;
 
+	function handleCanvasTouch(event: TouchEvent) {
+		const target = event.target as HTMLElement;
+
+		// Don't prevent default if touching form elements or buttons
+		if (
+			target.tagName === 'INPUT' ||
+			target.tagName === 'TEXTAREA' ||
+			target.tagName === 'BUTTON' ||
+			target.tagName === 'LABEL' ||
+			target.closest('form') ||
+			target.closest('button') ||
+			target.closest('input') ||
+			target.closest('label')
+		) {
+			return;
+		}
+
+		event.preventDefault();
+
+		// If game is over, restart on any touch
+		if (gameOver) {
+			restart();
+			return;
+		}
+
+		const touch = event.touches[0];
+		const rect = (event.target as HTMLElement).getBoundingClientRect();
+		const x = touch.clientX - rect.left;
+		const y = touch.clientY - rect.top;
+		const width = rect.width;
+		const height = rect.height;
+
+		// Divide canvas into 4 zones: top, bottom, left, right
+		const centerX = width / 2;
+		const centerY = height / 2;
+		const relX = x - centerX;
+		const relY = y - centerY;
+
+		// Determine which direction based on which zone is touched
+		if (Math.abs(relX) > Math.abs(relY)) {
+			// Horizontal
+			if (relX > 0) {
+				queueDirection({ x: 1, y: 0 }); // Right
+			} else {
+				queueDirection({ x: -1, y: 0 }); // Left
+			}
+		} else {
+			// Vertical
+			if (relY > 0) {
+				queueDirection({ x: 0, y: 1 }); // Down
+			} else {
+				queueDirection({ x: 0, y: -1 }); // Up
+			}
+		}
+	}
+
 	onMount(() => {
 		if (!browser) return;
+
+		// Detect if device is mobile/tablet
+		isMobileDevice =
+			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+			('ontouchstart' in window && navigator.maxTouchPoints > 0);
 
 		ctx = canvas?.getContext('2d') ?? null;
 		if (!ctx) {
@@ -522,6 +583,36 @@
 		window.addEventListener('resize', resizeHandler);
 		document.addEventListener('visibilitychange', visibilityHandler);
 
+		// Add touch event listeners with passive: false to prevent scrolling
+		if (focusTarget) {
+			focusTarget.addEventListener('touchstart', handleCanvasTouch as EventListener, {
+				passive: false
+			});
+			focusTarget.addEventListener(
+				'touchmove',
+				(e: Event) => {
+					const target = e.target as HTMLElement;
+					// Don't prevent default if touching form elements
+					if (
+						target.tagName === 'INPUT' ||
+						target.tagName === 'TEXTAREA' ||
+						target.tagName === 'BUTTON' ||
+						target.tagName === 'LABEL' ||
+						target.closest('form') ||
+						target.closest('button') ||
+						target.closest('input') ||
+						target.closest('label')
+					) {
+						return;
+					}
+					e.preventDefault();
+				},
+				{
+					passive: false
+				}
+			);
+		}
+
 		animationFrame = requestAnimationFrame(loop);
 
 		loadLeaderboard();
@@ -540,6 +631,10 @@
 		}
 		if (visibilityHandler) {
 			document.removeEventListener('visibilitychange', visibilityHandler);
+		}
+		if (focusTarget) {
+			focusTarget.removeEventListener('touchstart', handleCanvasTouch as EventListener);
+			focusTarget.removeEventListener('touchmove', (e: Event) => e.preventDefault());
 		}
 	});
 
@@ -583,16 +678,6 @@
 						<span class="label">Session best</span>
 						<span class="value">{sessionBest}</span>
 					</div>
-					<PixelButton
-						type="button"
-						variant="primary"
-						size="md"
-						onclick={togglePause}
-						aria-pressed={paused}
-						disabled={gameOver}
-					>
-						{paused ? 'Resume' : running ? 'Pause' : 'Start'}
-					</PixelButton>
 				</div>
 
 				<div
@@ -609,7 +694,11 @@
 
 					{#if !running && awaitingRestart && !gameOver}
 						<div class="overlay hint">
-							<p>Use the arrow keys or WASD to start moving.</p>
+							{#if isMobileDevice}
+								<p>Tap any side of the board to start moving.</p>
+							{:else}
+								<p>Use the arrow keys or WASD to start moving.</p>
+							{/if}
 						</div>
 					{/if}
 
@@ -624,43 +713,10 @@
 							<div class="overlay-inner">
 								<p class="headline">Game over</p>
 								<p class="score-line">Final score: {score}</p>
-								<div class="overlay-actions">
-									<PixelButton type="button" variant="primary" size="md" on:click={restart}>
-										Play again
-									</PixelButton>
-								</div>
-								{#if showSubmissionForm}
-									<form class="name-form" on:submit|preventDefault={submitScore}>
-										<label for="player-name">Save your score</label>
-										<input
-											id="player-name"
-											bind:this={nameInput}
-											bind:value={playerName}
-											name="player-name"
-											maxlength="64"
-											autocomplete="name"
-											placeholder="Your name"
-											required
-										/>
-										<div class="overlay-actions">
-											<PixelButton
-												type="submit"
-												variant="primary"
-												size="md"
-												disabled={submissionState === 'sending'}
-											>
-												{submissionState === 'sending' ? 'Saving…' : 'Submit'}
-											</PixelButton>
-											<PixelButton
-												type="button"
-												variant="outline"
-												size="md"
-												onclick={skipSubmission}
-											>
-												Skip
-											</PixelButton>
-										</div>
-									</form>
+								{#if isMobileDevice}
+									<p class="tap-hint">Tap to play again</p>
+								{:else}
+									<p class="tap-hint">Press Enter to play again</p>
 								{/if}
 							</div>
 						</div>
@@ -668,14 +724,17 @@
 				</div>
 
 				<div class="instructions" id={instructionsId}>
-					<p>
-						<strong>Controls:</strong> Arrow keys or WASD to steer, space to pause or resume, and Enter
-						to restart after a crash.
-					</p>
-					<p class="touch-note">
-						Touch and swipe controls are on our backlog—tap the board to focus and use a keyboard
-						today.
-					</p>
+					{#if isMobileDevice}
+						<p>
+							<strong>How to play:</strong> Tap the top, bottom, left, or right side of the game board
+							to move in that direction. Tap anywhere to restart after game over.
+						</p>
+					{:else}
+						<p>
+							<strong>How to play:</strong> Use arrow keys or WASD to steer. Press Enter to restart after
+							game over.
+						</p>
+					{/if}
 				</div>
 			</section>
 
@@ -720,6 +779,48 @@
 	</div>
 </div>
 
+<Drawer bind:open={showSubmissionForm} variant="bottom" title="Save your score" dismissable>
+	<form class="score-drawer-form" on:submit|preventDefault={submitScore}>
+		<FormControl label="Your name" required class="gap-2">
+			<Input
+				id="player-name"
+				bind:element={nameInput}
+				bind:value={playerName}
+				name="player-name"
+				maxlength={64}
+				autocomplete="name"
+				placeholder="Enter your name"
+				required
+			/>
+		</FormControl>
+
+		<div class="score-display">
+			<span class="score-label">Your score:</span>
+			<span class="score-value">{pendingSubmissionScore}</span>
+		</div>
+
+		{#if submissionMessage}
+			<p class="submission-feedback {submissionState}" role="alert">
+				{submissionMessage}
+			</p>
+		{/if}
+
+		<div class="drawer-actions">
+			<PixelButton
+				type="submit"
+				variant="primary"
+				size="md"
+				disabled={submissionState === 'sending'}
+			>
+				{submissionState === 'sending' ? 'Saving…' : 'Submit'}
+			</PixelButton>
+			<PixelButton type="button" variant="outline" size="md" on:click={skipSubmission}>
+				Skip
+			</PixelButton>
+		</div>
+	</form>
+</Drawer>
+
 <style>
 	:global(:root) {
 		--accent-orange: var(--color-primary, #f35b3f);
@@ -744,6 +845,12 @@
 			'Segoe UI',
 			sans-serif;
 		overflow: hidden;
+	}
+
+	@media (max-width: 640px) {
+		.error-page {
+			padding: clamp(2rem, 4vw, 3rem) clamp(0.75rem, 3vw, 1.5rem);
+		}
 	}
 
 	.content {
@@ -803,6 +910,12 @@
 		background: var(--color-card-bg, #1e1e1e);
 		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
 		box-shadow: none;
+	}
+
+	@media (max-width: 640px) {
+		.card {
+			padding: clamp(1rem, 2.5vw, 1.5rem);
+		}
 	}
 
 	.game-card {
@@ -875,6 +988,7 @@
 		background: var(--color-card-bg, #1e1e1e);
 		outline: none;
 		box-shadow: none;
+		touch-action: none;
 	}
 
 	.canvas-shell:focus-visible {
@@ -926,6 +1040,14 @@
 		color: rgba(226, 232, 240, 0.8);
 	}
 
+	.tap-hint {
+		margin-top: 1rem;
+		font-size: 0.95rem;
+		color: rgba(148, 163, 184, 0.9);
+		font-weight: 500;
+		letter-spacing: 0.05em;
+	}
+
 	.overlay-actions {
 		display: flex;
 		gap: 0.75rem;
@@ -955,34 +1077,38 @@
 		outline: none;
 	}
 
-	.name-form {
+	.score-drawer-form {
 		display: flex;
 		flex-direction: column;
+		gap: 1.5rem;
+		padding: 1rem 0;
+	}
+
+	.score-display {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem;
+		background: var(--color-message-bg, #2a2a2a);
+		border-radius: 8px;
+		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+	}
+
+	.score-label {
+		font-size: 0.9rem;
+		color: rgba(148, 163, 184, 0.9);
+	}
+
+	.score-value {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--accent-light);
+	}
+
+	.drawer-actions {
+		display: flex;
 		gap: 0.75rem;
-		width: 100%;
-		text-align: left;
-	}
-
-	.name-form label {
-		font-size: 0.85rem;
-		text-transform: uppercase;
-		letter-spacing: 0.18em;
-		color: rgba(148, 163, 184, 0.8);
-	}
-
-	.name-form input {
-		width: 100%;
-		border-radius: 0.125rem;
-		border: 1px solid rgba(148, 163, 184, 0.3);
-		background: rgba(2, 6, 23, 0.55);
-		padding: 0.65rem 0.9rem;
-		color: #f8fafc;
-		font-size: 1rem;
-	}
-
-	.name-form input:focus-visible {
-		outline: 2px solid rgba(241, 103, 74, 0.55);
-		outline-offset: 2px;
+		flex-wrap: wrap;
 	}
 
 	.instructions {
@@ -1078,7 +1204,7 @@
 	}
 
 	.submission-feedback.success {
-		color: rgba(167, 243, 208, 0.9);
+		color: var(--color-primary);
 	}
 
 	.submission-feedback.error {

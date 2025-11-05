@@ -45,7 +45,7 @@
 	aria-label="Main menu"
 	aria-hidden={$curtainMenu ? 'false' : 'true'}
 >
-	<div class="flex h-full flex-col justify-between px-6 py-10 md:px-16 md:py-14">
+	<div class="flex h-full flex-col justify-between px-6 py-8 md:px-16 md:py-14">
 		<div
 			class="flex items-start justify-between text-[0.65rem] font-medium tracking-[0.32em] text-white/70 uppercase md:text-xs"
 		>
@@ -57,9 +57,9 @@
 				style={`transition-delay: ${$curtainMenu ? 160 : 0}ms`}
 			>
 				{#if logoSrc}
-					<img class="h-6 w-auto" src={logoSrc} alt="Pixel & Code" />
+					<img class="h-5 w-auto md:h-6" src={logoSrc} alt="Pixel & Code" />
 				{:else}
-					<span class="text-base font-semibold text-white">pixel&code_</span>
+					<span class="text-sm font-semibold text-white md:text-base">pixel&code_</span>
 				{/if}
 			</a>
 			<Button
@@ -78,8 +78,8 @@
 				</span>
 			</Button>
 		</div>
-		<nav class="flex flex-1 flex-col justify-center">
-			<ul class="flex flex-col gap-6 md:gap-8">
+		<nav class="flex flex-1 flex-col justify-center py-8 md:py-0">
+			<ul class="flex flex-col gap-4 md:gap-8">
 				{#each links as { label, href }, index}
 					<li
 						class={`origin-top transition-all duration-500 ease-out ${
@@ -92,14 +92,14 @@
 							{href}
 							on:click={closeCurtainMenu}
 						>
-							<RollingText text={label} size="7xl" />
+							<RollingText text={label} size="3xl" class="md:text-7xl" />
 						</a>
 					</li>
 				{/each}
 			</ul>
 		</nav>
 		<div
-			class="flex flex-col gap-6 text-[0.65rem] tracking-[0.32em] text-white/70 uppercase md:flex-row md:items-end md:justify-between md:text-xs"
+			class="flex flex-col gap-4 text-[0.6rem] tracking-[0.32em] text-white/70 uppercase md:flex-row md:items-end md:justify-between md:gap-6 md:text-xs"
 		>
 			<a
 				href="https://www.linkedin.com/company/pixelandcode/"
@@ -118,7 +118,7 @@
 				</span>
 			</a>
 			<div
-				class="flex flex-col gap-2 text-[0.6rem] tracking-[0.32em] text-white/50 uppercase md:flex-row md:items-center md:gap-6 md:text-[0.65rem]"
+				class="flex flex-col gap-2 text-[0.55rem] tracking-[0.32em] text-white/50 uppercase md:flex-row md:items-center md:gap-6 md:text-[0.65rem]"
 			>
 				<a
 					href="#privacy"

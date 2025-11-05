@@ -190,6 +190,15 @@
 		text-align: left;
 		white-space: normal;
 	}
+	
+	/* Override input text color to use foreground color for better readability */
+	input {
+		color: var(--color-foreground);
+	}
+	
+	input::placeholder {
+		color: rgba(148, 163, 184, 0.6);
+	}
 }
 
 @keyframes marquee {
