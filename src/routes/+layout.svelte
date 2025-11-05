@@ -161,10 +161,10 @@
 	<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
 </div>
 
-{#if $floatingNavState.active}
-	<div
-		class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
-	>
+<div
+	class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
+>
+	{#if $floatingNavState.active}
 		<div
 			class="pointer-events-auto flex items-center gap-3"
 			transition:fly={{ y: 50, duration: 220, delay: 50 }}
@@ -178,9 +178,28 @@
 				<RollingText>Get in touch</RollingText>
 			</Button>
 		</div>
+	{/if}
 
+	<div
+		class="pointer-events-auto flex items-center gap-3 md:hidden"
+		class:md:block={$floatingNavState.active}
+	>
+		<Button
+			class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+			aria-label="Open main menu"
+			aria-expanded={$curtainMenu ? 'true' : 'false'}
+			aria-controls="curtain-menu"
+			onclick={curtainMenu.open}
+		>
+			<RollingText>
+				<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
+			</RollingText>
+		</Button>
+	</div>
+
+	{#if $floatingNavState.active}
 		<div
-			class="pointer-events-auto flex items-center gap-3"
+			class="pointer-events-auto hidden items-center gap-3 md:flex"
 			transition:fly={{ y: 50, duration: 220 }}
 		>
 			<Button
@@ -195,8 +214,8 @@
 				</RollingText>
 			</Button>
 		</div>
-	</div>
-{/if}
+	{/if}
+</div>
 
 {@render children?.()}
 {#if !$page.url.pathname.startsWith('/internal')}

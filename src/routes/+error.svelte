@@ -1,45 +1,657 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import InteractiveBackground from '$lib/components/backgrounds/InteractiveBackground.svelte';
+	import { PixelButton } from '$lib/components/pixel-button';
+	import { Drawer, Input, FormControl } from '@pixelcode_/blocks/components';
+	import { ampersandPath } from '$lib/graphics/ampersand';
+	import { onDestroy, onMount, tick } from 'svelte';
 
-	export let error: Error & { message?: string };
-	export let status: number;
+	let status = $derived(page.status);
+	let error = $derived(page.error);
 
-	type CellType = 'pixel' | 'ampersand' | 'underline' | 'empty';
+	console.log('Error page - status:', status, 'type:', typeof status);
+	console.log('Error page - error:', error);
 
-	const ampersandPath = `M16.8072 40C16.6166 39.9495 16.4261 39.8766 16.2299 39.8542C14.554 39.6524 12.9453 39.2094 11.46 38.3964C9.96344 37.5778 8.67428 36.5125 7.68779 35.0939C6.38741 33.2155 5.96143 31.141 6.09034 28.8926C6.18003 27.2665 6.60041 25.7526 7.3739 24.3341C8.28192 22.6632 9.57109 21.3175 11.0788 20.1793C11.5497 19.8204 12.0429 19.4952 12.5362 19.142C11.9308 18.6766 11.3367 18.2617 10.7818 17.7963C9.10026 16.3834 7.76065 14.7125 7.20015 12.5538C6.61722 10.311 6.74053 8.08501 7.66537 5.93753C8.75275 3.42 10.6641 1.78836 13.1751 0.823959C15.3275 -0.00026868 17.5639 -0.118015 19.8283 0.0894432C21.7901 0.268867 23.6174 0.829566 25.254 1.95096C26.5993 2.87051 27.6698 4.04237 28.3929 5.52262C29.2 7.17668 29.469 8.93167 29.3569 10.7371C29.256 12.4024 28.6675 13.9107 27.7091 15.2732C26.5208 16.9609 24.9962 18.2953 23.2474 19.3551C21.8181 20.2185 20.316 20.9699 18.8419 21.7605C17.1379 22.6744 15.4396 23.5996 14.0663 24.9957C12.8949 26.1844 12.2279 27.5805 12.3344 29.2906C12.4297 30.7597 13.0967 31.9315 14.2569 32.7894C16.4093 34.3818 18.7578 34.578 21.1904 33.552C22.4571 33.0193 23.4436 32.1054 24.0041 30.8214C24.4357 29.8289 24.503 28.786 23.9593 27.8216C23.3932 26.8236 22.7262 25.876 22.104 24.9116C22.0423 24.8163 21.9751 24.721 21.863 24.564C22.0535 24.5527 22.1657 24.5359 22.2834 24.5359C24.4525 24.5359 26.6217 24.5359 28.7964 24.5247C29.0655 24.5247 29.228 24.62 29.3738 24.8163C30.8479 26.8236 32.322 28.8253 33.8017 30.8326C35.8028 33.5351 37.8094 36.2377 39.8104 38.9403C39.872 39.0244 39.9169 39.1141 40.0009 39.2431C39.816 39.2543 39.7039 39.2599 39.5862 39.2599C37.417 39.2599 35.2479 39.2599 33.0731 39.2599C32.8545 39.2599 32.7032 39.215 32.5574 39.0188C31.3804 37.4096 30.1865 35.8172 28.9982 34.2192C28.9422 34.1463 28.8805 34.0734 28.7964 33.9669C28.5834 34.3201 28.3817 34.6453 28.1855 34.9705C27.1485 36.6582 25.6632 37.8413 23.9032 38.6936C22.53 39.3608 21.0839 39.7421 19.5649 39.871C19.4976 39.8766 19.436 39.9439 19.3743 39.9832L16.8128 39.9832L16.8072 40ZM13.1359 10.3895C13.1359 11.7015 13.7356 12.7388 14.5876 13.6696C15.5124 14.6732 16.6279 15.419 17.7993 16.0918C17.9394 16.1703 18.2141 16.1591 18.3598 16.0806C19.0885 15.6713 19.8171 15.2507 20.5066 14.7854C21.3081 14.2471 22.0199 13.5967 22.502 12.7388C23.04 11.78 23.197 10.7539 23.0344 9.67179C22.7934 8.01212 21.8686 6.87951 20.3608 6.21228C19.3407 5.76372 18.2701 5.72447 17.1715 5.85904C14.8062 6.14499 13.1191 8.02334 13.1247 10.3895L13.1359 10.3895Z`;
+	type Vec = { x: number; y: number };
+	type HighScoreEntry = {
+		id: string;
+		player_name: string;
+		score: number;
+		created_at: string;
+	};
 
-	const symbols: CellType[] = ['pixel', 'ampersand', 'underline'];
+	const GRID_COLS = 24;
+	const GRID_ROWS = 18;
+	const INITIAL_STEP = 180;
+	const MIN_STEP = 95;
+	const SPEED_RAMP = 3;
+	const TAIL_THICKNESS_RATIO = 0.24;
 
-	const FOUR = ['XX  XX', 'XX  XX', 'XXXXXX', '    XX', '    XX'];
-	const ZERO = ['XXXXXX', 'XX  XX', 'XX  XX', 'XX  XX', 'XXXXXX'];
+	let canvas: HTMLCanvasElement | null = null;
+	let ctx: CanvasRenderingContext2D | null = null;
+	let focusTarget: HTMLDivElement | null = null;
+	let nameInput: HTMLInputElement | null = null;
 
-	const digits = [FOUR, ZERO, FOUR];
-	const digitWidth = Math.max(...digits.flatMap((digit) => digit.map((row) => row.length)));
-	const rowCount = Math.max(...digits.map((digit) => digit.length));
-	const gap = '  ';
+	let cellSize = 16;
+	let animationFrame: number | null = null;
+	let moveStart = 0;
+	let stepDuration = INITIAL_STEP;
+	let pausedProgress = 0;
 
-	const asciiLines = Array.from({ length: rowCount }, (_, rowIndex) =>
-		digits
-			.map((digit) => (digit[rowIndex] ?? '').padEnd(digitWidth, ' '))
-			.join(gap)
-	);
+	let snake: Vec[] = $state([]);
+	let lastSnake: Vec[] = [];
+	let direction: Vec = { x: 1, y: 0 };
+	let queuedDirection: Vec | null = null;
+	let food: Vec = { x: 0, y: 0 };
+	let running = $state(false);
+	let paused = $state(false);
+	let gameOver = $state(false);
+	let awaitingRestart = true;
 
-	let filledIndex = 0;
+	let score = $state(0);
+	let sessionBest = $state(0);
+	let pendingSubmissionScore: number | null = $state(null);
 
-	const grid: CellType[][] = asciiLines.map((line) =>
-		line.split('').map((char) => {
-			if (char !== 'X') return 'empty';
-			const cellType = symbols[filledIndex % symbols.length];
-			filledIndex += 1;
-			return cellType;
-		})
-	);
+	let leaderboardState: 'idle' | 'loading' | 'ready' | 'error' = $state('idle');
+	let leaderboard: HighScoreEntry[] = $state([]);
+	let leaderboardError = $state('');
 
-	const columnCount = asciiLines[0]?.length ?? 0;
-	const headline = status === 404 ? 'This pixel wandered off.' : 'Something got lost in the grid.';
+	let playerName = $state('');
+	let submissionState: 'idle' | 'sending' | 'success' | 'error' = $state('idle');
+	let submissionMessage = $state('');
+	let showSubmissionForm = $state(false);
+	let showLeaderboard = $state(false);
+
+	let isMobileDevice = false;
+
+	let ampersandPath2D: Path2D | null = null;
+	let ampersandColor = '#f35b3f';
+	let snakeHeadColor = 'rgba(248, 250, 252, 0.96)';
+	let snakeBodyColor = 'rgba(226, 232, 240, 0.88)';
+	let snakeTailColor = 'rgba(226, 232, 240, 0.82)';
+	let boardBackground = '#1e1e1e';
+	let gridColor = 'rgba(148, 163, 184, 0.18)';
+	let headGlow = 'rgba(241, 103, 74, 0.38)';
+
+	const headline =
+		status === 404
+			? 'This pixel wandered off, but the snake stayed.'
+			: 'Something got lost in the grid.';
 	const detail =
 		error?.message ??
-		'The page you wanted clocked out early. Follow the trail of ampersands back to safety.';
+		'We turned the detour into a playground. Have a round of Snake while we guide you back.';
+
+	const instructionsId = 'snake-controls';
+
+	function readCssVar(name: string, fallback: string) {
+		if (!browser) return fallback;
+		const value = getComputedStyle(document.documentElement).getPropertyValue(name);
+		return value?.trim() || fallback;
+	}
+
+	function prepareNewGame() {
+		const midY = Math.floor(GRID_ROWS / 2);
+		const startX = Math.floor(GRID_COLS / 3);
+		snake = [
+			{ x: startX, y: midY },
+			{ x: startX - 1, y: midY }
+		];
+		lastSnake = snake.map((segment) => ({ ...segment }));
+		direction = { x: 1, y: 0 };
+		queuedDirection = null;
+		score = 0;
+		stepDuration = INITIAL_STEP;
+		pausedProgress = 0;
+		paused = false;
+		running = false;
+		awaitingRestart = true;
+		gameOver = false;
+		pendingSubmissionScore = null;
+		submissionState = 'idle';
+		submissionMessage = '';
+		showSubmissionForm = false;
+		spawnFood();
+	}
+
+	function startRun() {
+		if (running) return;
+		running = true;
+		awaitingRestart = false;
+		gameOver = false;
+		moveStart = performance.now();
+		pausedProgress = 0;
+	}
+
+	function restart() {
+		prepareNewGame();
+		startRun();
+		tick().then(() => {
+			focusTarget?.focus();
+		});
+	}
+
+	function spawnFood(state: Vec[] = snake) {
+		const occupied = new Set(state.map(({ x, y }) => `${x},${y}`));
+		let attempts = 0;
+		let next: Vec = { x: 0, y: 0 };
+		do {
+			next = {
+				x: Math.floor(Math.random() * GRID_COLS),
+				y: Math.floor(Math.random() * GRID_ROWS)
+			};
+			attempts += 1;
+		} while (occupied.has(`${next.x},${next.y}`) && attempts < 500);
+		food = next;
+	}
+
+	function isOpposite(a: Vec, b: Vec) {
+		return a.x === -b.x && a.y === -b.y;
+	}
+
+	function queueDirection(next: Vec) {
+		if (gameOver) return;
+		const baseline = queuedDirection ?? direction;
+		if (snake.length > 1 && isOpposite(next, baseline)) {
+			return;
+		}
+		queuedDirection = next;
+		if (!running) {
+			startRun();
+		}
+	}
+
+	function moveSnake() {
+		const previous = snake.map((segment) => ({ ...segment }));
+		lastSnake = previous;
+
+		if (queuedDirection && !isOpposite(queuedDirection, direction)) {
+			direction = queuedDirection;
+		}
+		queuedDirection = null;
+
+		const head = previous[0];
+		const nextHead = { x: head.x + direction.x, y: head.y + direction.y };
+
+		const hitsWall =
+			nextHead.x < 0 || nextHead.x >= GRID_COLS || nextHead.y < 0 || nextHead.y >= GRID_ROWS;
+		const willEat = nextHead.x === food.x && nextHead.y === food.y;
+
+		const bodyToCheck = willEat ? previous : previous.slice(0, previous.length - 1);
+		const hitsSelf = bodyToCheck.some(
+			(segment) => segment.x === nextHead.x && segment.y === nextHead.y
+		);
+
+		if (hitsWall || hitsSelf) {
+			handleGameOver();
+			return;
+		}
+
+		const newSnake = [nextHead, ...previous];
+
+		if (!willEat) {
+			newSnake.pop();
+		} else {
+			score += 1;
+			pendingSubmissionScore = score;
+			stepDuration = Math.max(MIN_STEP, stepDuration - SPEED_RAMP);
+			spawnFood(newSnake);
+		}
+
+		snake = newSnake;
+	}
+
+	function handleGameOver() {
+		running = false;
+		paused = false;
+		pausedProgress = 0;
+		awaitingRestart = false;
+		gameOver = true;
+		sessionBest = Math.max(sessionBest, score);
+		pendingSubmissionScore = score;
+		if (score > 0) {
+			showSubmissionForm = true;
+		}
+	}
+
+	function togglePause() {
+		if (gameOver) return;
+		if (!running) {
+			startRun();
+			return;
+		}
+		if (paused) {
+			paused = false;
+			moveStart = performance.now() - pausedProgress * stepDuration;
+			pausedProgress = 0;
+		} else {
+			paused = true;
+			pausedProgress = Math.min((performance.now() - moveStart) / stepDuration, 1);
+		}
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		const lowered = event.key.toLowerCase();
+		if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(lowered)) {
+			event.preventDefault();
+		}
+
+		if (showSubmissionForm) {
+			if (lowered === 'escape') {
+				event.preventDefault();
+				skipSubmission();
+			}
+			return;
+		}
+
+		switch (lowered) {
+			case 'arrowup':
+			case 'w':
+				queueDirection({ x: 0, y: -1 });
+				break;
+			case 'arrowdown':
+			case 's':
+				queueDirection({ x: 0, y: 1 });
+				break;
+			case 'arrowleft':
+			case 'a':
+				queueDirection({ x: -1, y: 0 });
+				break;
+			case 'arrowright':
+			case 'd':
+				queueDirection({ x: 1, y: 0 });
+				break;
+			case 'enter':
+				if (gameOver) {
+					event.preventDefault();
+					restart();
+				}
+				break;
+		}
+	}
+
+	function formatDate(input: string) {
+		try {
+			return new Intl.DateTimeFormat(undefined, {
+				month: 'short',
+				day: 'numeric'
+			}).format(new Date(input));
+		} catch (error) {
+			return '';
+		}
+	}
+
+	async function loadLeaderboard() {
+		leaderboardState = 'loading';
+		leaderboardError = '';
+		try {
+			const response = await fetch('/api/highscore');
+			const payload = (await response.json().catch(() => ({}))) as {
+				scores?: HighScoreEntry[];
+				error?: string;
+			};
+			if (!response.ok) {
+				throw new Error(payload?.error ?? 'Unable to load high scores.');
+			}
+			leaderboard = payload?.scores ?? [];
+			leaderboardState = 'ready';
+		} catch (error) {
+			leaderboard = [];
+			leaderboardState = 'error';
+			leaderboardError =
+				error instanceof Error
+					? error.message
+					: "The high scores are hiding. Here's what you did this session:";
+		}
+	}
+
+	async function submitScore() {
+		if (!pendingSubmissionScore || pendingSubmissionScore <= 0) {
+			submissionState = 'error';
+			submissionMessage = 'You need to score some points first!';
+			return;
+		}
+
+		const trimmed = playerName.trim();
+		if (!trimmed) {
+			submissionState = 'error';
+			submissionMessage = 'Every legend needs a name!';
+			return;
+		}
+
+		submissionState = 'sending';
+		submissionMessage = '';
+
+		try {
+			const response = await fetch('/api/highscore', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: trimmed.slice(0, 64), score: pendingSubmissionScore })
+			});
+			const payload = (await response.json().catch(() => ({}))) as {
+				error?: string;
+			};
+
+			if (!response.ok) {
+				throw new Error(payload?.error ?? 'The leaderboard refused your greatness.');
+			}
+
+			submissionState = 'success';
+			submissionMessage = "You're on the board! 🎉";
+			playerName = trimmed;
+			showSubmissionForm = false;
+			pendingSubmissionScore = null;
+			await loadLeaderboard();
+			showLeaderboard = true;
+		} catch (error) {
+			submissionState = 'error';
+			submissionMessage =
+				error instanceof Error ? error.message : 'The leaderboard is taking a coffee break.';
+		}
+	}
+
+	function skipSubmission() {
+		showSubmissionForm = false;
+		pendingSubmissionScore = null;
+		if (submissionState !== 'success') {
+			submissionState = 'idle';
+			submissionMessage = '';
+		}
+	}
+
+	function focusGame() {
+		focusTarget?.focus();
+	}
+
+	function resizeCanvas() {
+		if (!browser || !canvas || !ctx) return;
+		const displayWidth = canvas.clientWidth;
+		const displayHeight = canvas.clientHeight;
+		const dpr = window.devicePixelRatio ?? 1;
+		canvas.width = displayWidth * dpr;
+		canvas.height = displayHeight * dpr;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.scale(dpr, dpr);
+		cellSize = displayWidth / GRID_COLS;
+	}
+
+	function draw(progress: number) {
+		if (!ctx || !canvas) return;
+
+		const width = canvas.clientWidth;
+		const height = canvas.clientHeight;
+
+		ctx.clearRect(0, 0, width, height);
+
+		ctx.fillStyle = boardBackground;
+		ctx.fillRect(0, 0, width, height);
+
+		ctx.save();
+		ctx.strokeStyle = gridColor;
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		for (let col = 1; col < GRID_COLS; col += 1) {
+			const x = col * cellSize;
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, height);
+		}
+		for (let row = 1; row < GRID_ROWS; row += 1) {
+			const y = row * cellSize;
+			ctx.moveTo(0, y);
+			ctx.lineTo(width, y);
+		}
+		ctx.globalAlpha = 0.35;
+		ctx.stroke();
+		ctx.restore();
+
+		drawFood();
+		drawSnake(progress);
+	}
+
+	function drawFood() {
+		if (!ctx || !ampersandPath2D) return;
+		ctx.save();
+		const centerX = (food.x + 0.5) * cellSize;
+		const centerY = (food.y + 0.5) * cellSize;
+		const scale = cellSize / 40;
+		ctx.translate(centerX, centerY);
+		ctx.scale(scale, scale);
+		ctx.translate(-20, -20);
+		ctx.shadowColor = ampersandColor;
+		ctx.shadowBlur = cellSize * 0.6;
+		ctx.fillStyle = ampersandColor;
+		ctx.fill(ampersandPath2D);
+		ctx.restore();
+	}
+
+	function drawSnake(progress: number) {
+		if (!ctx) return;
+		const segments = snake;
+		const previous = lastSnake;
+
+		for (let index = segments.length - 1; index >= 0; index -= 1) {
+			const end = segments[index];
+			const start = previous[index] ?? previous[previous.length - 1] ?? end;
+			const x = (start.x + (end.x - start.x) * progress) * cellSize;
+			const y = (start.y + (end.y - start.y) * progress) * cellSize;
+
+			if (index === segments.length - 1) {
+				drawTailSegment(x, y);
+			} else {
+				drawBodySegment(x, y, index === 0);
+			}
+		}
+	}
+
+	function drawBodySegment(x: number, y: number, isHead: boolean) {
+		if (!ctx) return;
+		const margin = cellSize * 0.18;
+		const size = cellSize - margin * 2;
+		ctx.save();
+		ctx.fillStyle = isHead ? snakeHeadColor : snakeBodyColor;
+		if (isHead) {
+			ctx.shadowColor = headGlow;
+			ctx.shadowBlur = cellSize * 0.6;
+		}
+		ctx.fillRect(x + margin, y + margin, size, size);
+		ctx.restore();
+	}
+
+	function drawTailSegment(x: number, y: number) {
+		if (!ctx) return;
+		const underlineWidth = cellSize * 0.76;
+		const thickness = Math.max(2, cellSize * TAIL_THICKNESS_RATIO);
+		const offsetX = (cellSize - underlineWidth) / 2;
+		const baseY = y + cellSize - thickness;
+		ctx.save();
+		ctx.fillStyle = snakeTailColor;
+		ctx.fillRect(x + offsetX, baseY, underlineWidth, thickness);
+		ctx.restore();
+	}
+
+	function loop(timestamp: number) {
+		if (!ctx || !canvas) {
+			animationFrame = requestAnimationFrame(loop);
+			return;
+		}
+		let progress = 0;
+		if (running) {
+			if (paused) {
+				progress = pausedProgress;
+			} else {
+				let elapsed = timestamp - moveStart;
+				while (elapsed >= stepDuration && running) {
+					moveSnake();
+					moveStart += stepDuration;
+					elapsed -= stepDuration;
+				}
+				if (!running) {
+					progress = 0;
+				} else {
+					progress = Math.min(elapsed / stepDuration, 1);
+				}
+			}
+		}
+		draw(progress);
+		animationFrame = requestAnimationFrame(loop);
+	}
+
+	prepareNewGame();
+
+	let resizeHandler: (() => void) | null = null;
+	let visibilityHandler: (() => void) | null = null;
+
+	function handleCanvasTouch(event: TouchEvent) {
+		const target = event.target as HTMLElement;
+
+		// Don't prevent default if touching form elements or buttons
+		if (
+			target.tagName === 'INPUT' ||
+			target.tagName === 'TEXTAREA' ||
+			target.tagName === 'BUTTON' ||
+			target.tagName === 'LABEL' ||
+			target.closest('form') ||
+			target.closest('button') ||
+			target.closest('input') ||
+			target.closest('label')
+		) {
+			return;
+		}
+
+		event.preventDefault();
+
+		// If game is over, restart on any touch
+		if (gameOver) {
+			restart();
+			return;
+		}
+
+		const touch = event.touches[0];
+		const rect = (event.target as HTMLElement).getBoundingClientRect();
+		const x = touch.clientX - rect.left;
+		const y = touch.clientY - rect.top;
+		const width = rect.width;
+		const height = rect.height;
+
+		// Divide canvas into 4 zones: top, bottom, left, right
+		const centerX = width / 2;
+		const centerY = height / 2;
+		const relX = x - centerX;
+		const relY = y - centerY;
+
+		// Determine which direction based on which zone is touched
+		if (Math.abs(relX) > Math.abs(relY)) {
+			// Horizontal
+			if (relX > 0) {
+				queueDirection({ x: 1, y: 0 }); // Right
+			} else {
+				queueDirection({ x: -1, y: 0 }); // Left
+			}
+		} else {
+			// Vertical
+			if (relY > 0) {
+				queueDirection({ x: 0, y: 1 }); // Down
+			} else {
+				queueDirection({ x: 0, y: -1 }); // Up
+			}
+		}
+	}
+
+	onMount(() => {
+		if (!browser) return;
+
+		// Detect if device is mobile/tablet
+		isMobileDevice =
+			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+			('ontouchstart' in window && navigator.maxTouchPoints > 0);
+
+		ctx = canvas?.getContext('2d') ?? null;
+		if (!ctx) {
+			return;
+		}
+
+		ampersandPath2D = new Path2D(ampersandPath);
+		ampersandColor = readCssVar('--color-primary', ampersandColor);
+		snakeBodyColor = readCssVar('--accent-light', snakeBodyColor);
+		snakeTailColor = snakeBodyColor;
+		headGlow = readCssVar('--accent-glow', headGlow);
+
+		resizeCanvas();
+		draw(0);
+
+		resizeHandler = () => resizeCanvas();
+		visibilityHandler = () => {
+			if (document.hidden && running && !paused && !gameOver) {
+				togglePause();
+			}
+		};
+
+		window.addEventListener('resize', resizeHandler);
+		document.addEventListener('visibilitychange', visibilityHandler);
+
+		// Add touch event listeners with passive: false to prevent scrolling
+		if (focusTarget) {
+			focusTarget.addEventListener('touchstart', handleCanvasTouch as EventListener, {
+				passive: false
+			});
+			focusTarget.addEventListener(
+				'touchmove',
+				(e: Event) => {
+					const target = e.target as HTMLElement;
+					// Don't prevent default if touching form elements
+					if (
+						target.tagName === 'INPUT' ||
+						target.tagName === 'TEXTAREA' ||
+						target.tagName === 'BUTTON' ||
+						target.tagName === 'LABEL' ||
+						target.closest('form') ||
+						target.closest('button') ||
+						target.closest('input') ||
+						target.closest('label')
+					) {
+						return;
+					}
+					e.preventDefault();
+				},
+				{
+					passive: false
+				}
+			);
+		}
+
+		animationFrame = requestAnimationFrame(loop);
+
+		loadLeaderboard();
+
+		tick().then(() => {
+			focusTarget?.focus();
+		});
+	});
+
+	onDestroy(() => {
+		if (animationFrame) {
+			cancelAnimationFrame(animationFrame);
+		}
+		if (resizeHandler) {
+			window.removeEventListener('resize', resizeHandler);
+		}
+		if (visibilityHandler) {
+			document.removeEventListener('visibilitychange', visibilityHandler);
+		}
+		if (focusTarget) {
+			focusTarget.removeEventListener('touchstart', handleCanvasTouch as EventListener);
+			focusTarget.removeEventListener('touchmove', (e: Event) => e.preventDefault());
+		}
+	});
+
+	$effect(() => {
+		if (showSubmissionForm) {
+			tick().then(() => {
+				nameInput?.focus();
+				nameInput?.select();
+			});
+		}
+	});
 </script>
 
 <svelte:head>
@@ -57,242 +669,621 @@
 	/>
 
 	<div class="content">
-		<div class="error-grid" style={`grid-template-columns: repeat(${columnCount}, var(--cell-size));`}>
-			{#each grid as row, rowIndex}
-				{#each row as cellType, columnIndex}
-					<div
-						class={`cell ${cellType}`}
-						style={`--delay:${((rowIndex + columnIndex) * 0.12).toFixed(2)}s;`}
-					>
-						{#if cellType !== 'empty'}
-							<div class="wave">
-								{#if cellType === 'pixel'}
-									<span class="dot" aria-hidden="true"></span>
-								{:else if cellType === 'ampersand'}
-									<svg class="ampersand" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
-										<path d={ampersandPath}></path>
-									</svg>
-								{:else if cellType === 'underline'}
-									<span class="underscore" aria-hidden="true"></span>
+		<header class="intro">
+			<p class="status">{status || '404'}</p>
+			<h1>Lost in the grid.</h1>
+			<p class="detail">
+				While you are here, take a quick break with Snake, and try to beat the highscore.
+			</p>
+		</header>
+
+		<div class="layout">
+			<section class="card game-card">
+				<div class="hud">
+					<div class="score-block">
+						<span class="label">Score</span>
+						<span class="value">{score}</span>
+					</div>
+					<div class="score-block">
+						<span class="label">Session best</span>
+						<span class="value">{sessionBest}</span>
+					</div>
+					<button class="highscore-link" on:click={() => (showLeaderboard = true)}>
+						Show Highscore
+					</button>
+				</div>
+
+				<div
+					class="canvas-shell"
+					bind:this={focusTarget}
+					tabindex="0"
+					role="application"
+					aria-labelledby={instructionsId}
+					aria-live="off"
+					on:keydown={handleKeydown}
+					on:click={focusGame}
+				>
+					<canvas bind:this={canvas} class="game-canvas" aria-hidden="true"></canvas>
+
+					{#if !running && !gameOver}
+						<div class="overlay hint">
+							{#if isMobileDevice}
+								<p>Tap any side of the board to start moving.</p>
+							{:else}
+								<p>Use the arrow keys or WASD to start moving.</p>
+							{/if}
+						</div>
+					{/if}
+
+					{#if paused && running && !gameOver}
+						<div class="overlay paused">
+							<p>Paused</p>
+						</div>
+					{/if}
+
+					{#if gameOver}
+						<div class="overlay game-over">
+							<div class="overlay-inner">
+								<p class="headline">Game over</p>
+								<p class="score-line">Final score: {score}</p>
+								{#if isMobileDevice}
+									<p class="tap-hint">Tap to play again</p>
+								{:else}
+									<p class="tap-hint">Press Enter to play again</p>
 								{/if}
 							</div>
-						{/if}
-					</div>
-				{/each}
-			{/each}
+						</div>
+					{/if}
+				</div>
+
+				<div class="instructions" id={instructionsId}>
+					{#if isMobileDevice}
+						<p>
+							<strong>How to play:</strong> Tap the top, bottom, left, or right side of the game board
+							to move in that direction. Tap anywhere to restart after game over.
+						</p>
+					{:else}
+						<p>
+							<strong>How to play:</strong> Use arrow keys or WASD to steer. Press Enter to restart after
+							game over.
+						</p>
+					{/if}
+				</div>
+			</section>
 		</div>
 
-		<div class="copy">
-			<p class="status">Error {status}</p>
-			<h1>{headline}</h1>
-			<p class="detail">{detail}</p>
-			<p>
-				In the meantime, the homepage is still behaving.
-				<a class="home-link" href="/">Take me back</a>
-			</p>
-		</div>
+		<a class="home-link" href="/">Take me home</a>
 	</div>
 </div>
 
+<Drawer
+	bind:open={showLeaderboard}
+	variant={isMobileDevice ? 'bottom' : 'right'}
+	title="Top Scores"
+	dismissable
+>
+	<div class="leaderboard-drawer">
+		{#if leaderboardState === 'loading'}
+			<p class="muted">Loading the hall of fame…</p>
+		{:else if leaderboardState === 'error'}
+			<p class="muted">
+				{leaderboardError}
+			</p>
+			<ul class="fallback-list">
+				<li>
+					<span class="name">Session best</span>
+					<span class="score">{sessionBest}</span>
+				</li>
+			</ul>
+		{:else if leaderboard.length === 0}
+			<p class="muted">The leaderboard is empty! Be the first to claim glory!</p>
+		{:else}
+			<ol class="leaderboard-list">
+				{#each leaderboard as entry, index}
+					<li>
+						<span class="rank">#{index + 1}</span>
+						<span class="name">{entry.player_name}</span>
+						<span class="date">{formatDate(entry.created_at)}</span>
+						<span class="score">{entry.score}</span>
+					</li>
+				{/each}
+			</ol>
+		{/if}
+
+		{#if submissionMessage}
+			<p class={`submission-feedback ${submissionState}`} aria-live="polite">
+				{submissionMessage}
+			</p>
+		{/if}
+	</div>
+</Drawer>
+
+<Drawer bind:open={showSubmissionForm} variant="bottom" title="Save your score" dismissable>
+	<form class="score-drawer-form" on:submit|preventDefault={submitScore}>
+		<FormControl label="Your name" required class="gap-2">
+			<Input
+				id="player-name"
+				bind:node={nameInput}
+				bind:value={playerName}
+				name="player-name"
+				maxlength={64}
+				autocomplete="name"
+				placeholder="Enter your name"
+				required
+			/>
+		</FormControl>
+
+		<div class="score-display">
+			<span class="score-label">Your score:</span>
+			<span class="score-value">{pendingSubmissionScore}</span>
+		</div>
+
+		{#if submissionMessage}
+			<p class="submission-feedback {submissionState}" role="alert">
+				{submissionMessage}
+			</p>
+		{/if}
+
+		<div class="drawer-actions">
+			<PixelButton
+				type="submit"
+				variant="primary"
+				size="md"
+				disabled={submissionState === 'sending'}
+			>
+				{submissionState === 'sending' ? 'Saving…' : 'Submit'}
+			</PixelButton>
+			<PixelButton type="button" variant="outline" size="md" on:click={skipSubmission}>
+				Skip
+			</PixelButton>
+		</div>
+	</form>
+</Drawer>
+
 <style>
+	:global(:root) {
+		--accent-orange: var(--color-primary, #f35b3f);
+		--accent-light: rgba(248, 250, 252, 0.92);
+		--accent-glow: rgba(241, 103, 74, 0.46);
+	}
+
 	.error-page {
 		position: relative;
 		min-height: 100vh;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: radial-gradient(circle at 15% 10%, rgba(241, 103, 74, 0.2), transparent 60%),
-			radial-gradient(circle at 80% 0%, rgba(148, 163, 184, 0.12), transparent 55%), #020617;
+		padding: clamp(3rem, 6vw, 5rem) clamp(1.75rem, 6vw, 3.5rem);
+		background: hsl(var(--background));
 		color: #f8fafc;
-		font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+		font-family:
+			'Montserrat',
+			system-ui,
+			-apple-system,
+			BlinkMacSystemFont,
+			'Segoe UI',
+			sans-serif;
 		overflow: hidden;
+	}
+
+	@media (max-width: 640px) {
+		.error-page {
+			padding: clamp(2rem, 4vw, 3rem) clamp(0.75rem, 3vw, 1.5rem);
+		}
 	}
 
 	.content {
 		position: relative;
 		z-index: 1;
+		width: min(1100px, 100%);
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		gap: clamp(2rem, 5vw, 3.25rem);
-		max-width: 70rem;
-		padding: clamp(3rem, 6vw, 5rem) clamp(1.75rem, 6vw, 3.5rem);
+		gap: clamp(2rem, 4vw, 3.2rem);
+	}
+
+	.intro {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 		text-align: center;
 	}
 
-	.error-grid {
-		--cell-size: clamp(2.4rem, 4.8vw, 4rem);
-		display: grid;
-		gap: clamp(0.35rem, 1vw, 0.75rem);
-		padding: clamp(1.35rem, 3.5vw, 2.25rem);
-		border-radius: 1.25rem;
-		background: linear-gradient(160deg, rgba(13, 20, 40, 0.72), rgba(10, 13, 25, 0.42));
-		box-shadow: 0 32px 80px rgba(2, 6, 23, 0.85);
-		backdrop-filter: blur(20px);
-		border: 1px solid rgba(148, 163, 184, 0.12);
-	}
-
-	.cell {
-		width: var(--cell-size);
-		aspect-ratio: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		position: relative;
-		transition: transform 0.28s ease, filter 0.28s ease, opacity 0.28s ease;
-		transform-origin: center bottom;
-	}
-
-	.cell.empty {
-		opacity: 0.12;
-		pointer-events: none;
-	}
-
-	:global(:root) {
-		--accent-orange: var(--color-primary, #f1674a);
-		--accent-light: rgba(248, 250, 252, 0.92);
-		--accent-glow: rgba(241, 103, 74, 0.46);
-	}
-
-	.wave {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: flex-end;
-		justify-content: center;
-		animation: wave-bob 5.6s ease-in-out infinite;
-		animation-delay: var(--delay, 0s);
-	}
-
-		.cell:not(.empty):hover {
-			transform: translateY(-0.45rem) scale(1.07);
-			filter: drop-shadow(0 0 20px var(--accent-glow));
-		}
-
-	.cell:not(.empty):hover .wave {
-		animation-play-state: paused;
-	}
-
-	.cell.pixel .dot {
-		width: 36%;
-		aspect-ratio: 1;
-		border-radius: 0.25rem;
-		background: var(--accent-orange);
-		box-shadow: 0 6px 18px rgba(241, 103, 74, 0.35);
-		margin-bottom: 18%;
-	}
-
-	.cell.ampersand .ampersand {
-		width: 82%;
-		height: auto;
-		display: block;
-		color: var(--accent-light);
-		filter: drop-shadow(0 12px 26px rgba(248, 250, 252, 0.25));
-		margin-bottom: 15%;
-	}
-
-	.cell.ampersand .ampersand path {
-		fill: currentColor;
-	}
-
-	.cell.underline .underscore {
-		width: 78%;
-		height: 0.32rem;
-		border-radius: 999px;
-		background: rgba(241, 103, 74, 0.9);
-		box-shadow: 0 6px 18px rgba(241, 103, 74, 0.35);
-		margin-bottom: 12%;
-	}
-
-	.copy {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-		max-width: 32rem;
-	}
-
-	.copy .status {
-		font-size: 0.95rem;
-		letter-spacing: 0.36em;
+	.intro .status {
+		letter-spacing: 0.32em;
 		text-transform: uppercase;
+		font-size: 0.9rem;
 		color: rgba(248, 250, 252, 0.54);
 	}
 
-	.copy h1 {
-		font-size: clamp(2rem, 4.5vw, 2.7rem);
+	.intro h1 {
+		font-size: clamp(2.2rem, 4vw, 3rem);
 		font-weight: 600;
-		line-height: 1.3;
 		color: rgba(248, 250, 252, 0.94);
+		line-height: 1.3;
 	}
 
-	.copy .detail {
-		max-width: 30rem;
-	}
-	.detail,
-	.copy p {
-		font-size: clamp(1rem, 2.4vw, 1.15rem);
+	.intro .detail {
+		max-width: 38rem;
+		margin: 0 auto;
+		color: rgba(226, 232, 240, 0.78);
 		line-height: 1.7;
+	}
+
+	.layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(1.5rem, 3vw, 2.5rem);
+		align-items: start;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
+	.card {
+		position: relative;
+		padding: clamp(1.6rem, 3vw, 2.4rem);
+		border-radius: 8px;
+		background: var(--color-card-bg, #1e1e1e);
+		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+		box-shadow: none;
+	}
+
+	@media (max-width: 640px) {
+		.card {
+			padding: clamp(1rem, 2.5vw, 1.5rem);
+		}
+	}
+
+	.game-card {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(1.4rem, 3vw, 2.2rem);
+	}
+
+	.hud {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.highscore-link {
+		appearance: none;
+		background: none;
+		border: none;
+		color: var(--color-primary);
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+		transition: opacity 0.2s ease;
+		margin-left: auto;
+	}
+
+	.highscore-link:hover {
+		opacity: 0.8;
+	}
+
+	.score-block {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 6rem;
+	}
+
+	.score-block .label {
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.24em;
+		color: rgba(148, 163, 184, 0.8);
+	}
+
+	.score-block .value {
+		font-size: clamp(1.6rem, 3vw, 2.2rem);
+		font-weight: 600;
+		color: rgba(248, 250, 252, 0.95);
+	}
+
+	.pause-button {
+		appearance: none;
+		border: 1px solid rgba(241, 103, 74, 0.6);
+		background: rgba(241, 103, 74, 0.18);
+		color: var(--accent-orange);
+		font-weight: 600;
+		border-radius: 0.125rem;
+		padding: 0.55rem 1.45rem;
+		transition:
+			background 0.2s ease,
+			transform 0.2s ease,
+			border-color 0.2s ease;
+	}
+
+	.pause-button:hover:not(:disabled),
+	.pause-button:focus-visible {
+		background: rgba(241, 103, 74, 0.28);
+		transform: translateY(-1px);
+		outline: none;
+	}
+
+	.pause-button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.canvas-shell {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 24 / 18;
+		border-radius: 8px;
+		overflow: hidden;
+		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+		background: var(--color-card-bg, #1e1e1e);
+		outline: none;
+		box-shadow: none;
+		touch-action: none;
+	}
+
+	.canvas-shell:focus-visible {
+		box-shadow: 0 0 0 2px rgba(241, 103, 74, 0.65);
+	}
+
+	.game-canvas {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	.overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: clamp(1.5rem, 3vw, 2rem);
+		background: rgba(30, 30, 30, 0.95);
+		backdrop-filter: blur(6px);
+	}
+
+	.overlay.hint {
+		background: rgba(30, 30, 30, 0.85);
+	}
+
+	.overlay.paused {
+		background: rgba(30, 30, 30, 0.9);
+	}
+
+	.overlay-inner {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		align-items: center;
+		width: min(24rem, 100%);
+	}
+
+	.overlay .headline {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--accent-light);
+	}
+
+	.overlay .score-line {
+		font-size: 1rem;
+		color: rgba(226, 232, 240, 0.8);
+	}
+
+	.tap-hint {
+		margin-top: 1rem;
+		font-size: 0.95rem;
+		color: rgba(148, 163, 184, 0.9);
+		font-weight: 500;
+		letter-spacing: 0.05em;
+	}
+
+	.overlay-actions {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.overlay button,
+	.overlay .primary {
+		appearance: none;
+		border-radius: 0.125rem;
+		border: 1px solid rgba(241, 103, 74, 0.6);
+		background: rgba(241, 103, 74, 0.18);
+		color: var(--accent-orange);
+		font-weight: 600;
+		padding: 0.55rem 1.4rem;
+		cursor: pointer;
+		transition:
+			background 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	.overlay button:hover,
+	.overlay button:focus-visible {
+		background: rgba(241, 103, 74, 0.3);
+		transform: translateY(-1px);
+		outline: none;
+	}
+
+	.score-drawer-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		padding: 1rem 0;
+	}
+
+	.score-display {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem;
+		background: var(--color-message-bg, #2a2a2a);
+		border-radius: 8px;
+		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+	}
+
+	.score-label {
+		font-size: 0.9rem;
+		color: rgba(148, 163, 184, 0.9);
+	}
+
+	.score-value {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--accent-light);
+	}
+
+	.drawer-actions {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.instructions {
+		font-size: 0.95rem;
+		line-height: 1.6;
 		color: rgba(226, 232, 240, 0.75);
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.instructions strong {
+		color: var(--accent-light);
+	}
+
+	.touch-note {
+		font-size: 0.85rem;
+		color: rgba(148, 163, 184, 0.8);
+	}
+
+	.leaderboard-drawer {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		padding: 0.5rem 0;
+	}
+
+	.leaderboard-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.leaderboard-list li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		padding: 0.5rem 0;
+		border-bottom: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+	}
+
+	.leaderboard-list li:last-child {
+		border-bottom: none;
+	}
+
+	.leaderboard-list .rank {
+		font-weight: 600;
+		color: var(--accent-orange);
+		min-width: 2rem;
+	}
+
+	.leaderboard-list .name {
+		font-weight: 500;
+		color: rgba(248, 250, 252, 0.92);
+		flex: 1;
+	}
+
+	.leaderboard-list .date {
+		font-size: 0.85rem;
+		color: rgba(148, 163, 184, 0.6);
+	}
+
+	.leaderboard-list .score {
+		font-weight: 600;
+		color: rgba(248, 250, 252, 0.9);
+		min-width: 3rem;
+		text-align: right;
+	}
+
+	.fallback-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.fallback-list li {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		background: var(--color-message-bg, #2a2a2a);
+		padding: 0.75rem 1rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.05));
+	}
+
+	.muted {
+		color: rgba(148, 163, 184, 0.82);
+		line-height: 1.6;
+	}
+
+	.submission-feedback {
+		font-size: 0.85rem;
+	}
+
+	.submission-feedback.success {
+		color: var(--color-primary);
+	}
+
+	.submission-feedback.error {
+		color: rgba(248, 113, 113, 0.9);
+	}
+
+	.submission-feedback.sending,
+	.submission-feedback.idle {
+		color: rgba(148, 163, 184, 0.85);
 	}
 
 	.home-link {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		margin-left: 0.5rem;
-		padding: 0.55rem 1.35rem;
-		border-radius: 999px;
-		font-weight: 600;
-		color: #0f172a;
-		background: var(--accent-orange);
-		box-shadow: 0 16px 30px rgba(241, 103, 74, 0.35);
-		transition: transform 0.25s ease, box-shadow 0.25s ease;
+		align-self: center;
+		color: var(--accent-light);
+		border-bottom: 1px solid rgba(248, 250, 252, 0.4);
+		padding-bottom: 0.2rem;
+		transition:
+			color 0.2s ease,
+			border-color 0.2s ease;
 	}
 
-	.home-link:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 18px 40px rgba(241, 103, 74, 0.42);
+	.home-link:hover,
+	.home-link:focus-visible {
+		color: var(--accent-orange);
+		border-color: rgba(241, 103, 74, 0.6);
+		outline: none;
 	}
 
-	@keyframes wave-bob {
-		0%,
-		100% {
-			transform: translateY(0);
+	@media (max-width: 640px) {
+		.overlay {
+			padding: 1.25rem;
 		}
 
-		25% {
-			transform: translateY(-6%);
+		.overlay .headline {
+			font-size: 1.3rem;
 		}
 
-		50% {
-			transform: translateY(5%);
-		}
-
-		75% {
-			transform: translateY(-3%);
+		.score-block {
+			min-width: auto;
 		}
 	}
-
-	@media (max-width: 720px) {
-		.error-grid {
-			gap: 0.3rem;
-			padding: 1.4rem;
-			border-radius: 1rem;
-		}
-
-		.copy {
-			gap: 0.85rem;
-		}
-	}
-	@media (max-width: 540px) {
-		.error-grid {
-			--cell-size: clamp(1.9rem, 9vw, 2.4rem);
-		}
-
-		.copy .status {
-			letter-spacing: 0.28em;
-		}
-	}
-
 </style>
