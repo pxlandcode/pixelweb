@@ -59,20 +59,24 @@
 >
 	<div class="flex h-full flex-col justify-between px-6 py-8 md:px-16 md:py-14">
 		<div
-			class="flex items-start justify-between text-[0.65rem] font-medium tracking-[0.32em] text-white/70 uppercase md:text-xs"
+			class="flex items-center justify-between text-[0.65rem] font-medium tracking-[0.32em] text-white/70 uppercase md:items-start md:text-xs"
 		>
 			<a
 				href="/"
-				class={`inline-flex items-center gap-3 text-white transition-opacity duration-500 ${
+				aria-label="Pixel & Code"
+				class={`inline-flex items-center text-white transition-opacity duration-500 ${
 					$curtainMenu ? 'opacity-100' : 'opacity-0'
 				}`}
 				style={`transition-delay: ${$curtainMenu ? 160 : 0}ms`}
+				on:click={closeCurtainMenu}
 			>
-				{#if logoSrc}
-					<img class="h-5 w-auto md:h-6" src={logoSrc} alt="Pixel & Code" />
-				{:else}
-					<span class="text-sm font-semibold text-white md:text-base">pixel&code_</span>
-				{/if}
+				<RollingText>
+					{#if logoSrc}
+						<img class="h-6 w-auto" src={logoSrc} alt="Pixel & Code" />
+					{:else}
+						<span class="text-base font-semibold text-white">pixel&code_</span>
+					{/if}
+				</RollingText>
 			</a>
 			<Button
 				type="button"
