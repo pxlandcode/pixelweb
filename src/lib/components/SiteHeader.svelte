@@ -1,10 +1,18 @@
 <script lang="ts">
 	import { RollingText } from '$components/rolling-text';
 	import type { NavLink } from '$types';
+	import { contactModal } from '$lib/stores/contactModal';
 
 	export let links: NavLink[] = [];
 
 	export let logoSrc: string;
+
+	function handleLinkClick(e: MouseEvent, href: string) {
+		if (href === '#contact') {
+			e.preventDefault();
+			contactModal.open();
+		}
+	}
 </script>
 
 <header
@@ -25,7 +33,11 @@
 		>
 			{#each links as { label, href }}
 				<li>
-					<a class="transition-colors hover:text-white focus-visible:text-white" {href}>
+					<a
+						class="transition-colors hover:text-white focus-visible:text-white"
+						{href}
+						onclick={(e) => handleLinkClick(e, href)}
+					>
 						<RollingText text={label} />
 					</a>
 				</li>

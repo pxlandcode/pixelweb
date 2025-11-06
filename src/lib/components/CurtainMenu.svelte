@@ -4,6 +4,7 @@
 	import { RollingText } from '$components/rolling-text';
 	import type { NavLink } from '$types';
 	import { curtainMenu } from '$lib/stores/curtainMenu';
+	import { contactModal } from '$lib/stores/contactModal';
 	import { Button } from '@pixelcode_/blocks/components';
 
 	export let links: NavLink[] = [];
@@ -13,6 +14,17 @@
 
 	function closeCurtainMenu() {
 		curtainMenu.close();
+	}
+
+	function handleLinkClick(e: MouseEvent, href: string) {
+		if (href === '#contact') {
+			e.preventDefault();
+			closeCurtainMenu();
+			// Small delay to let curtain close first
+			setTimeout(() => contactModal.open(), 300);
+		} else {
+			closeCurtainMenu();
+		}
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -90,7 +102,7 @@
 						<a
 							class="group inline-flex items-center tracking-[0.06em] text-white uppercase transition-colors duration-200 hover:text-primary focus-visible:text-primary"
 							{href}
-							on:click={closeCurtainMenu}
+							on:click={(e) => handleLinkClick(e, href)}
 						>
 							<RollingText text={label} size="3xl" class="md:text-7xl" />
 						</a>

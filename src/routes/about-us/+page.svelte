@@ -7,6 +7,7 @@
 	import DiscordCulture from '$components/discord-culture/DiscordCulture.svelte';
 	import * as cultureLogos from '$lib/assets/culture';
 	import peopleAndCultureLogoUrl from '$lib/assets/peopleandculturelogo.svg?url';
+	import { contactModal } from '$lib/stores/contactModal';
 
 	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 
@@ -109,7 +110,13 @@
 			Let's talk about how you can join our team and make an impact.
 		</p>
 		<div class="flex justify-center">
-			<Button href="/#contact">Start the conversation</Button>
+			<Button
+				href="/#contact"
+				onclick={(e) => {
+					e.preventDefault();
+					contactModal.open();
+				}}>Start the conversation</Button
+			>
 		</div>
 	</section>
 </main>

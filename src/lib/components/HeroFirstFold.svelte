@@ -6,20 +6,28 @@
 	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
+	import { contactModal } from '$lib/stores/contactModal';
 	import type { ComponentProps } from 'svelte';
 
 	type HeroSectionProps = ComponentProps<typeof HeroSection>;
 
 	export let logos: string[] = [];
 	export let heroProps: Partial<HeroSectionProps> = {};
-export let showCta = true;
-export let ctaHref = '#contact';
-export let ctaLabel = 'Get in touch';
-export let buttonVariant: string | undefined = 'primary';
-export let buttonSize: string | undefined = 'lg';
+	export let showCta = true;
+	export let ctaHref = '#contact';
+	export let ctaLabel = 'Get in touch';
+	export let buttonVariant: string | undefined = 'primary';
+	export let buttonSize: string | undefined = 'lg';
 	export let parallaxDistance = 280;
 	export let parallaxMultiplier = 0.45;
 	export let floatThreshold = 96;
+
+	function handleCtaClick(e: MouseEvent) {
+		if (ctaHref === '#contact') {
+			e.preventDefault();
+			contactModal.open();
+		}
+	}
 
 	let firstFoldSection: HTMLElement | null = null;
 	let heroSectionEl: HTMLDivElement | null = null;
@@ -44,14 +52,8 @@ export let buttonSize: string | undefined = 'lg';
 	$: floatingNavActive = headerFullyHidden;
 	$: showFloatingCta = floatingNavActive && heroButtonShouldFloat && showCta;
 	$: heroButtonHidden = floatingNavActive || !showCta;
-	$: heroParallaxLimit = Math.max(
-		heroSectionHeight + marqueeHeight * 0.7,
-		parallaxDistance
-	);
-	$: heroParallaxOffset = Math.min(
-		firstFoldScrollProgress * parallaxMultiplier,
-		heroParallaxLimit
-	);
+	$: heroParallaxLimit = Math.max(heroSectionHeight + marqueeHeight * 0.7, parallaxDistance);
+	$: heroParallaxOffset = Math.min(firstFoldScrollProgress * parallaxMultiplier, heroParallaxLimit);
 	$: setFloatingNavState({ active: floatingNavActive, showCta: showFloatingCta });
 	$: firstFoldMinHeight =
 		headerHeight && heroSectionHeight
@@ -135,6 +137,7 @@ export let buttonSize: string | undefined = 'lg';
 						size={buttonSize}
 						variant={buttonVariant}
 						href={ctaHref}
+						onclick={handleCtaClick}
 						aria-hidden={heroButtonHidden ? 'true' : undefined}
 						tabindex={heroButtonHidden ? -1 : undefined}
 					>

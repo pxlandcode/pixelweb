@@ -6,11 +6,13 @@
 	import CurtainMenu from '$components/CurtainMenu.svelte';
 	import SiteHeader from '$components/SiteHeader.svelte';
 	import SiteFooter from '$components/SiteFooter.svelte';
+	import { ContactPostcard } from '$lib/components';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 	import { navLinks } from '$lib/navlinks';
 	import { curtainMenu } from '$lib/stores/curtainMenu';
+	import { contactModal } from '$lib/stores/contactModal';
 	import {
 		floatingNavState,
 		resetFloatingNavState,
@@ -171,7 +173,7 @@
 			<Button
 				size="md"
 				variant="primary"
-				href="#contact"
+				onclick={contactModal.open}
 				class="border border-white/20 transition-transform duration-200"
 			>
 				<RollingText>Get in touch</RollingText>
@@ -218,5 +220,7 @@
 
 {@render children?.()}
 {#if !$page.url.pathname.startsWith('/internal')}
-	<SiteFooter links={navLinks} ctaHref="#contact" />
+	<SiteFooter links={navLinks} />
 {/if}
+
+<ContactPostcard />
