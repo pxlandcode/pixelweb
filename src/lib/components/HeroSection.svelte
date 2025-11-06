@@ -21,7 +21,7 @@
 
 	export let workWeight = 0.75;
 
-	const clampFont = 'clamp(1.9rem, 10vw, 5.5rem)';
+	const clampFont = 'clamp(1.25rem, 6vw, 4.8rem)';
 
 	const DEFAULT_WORK_STATEMENTS = [
 		'Code Crafters',
@@ -58,6 +58,9 @@
 	let headlineKey = 0;
 	let timer: ReturnType<typeof setInterval> | undefined;
 	let currentItem: HeadlineItem = { type: 'brand', text: brandText, logo: brandLogo };
+	let measurementHeight = 0;
+	let currentHeadlineHeight = 0;
+	let brandHeadlineHeight = 0;
 	let headlineHeightPx = 0;
 	let measurementRefs: (HTMLElement | null)[] = [];
 	let workPool: string[] = [];
@@ -70,6 +73,10 @@
 	let previousShouldAnimate: boolean | null = null;
 	let currentIntervalMs = intervalMs;
 	let isFirstLoad = true;
+	let isInitialBrandDisplay = false;
+	const flyInDefault = { x: 760, duration: 520, easing: quintOut };
+	const flyOutDefault = { x: -760, duration: 520, easing: quintOut };
+	const flyInInitialBrand = { x: 0, duration: 0 };
 
 	$: normalizedWorkStatements = workStatements
 		.map((value) => value?.trim() ?? '')
@@ -124,9 +131,7 @@
 			.filter((height) => height > 0);
 
 		const max = heights.length ? Math.max(...heights) : 0;
-		if (max && max !== headlineHeightPx) {
-			headlineHeightPx = max;
-		}
+		measurementHeight = max;
 	}
 
 	function ensurePool(type: 'work' | 'culture'): string[] {
@@ -306,7 +311,8 @@
 			const segment = rawSegments[index];
 
 			if (connectors.has(segment) && result.length > 0 && index + 1 < rawSegments.length) {
-				result[result.length - 1] = `${result[result.length - 1]} ${segment} ${rawSegments[index + 1]}`;
+				result[result.length - 1] =
+					`${result[result.length - 1]} ${segment} ${rawSegments[index + 1]}`;
 				index += 2;
 				continue;
 			}
@@ -317,6 +323,40 @@
 
 		return result;
 	}
+
+	function observeHeadline(node: HTMLElement) {
+		const updateHeight = () => {
+			const height = Math.ceil(node.offsetHeight);
+			if (!height) return;
+			currentHeadlineHeight = height;
+			if (currentItem.type === 'brand') {
+				brandHeadlineHeight = height;
+			}
+		};
+
+		updateHeight();
+
+		if (typeof ResizeObserver === 'undefined') {
+			return {
+				destroy: () => {}
+			};
+		}
+
+		const observer = new ResizeObserver(() => {
+			updateHeight();
+		});
+		observer.observe(node);
+
+		return {
+			destroy() {
+				observer.disconnect();
+			}
+		};
+	}
+
+	let previousHeightSignature = '';
+
+	$: headlineHeightPx = Math.max(measurementHeight, brandHeadlineHeight, currentHeadlineHeight);
 
 	$: if (
 		!shouldAnimate &&
@@ -343,6 +383,19 @@
 
 	$: if (mounted && shouldAnimate && !isFirstLoad) {
 		startTimer(intervalMs);
+	}
+
+	$: isInitialBrandDisplay = isFirstLoad && headlineKey === 0 && currentItem.type === 'brand';
+
+	$: {
+		const signature = JSON.stringify([measurementTexts, brandText, brandLogo]);
+		if (signature !== previousHeightSignature) {
+			previousHeightSignature = signature;
+			measurementHeight = 0;
+			currentHeadlineHeight = 0;
+			brandHeadlineHeight = 0;
+			void measureHeadlineHeight();
+		}
 	}
 
 	onMount(() => {
@@ -384,15 +437,16 @@
 		<p class="text-xs tracking-[0.4em] text-white/55 uppercase md:text-sm">{eyebrow}</p>
 		<div
 			class="grid place-items-center overflow-hidden"
-			style={`min-height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont};`}
+			style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont};`}
 		>
-			{#if shouldAnimate && !isFirstLoad}
+			{#if shouldAnimate}
 				{#key headlineKey}
-					<h1
-						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
-						style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
-						in:fly={{ x: 760, duration: 520, easing: quintOut }}
-						out:fly={{ x: -760, duration: 520, easing: quintOut }}
+						<h1
+							class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
+							style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
+							use:observeHeadline
+							in:fly={isInitialBrandDisplay ? flyInInitialBrand : flyInDefault}
+							out:fly={flyOutDefault}
 					>
 						{#if currentItem.type === 'brand' && currentItem.logo}
 							<span class="sr-only">{brandText}</span>
@@ -408,15 +462,16 @@
 									<span>{segment}</span>
 								{/each}
 							</span>
-							<span class="hidden sm:inline">{currentItem.text}</span>
+							<span class="hidden sm:inline sm:whitespace-nowrap">{currentItem.text}</span>
 						{/if}
 					</h1>
 				{/key}
-			{:else}
-				<h1
-					class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
-					style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
-				>
+				{:else}
+					<h1
+						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
+						style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
+						use:observeHeadline
+					>
 					{#if currentItem.type === 'brand' && currentItem.logo}
 						<span class="sr-only">{brandText}</span>
 						<img
@@ -431,7 +486,7 @@
 								<span>{segment}</span>
 							{/each}
 						</span>
-						<span class="hidden sm:inline">{currentItem.text}</span>
+						<span class="hidden sm:inline sm:whitespace-nowrap">{currentItem.text}</span>
 					{/if}
 				</h1>
 			{/if}
@@ -446,7 +501,7 @@
 >
 	{#each measurementTexts as text, index}
 		<span
-			class="inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
+			class="inline-flex items-center justify-center gap-3 text-center leading-[1.05] font-semibold tracking-[0.04em] uppercase sm:gap-5"
 			style={`font-size: ${clampFont};`}
 			use:registerMeasurement={index}
 		>
@@ -455,7 +510,7 @@
 					<span>{segment}</span>
 				{/each}
 			</span>
-			<span class="hidden sm:inline">{text}</span>
+			<span class="hidden sm:inline sm:whitespace-nowrap">{text}</span>
 		</span>
 	{/each}
 </div>
