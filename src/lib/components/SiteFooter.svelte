@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { RollingText } from '$components/rolling-text';
 	import type { NavLink } from '$types';
-	import footerImageUrl from '$lib/assets/footerimage.svg?url';
+	import worldclassUrl from '$lib/assets/worldclass.svg?url';
 	import InteractiveBackground from './backgrounds/InteractiveBackground.svelte';
 	type Props = {
 		links?: NavLink[];
@@ -17,9 +17,9 @@
 	>
 		<figure class="flex w-full justify-center md:w-auto md:justify-start">
 			<img
-				src={footerImageUrl}
-				alt="Pixel & Code logomark"
-				class="max-h-[300px] w-full object-contain md:max-h-[450px]"
+				src={worldclassUrl}
+				alt="Worldclass Tech, Worldclass People"
+				class="max-h-[300px] w-full object-contain md:max-h-[300px]"
 				loading="lazy"
 			/>
 		</figure>

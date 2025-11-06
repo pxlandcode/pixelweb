@@ -57,7 +57,7 @@
 	let displayCount = 0;
 	let headlineKey = 0;
 	let timer: ReturnType<typeof setInterval> | undefined;
-	let currentItem: HeadlineItem = { type: 'work', text: workStatements[0] ?? '' };
+	let currentItem: HeadlineItem = { type: 'brand', text: brandText, logo: brandLogo };
 	let headlineHeightPx = 0;
 	let measurementRefs: (HTMLElement | null)[] = [];
 	let workPool: string[] = [];
@@ -69,6 +69,7 @@
 	let mounted = false;
 	let previousShouldAnimate: boolean | null = null;
 	let currentIntervalMs = intervalMs;
+	let isFirstLoad = true;
 
 	$: normalizedWorkStatements = workStatements
 		.map((value) => value?.trim() ?? '')
@@ -301,9 +302,11 @@
 
 	$: if (mounted && shouldAnimate !== previousShouldAnimate) {
 		if (shouldAnimate) {
-			displayCount = 0;
-			advance();
-			startTimer(intervalMs);
+			if (!isFirstLoad) {
+				displayCount = 0;
+				advance();
+				startTimer(intervalMs);
+			}
 		} else {
 			stopTimer();
 			showBrand();
@@ -311,7 +314,7 @@
 		previousShouldAnimate = shouldAnimate;
 	}
 
-	$: if (mounted && shouldAnimate) {
+	$: if (mounted && shouldAnimate && !isFirstLoad) {
 		startTimer(intervalMs);
 	}
 
@@ -323,10 +326,21 @@
 		window.addEventListener('resize', resizeHandler);
 		const remeasure = setTimeout(() => void measureHeadlineHeight(), 80);
 
+		// Start animation after first load
+		const animationDelay = setTimeout(() => {
+			isFirstLoad = false;
+			if (shouldAnimate) {
+				displayCount = 0;
+				advance();
+				startTimer(intervalMs);
+			}
+		}, intervalMs);
+
 		return () => {
 			stopTimer();
 			window.removeEventListener('resize', resizeHandler);
 			clearTimeout(remeasure);
+			clearTimeout(animationDelay);
 		};
 	});
 
@@ -345,7 +359,7 @@
 			class="grid place-items-center overflow-hidden"
 			style={`min-height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont};`}
 		>
-			{#if shouldAnimate}
+			{#if shouldAnimate && !isFirstLoad}
 				{#key headlineKey}
 					<h1
 						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-5 leading-[1.05] font-semibold tracking-[0.04em] whitespace-nowrap uppercase"
