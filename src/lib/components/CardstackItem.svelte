@@ -1,47 +1,44 @@
 <script lang="ts">
 	import { Icon } from '@pixelcode_/blocks/components';
-        import RollingText from './rolling-text/RollingText.svelte';
-        import { IconPixelCode } from '$lib/icons';
+	import RollingText from './rolling-text/RollingText.svelte';
+	import { IconPixelCode } from '$lib/icons';
 
-        type Props = {
-                title: string;
-                eyebrow?: string | null;
-                description?: string | null;
-                link?: { href: string; label: string };
-                img?: string | null;
-                imgAlt?: string | null;
-                imagePosition?: 'left' | 'right';
-                bullets?: string[] | null;
-                bodyHtml?: string | null;
-                counter: number;
-        };
+	type Props = {
+		title: string;
+		eyebrow?: string | null;
+		description?: string | null;
+		link?: { href: string; label: string };
+		img?: string | null;
+		imgAlt?: string | null;
+		imagePosition?: 'left' | 'right';
+		bullets?: string[] | null;
+		bodyHtml?: string | null;
+		counter: number;
+	};
 
-        let {
-                title,
-                eyebrow,
-                description,
-                link,
-                img,
-                imgAlt,
-                imagePosition = 'right',
-                bullets = null,
-                bodyHtml = null
-        }: Props = $props();
+	let {
+		title,
+		eyebrow,
+		description,
+		link,
+		img,
+		imgAlt,
+		imagePosition = 'right',
+		bullets = null,
+		bodyHtml = null
+	}: Props = $props();
 
-        const imageWrapperOrderClass = $derived(() =>
-                imagePosition === 'right' ? 'md:order-2' : 'md:order-1'
-        );
-        const contentWrapperOrderClass = $derived(() =>
-                imagePosition === 'right' ? 'md:order-1' : 'md:order-2'
-        );
+	const imageWrapperOrderClass = $derived(imagePosition === 'right' ? 'md:order-2' : 'md:order-1');
+	const contentWrapperOrderClass = $derived(
+		imagePosition === 'right' ? 'md:order-1' : 'md:order-2'
+	);
 
-        const normalizedBullets = $derived(() =>
-                (bullets ?? []).map((entry) => entry?.trim()).filter((entry): entry is string => Boolean(entry))
-        );
-        const hasBullets = $derived(() => normalizedBullets.length > 0);
-        const hasBodyHtml = $derived(() => Boolean(bodyHtml && bodyHtml.trim()));
+	const normalizedBullets = $derived(
+		(bullets ?? []).map((entry) => entry?.trim()).filter((entry): entry is string => Boolean(entry))
+	);
+	const hasBullets = $derived(normalizedBullets.length > 0);
 
-        const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
+	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 </script>
 
 <li
@@ -86,28 +83,24 @@
 				{title}
 			</h3>
 
-                        {#if description}
-                                <p class="m-0 text-[clamp(1rem,2vw,1.1rem)] leading-[1.7] text-[#31333f]">
-                                        {description}
-                                </p>
-                        {/if}
+			{#if description}
+				<p class="m-0 text-[clamp(1rem,2vw,1.1rem)] leading-[1.7] text-[#31333f]">
+					{description}
+				</p>
+			{/if}
 
-                        {#if hasBodyHtml}
-                                <div class="prose prose-invert mt-2 max-w-none" {@html bodyHtml}></div>
-                        {/if}
+			{#if hasBullets}
+				<ul class="stack-card__list">
+					{#each normalizedBullets as bullet}
+						<li>{bullet}</li>
+					{/each}
+				</ul>
+			{/if}
 
-                        {#if hasBullets}
-                                <ul class="stack-card__list">
-                                        {#each normalizedBullets as bullet}
-                                                <li>{bullet}</li>
-                                        {/each}
-                                </ul>
-                        {/if}
-
-                        {#if link}
-                                <a
-                                        class="group inline-flex items-center gap-1 font-semibold text-[#12152b] no-underline"
-                                        href={link.href}
+			{#if link}
+				<a
+					class="group inline-flex items-center gap-1 font-semibold text-[#12152b] no-underline"
+					href={link.href}
 				>
 					<RollingText>
 						{link.label}

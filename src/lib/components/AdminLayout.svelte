@@ -25,7 +25,16 @@
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
 		},
 		{ label: 'Users', href: '/internal/users', allowed: ['admin'] satisfies AdminRole[] },
-		{ label: 'News', href: '/internal/news', allowed: ['admin', 'cms_admin'] satisfies AdminRole[] }
+		{
+			label: 'News',
+			href: '/internal/news',
+			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+		},
+		{
+			label: 'Cases',
+			href: '/internal/cases',
+			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+		}
 	];
 
 	$: activePath = $page.url.pathname;
