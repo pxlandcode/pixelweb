@@ -2,18 +2,18 @@
 	import { Icon } from '@pixelcode_/blocks/components';
 	import RollingText from './rolling-text/RollingText.svelte';
 	import { IconPixelCode } from '$lib/icons';
-	import type { Snippet } from 'svelte';
 
 	type Props = {
 		title: string;
-		eyebrow?: string;
-		description?: string;
+		eyebrow?: string | null;
+		description?: string | null;
 		link?: { href: string; label: string };
-		img?: string;
-		imgAlt?: string;
+		img?: string | null;
+		imgAlt?: string | null;
 		imagePosition?: 'left' | 'right';
+		bullets?: string[] | null;
+		bodyHtml?: string | null;
 		counter: number;
-		children: Snippet;
 	};
 
 	let {
@@ -24,15 +24,19 @@
 		img,
 		imgAlt,
 		imagePosition = 'right',
-		children
+		bullets = null,
+		bodyHtml = null
 	}: Props = $props();
 
-	const imageWrapperOrderClass = $derived(() =>
-		imagePosition === 'right' ? 'md:order-2' : 'md:order-1'
-	);
-	const contentWrapperOrderClass = $derived(() =>
+	const imageWrapperOrderClass = $derived(imagePosition === 'right' ? 'md:order-2' : 'md:order-1');
+	const contentWrapperOrderClass = $derived(
 		imagePosition === 'right' ? 'md:order-1' : 'md:order-2'
 	);
+
+	const normalizedBullets = $derived(
+		(bullets ?? []).map((entry) => entry?.trim()).filter((entry): entry is string => Boolean(entry))
+	);
+	const hasBullets = $derived(normalizedBullets.length > 0);
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 </script>
@@ -85,7 +89,13 @@
 				</p>
 			{/if}
 
-			{@render children()}
+			{#if hasBullets}
+				<ul class="stack-card__list">
+					{#each normalizedBullets as bullet}
+						<li>{bullet}</li>
+					{/each}
+				</ul>
+			{/if}
 
 			{#if link}
 				<a

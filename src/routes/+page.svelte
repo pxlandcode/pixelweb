@@ -1,17 +1,15 @@
 <script lang="ts">
-	import Cardstack from '$lib/components/Cardstack.svelte';
-	import CardstackItem from '$lib/components/CardstackItem.svelte';
-	import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
-	import NewsPreview from '$lib/components/NewsPreview.component.svelte';
-	import type { ActionData, PageData } from './$types';
+        import Cardstack from '$lib/components/Cardstack.svelte';
+        import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
+        import NewsPreview from '$lib/components/NewsPreview.component.svelte';
+        import type { ActionData, PageData } from './$types';
 
-	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
+        import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 
-	import { cardstackEntries } from '$lib/mockdata';
-	import ImageHeadline from '$components/ImageHeadline.svelte';
-	import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
+        import ImageHeadline from '$components/ImageHeadline.svelte';
+        import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
 
-	import { soloImages } from '$lib/images/manifest';
+        import { soloImages } from '$lib/images/manifest';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -19,9 +17,7 @@
 		eager: true
 	});
 
-	const cards = cardstackEntries;
-
-	const discoveredLogos = Object.values(logoImports) as string[];
+        const discoveredLogos = Object.values(logoImports) as string[];
 
 	const logos = (discoveredLogos.length ? [...discoveredLogos].sort() : []) satisfies string[];
 	const leadTitle =
@@ -60,27 +56,6 @@
 	<!-- Parallax banner -->
 	<ImageHeadline imageSrc={soloImages.meetingRoom.src} title={bannerTitle} parallax={0.25} />
 
-	<Cardstack>
-		{#each cardstackEntries as entry (entry.title)}
-			<CardstackItem
-				counter={cards.indexOf(entry) + 1}
-				title={entry.title}
-				eyebrow={entry.eyebrow}
-				description={entry.description}
-				link={entry.link}
-				img={entry.img}
-				imgAlt={entry.imgAlt}
-				imagePosition={entry.imagePosition}
-			>
-				{#if entry.bullets}
-					<ul class="stack-card__list">
-						{#each entry.bullets as bullet}
-							<li>{bullet}</li>
-						{/each}
-					</ul>
-				{/if}
-			</CardstackItem>
-		{/each}
-	</Cardstack>
+        <Cardstack />
 	<NewsPreview posts={newsPosts} error={newsError} />
 </main>
