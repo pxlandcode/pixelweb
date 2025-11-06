@@ -291,6 +291,33 @@
 		}
 	}
 
+	function getStackedSegments(text: string): string[] {
+		const rawSegments = text.split(/\s+/).filter(Boolean);
+
+		if (rawSegments.length <= 1) {
+			return rawSegments;
+		}
+
+		const connectors = new Set(['&', '/', '+', '-']);
+		const result: string[] = [];
+
+		let index = 0;
+		while (index < rawSegments.length) {
+			const segment = rawSegments[index];
+
+			if (connectors.has(segment) && result.length > 0 && index + 1 < rawSegments.length) {
+				result[result.length - 1] = `${result[result.length - 1]} ${segment} ${rawSegments[index + 1]}`;
+				index += 2;
+				continue;
+			}
+
+			result.push(segment);
+			index += 1;
+		}
+
+		return result;
+	}
+
 	$: if (
 		!shouldAnimate &&
 		(currentItem.type !== 'brand' ||
@@ -362,7 +389,7 @@
 			{#if shouldAnimate && !isFirstLoad}
 				{#key headlineKey}
 					<h1
-						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-5 leading-[1.05] font-semibold tracking-[0.04em] whitespace-nowrap uppercase"
+						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
 						style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
 						in:fly={{ x: 760, duration: 520, easing: quintOut }}
 						out:fly={{ x: -760, duration: 520, easing: quintOut }}
@@ -376,13 +403,18 @@
 								alt={brandText}
 							/>
 						{:else}
-							{currentItem.text}
+							<span class="flex flex-col items-center gap-1 sm:hidden">
+								{#each getStackedSegments(currentItem.text) as segment}
+									<span>{segment}</span>
+								{/each}
+							</span>
+							<span class="hidden sm:inline">{currentItem.text}</span>
 						{/if}
 					</h1>
 				{/key}
 			{:else}
 				<h1
-					class="col-start-1 row-start-1 inline-flex items-center justify-center gap-5 leading-[1.05] font-semibold tracking-[0.04em] whitespace-nowrap uppercase"
+					class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
 					style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
 				>
 					{#if currentItem.type === 'brand' && currentItem.logo}
@@ -394,7 +426,12 @@
 							alt={brandText}
 						/>
 					{:else}
-						{currentItem.text}
+						<span class="flex flex-col items-center gap-1 sm:hidden">
+							{#each getStackedSegments(currentItem.text) as segment}
+								<span>{segment}</span>
+							{/each}
+						</span>
+						<span class="hidden sm:inline">{currentItem.text}</span>
 					{/if}
 				</h1>
 			{/if}
@@ -409,11 +446,16 @@
 >
 	{#each measurementTexts as text, index}
 		<span
-			class="inline-flex items-center justify-center gap-5 leading-[1.05] font-bold tracking-[0.08em] whitespace-nowrap uppercase"
+			class="inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
 			style={`font-size: ${clampFont};`}
 			use:registerMeasurement={index}
 		>
-			{text}
+			<span class="flex flex-col items-center gap-1 sm:hidden">
+				{#each getStackedSegments(text) as segment}
+					<span>{segment}</span>
+				{/each}
+			</span>
+			<span class="hidden sm:inline">{text}</span>
 		</span>
 	{/each}
 </div>
