@@ -32,15 +32,16 @@
 	type AnyUppyFile = UppyFile<Record<string, unknown>, Record<string, unknown>>;
 	type ImagePosition = 'left' | 'right';
 
-	let eyebrow = $state('');
 	let title = $state('');
+	let eyebrow = $state('');
 	let description = $state('');
+	let bullets = $state('');
 	let bulletsInput = $state('');
-	let imagePosition = $state<ImagePosition>('right');
 	let img = $state('');
-	let previewUrl = $state('');
+	let imagePosition = $state<'left' | 'right'>('right');
 	let bodyHtml = $state('');
-
+	let previewUrl = $state('');
+	let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 	let errorMessage = $state<string | null>(null);
 	let uploadError = $state<string | null>(null);
 	let isSaving = $state(false);
@@ -69,18 +70,15 @@
 	const showUploader = $derived(() => !previewUrl);
 
 	const resetForm = () => {
-		eyebrow = '';
 		title = '';
+		eyebrow = '';
 		description = '';
-		bulletsInput = '';
-		imagePosition = 'right';
+		bullets = '';
 		img = '';
-		previewUrl = '';
+		imagePosition = 'right';
 		bodyHtml = '';
-		errorMessage = null;
-		uploadError = null;
+		feedback = null;
 	};
-
 	const applyCaseToForm = (record: CaseRecord | null) => {
 		if (!record) {
 			resetForm();
@@ -334,26 +332,24 @@
 	dismissable
 >
 	<div class="flex flex-1 flex-col gap-6 overflow-y-auto pb-16">
-		<div class="grid gap-6 md:grid-cols-2">
-			<FormControl label="Eyebrow" class="gap-2 text-sm">
-				<Input
-					id="case-eyebrow"
-					placeholder="Featured project"
-					class="bg-white text-gray-900 placeholder:text-gray-400"
-					bind:value={eyebrow}
-				/>
-			</FormControl>
+		<FormControl label="Title" required class="gap-2 text-sm">
+			<Input
+				id="case-title"
+				placeholder="E-commerce redesign"
+				class="bg-white text-gray-900 placeholder:text-gray-400"
+				bind:value={title}
+				required
+			/>
+		</FormControl>
 
-			<FormControl label="Title" required class="gap-2 text-sm">
-				<Input
-					id="case-title"
-					placeholder="E-commerce redesign"
-					class="bg-white text-gray-900 placeholder:text-gray-400"
-					bind:value={title}
-					required
-				/>
-			</FormControl>
-		</div>
+		<FormControl label="Eyebrow" class="gap-2 text-sm">
+			<Input
+				id="case-eyebrow"
+				placeholder="Featured project"
+				class="bg-white text-gray-900 placeholder:text-gray-400"
+				bind:value={eyebrow}
+			/>
+		</FormControl>
 
 		<FormControl label="Description" class="gap-2 text-sm">
 			<TextArea
