@@ -24,12 +24,10 @@
 		</h2>
 
 		<div
-			class="relative mt-10 grid gap-10 md:mt-16 md:grid-cols-2 md:gap-12"
+			class="relative mt-10 grid gap-10 md:mt-16 md:grid-cols-2 md:gap-12 md:[padding-bottom:max(var(--left-offset),var(--right-offset))]"
 			style="
         --left-offset: {leftTop};
         --right-offset: {rightTop};
-        /* ensure the section reserves space for the translated content on md+ */
-        padding-bottom: max(var(--left-offset), var(--right-offset));
       "
 		>
 			<!-- LEFT feature -->

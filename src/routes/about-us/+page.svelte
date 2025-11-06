@@ -8,6 +8,7 @@
 	import * as cultureLogos from '$lib/assets/culture';
 	import peopleAndCultureLogoUrl from '$lib/assets/peopleandculturelogo.svg?url';
 	import { contactModal } from '$lib/stores/contactModal';
+	import NeonSign from '$lib/components/NeonSign.svelte';
 
 	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 
@@ -101,22 +102,38 @@
 
 	<!-- Closing CTA -->
 	<section
-		class="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-24 text-center md:px-12 lg:px-20"
+		class="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-8 px-6 py-24 text-center md:px-12 lg:px-20"
 	>
-		<h2 class="text-4xl font-semibold text-white md:text-5xl">
-			Ready to build something amazing together?
-		</h2>
-		<p class="text-lg leading-relaxed text-[#d4d4d8]">
-			Let's talk about how you can join our team and make an impact.
-		</p>
-		<div class="flex justify-center">
-			<Button
-				href="/#contact"
-				onclick={(e) => {
-					e.preventDefault();
-					contactModal.open();
-				}}>Start the conversation</Button
-			>
+		<div
+			class="pointer-events-none absolute inset-0 z-0 flex items-center justify-end"
+			aria-hidden="true"
+		>
+			<NeonSign
+				decorative
+				className="relative right-[-12%] opacity-55 mix-blend-screen"
+				size="clamp(14rem, 38vw, 28rem)"
+			/>
+		</div>
+
+		<div class="relative z-10 flex flex-col items-center gap-6">
+			<p class="text-xs font-semibold tracking-[0.35em] text-primary/70 uppercase">
+				The office glow
+			</p>
+			<h2 class="text-4xl font-semibold text-white md:text-5xl">
+				Ready to build something amazing together?
+			</h2>
+			<p class="max-w-2xl text-lg leading-relaxed text-[#d4d4d8]">
+				Let's talk about how you can join our team and make an impact.
+			</p>
+			<div class="flex justify-center">
+				<Button
+					href="/#contact"
+					onclick={(e) => {
+						e.preventDefault();
+						contactModal.open();
+					}}>Start the conversation</Button
+				>
+			</div>
 		</div>
 	</section>
 </main>
