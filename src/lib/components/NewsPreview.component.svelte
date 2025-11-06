@@ -287,7 +287,9 @@
 				class:is-scrolling={isScrolling}
 			>
 				{#each formattedPosts as post (post.id)}
-					<article class="group flex max-w-[380px] min-w-[380px] flex-col">
+					<article
+						class="group flex max-w-[280px] min-w-[280px] flex-col sm:max-w-[380px] sm:min-w-[380px]"
+					>
 						<div class="flex h-full flex-col">
 							<div class="relative overflow-hidden rounded-lg">
 								{#if post.coverImageUrl}
@@ -368,7 +370,9 @@
 				<!-- Loading skeleton cards -->
 				{#if isLoadingMore}
 					{#each Array(4) as _, i (i)}
-						<article class="group flex max-w-[380px] min-w-[380px] flex-col">
+						<article
+							class="group flex max-w-[280px] min-w-[280px] flex-col sm:max-w-[380px] sm:min-w-[380px]"
+						>
 							<div class="flex h-full flex-col">
 								<div
 									class="relative overflow-hidden rounded-lg border-2 border-dashed border-primary bg-background"

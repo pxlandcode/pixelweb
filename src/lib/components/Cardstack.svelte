@@ -248,7 +248,7 @@
 </script>
 
 <section
-	class="relative isolate grid min-h-screen gap-[clamp(3rem,7vw,6rem)] bg-background text-white [--stack-gap:clamp(3rem,6vw,5rem)] max-[50rem]:px-[clamp(1rem,5vw,2rem)]"
+	class="relative isolate grid min-h-screen gap-[clamp(3rem,7vw,6rem)] bg-background text-white [--stack-gap:clamp(3rem,6vw,5rem)]"
 >
 	{#if loadError}
 		<div class="rounded-lg border border-white/10 bg-white/5 p-6 text-sm text-white/80">
