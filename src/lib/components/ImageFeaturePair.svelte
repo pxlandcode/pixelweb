@@ -59,37 +59,35 @@
 
 <style>
 	:global(:root) {
-		--feature-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+		--feature-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.headline-motion {
-		--headline-shift: clamp(3rem, 8vw, 5rem);
-		opacity: 0;
+		--headline-shift: clamp(5rem, 12vw, 8rem);
 		translate: 0 var(--headline-shift);
-		animation: headline-rise 0.9s var(--feature-motion-ease) forwards;
-		animation-delay: 0.15s;
-		will-change: opacity, translate;
+		animation: headline-rise 1.4s var(--feature-motion-ease) forwards;
+		animation-delay: 0.1s;
+		will-change: translate;
 	}
 
 	.feature {
 		--feature-column-delay: 0s;
-		--feature-distance: clamp(2.5rem, 7vw, 5.5rem);
+		--feature-distance: clamp(4rem, 10vw, 8rem);
 		view-timeline-name: --feature;
 		view-timeline-axis: block;
 	}
 
 	.feature--right {
-		--feature-column-delay: 0.5s;
+		--feature-column-delay: 1s;
 	}
 
 	.feature__title,
 	.feature__body,
 	.feature__image {
-		opacity: 0;
 		translate: 0 var(--feature-distance);
-		animation: feature-pull 0.9s var(--feature-motion-ease) forwards;
+		animation: feature-pull 1.4s var(--feature-motion-ease) forwards;
 		animation-delay: calc(var(--feature-column-delay) + var(--feature-stagger));
-		will-change: opacity, translate;
+		will-change: translate;
 	}
 
 	.feature__title {
@@ -97,11 +95,11 @@
 	}
 
 	.feature__body {
-		--feature-stagger: 0.12s;
+		--feature-stagger: 0.1s;
 	}
 
 	.feature__image {
-		--feature-stagger: 0.24s;
+		--feature-stagger: 0.3s;
 	}
 
 	@supports (animation-timeline: view()) {
@@ -131,31 +129,26 @@
 		.feature__body,
 		.feature__image {
 			animation: none;
-			opacity: 1;
 			translate: none;
 		}
 	}
 
 	@keyframes headline-rise {
 		from {
-			opacity: 0;
 			translate: 0 var(--headline-shift);
 		}
 
 		to {
-			opacity: 1;
 			translate: 0;
 		}
 	}
 
 	@keyframes feature-pull {
 		from {
-			opacity: 0;
 			translate: 0 var(--feature-distance);
 		}
 
 		to {
-			opacity: 1;
 			translate: 0;
 		}
 	}
