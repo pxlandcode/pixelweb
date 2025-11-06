@@ -22,6 +22,7 @@
 	export let workWeight = 0.75;
 
 	const clampFont = 'clamp(1.25rem, 6vw, 4.8rem)';
+	const brandClampHeight = 'clamp(3rem, 9vw, 6.8rem)';
 
 	const DEFAULT_WORK_STATEMENTS = [
 		'Code Crafters',
@@ -437,25 +438,32 @@
 		<p class="text-xs tracking-[0.4em] text-white/55 uppercase md:text-sm">{eyebrow}</p>
 		<div
 			class="grid place-items-center overflow-hidden"
-			style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont};`}
+			style={`height: ${
+				headlineHeightPx
+					? `${headlineHeightPx}px`
+					: currentItem.type === 'brand'
+						? brandClampHeight
+						: clampFont
+			};`}
 		>
 			{#if shouldAnimate}
 				{#key headlineKey}
 						<h1
 							class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
-							style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
+							style={`height: ${
+								headlineHeightPx
+									? `${headlineHeightPx}px`
+									: currentItem.type === 'brand'
+										? brandClampHeight
+										: clampFont
+							}; font-size: ${clampFont};`}
 							use:observeHeadline
 							in:fly={isInitialBrandDisplay ? flyInInitialBrand : flyInDefault}
 							out:fly={flyOutDefault}
 					>
 						{#if currentItem.type === 'brand' && currentItem.logo}
 							<span class="sr-only">{brandText}</span>
-							<img
-								class="h-full w-auto object-contain opacity-90"
-								style={`max-height: ${clampFont};`}
-								src={currentItem.logo}
-								alt={brandText}
-							/>
+							<img class="hero-brand-logo" src={currentItem.logo} alt={brandText} />
 						{:else}
 							<span class="flex flex-col items-center gap-1 sm:hidden">
 								{#each getStackedSegments(currentItem.text) as segment}
@@ -469,17 +477,18 @@
 				{:else}
 					<h1
 						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
-						style={`height: ${headlineHeightPx ? `${headlineHeightPx}px` : clampFont}; font-size: ${clampFont};`}
+						style={`height: ${
+							headlineHeightPx
+								? `${headlineHeightPx}px`
+								: currentItem.type === 'brand'
+									? brandClampHeight
+									: clampFont
+						}; font-size: ${clampFont};`}
 						use:observeHeadline
 					>
 					{#if currentItem.type === 'brand' && currentItem.logo}
 						<span class="sr-only">{brandText}</span>
-						<img
-							class="h-full w-auto object-contain opacity-90"
-							style={`max-height: ${clampFont};`}
-							src={currentItem.logo}
-							alt={brandText}
-						/>
+						<img class="hero-brand-logo" src={currentItem.logo} alt={brandText} />
 					{:else}
 						<span class="flex flex-col items-center gap-1 sm:hidden">
 							{#each getStackedSegments(currentItem.text) as segment}
@@ -514,3 +523,18 @@
 		</span>
 	{/each}
 </div>
+
+<style>
+	.hero-brand-logo {
+		height: clamp(2.75rem, 6.8vw, 5.5rem);
+		width: auto;
+		object-fit: contain;
+		opacity: 0.9;
+	}
+
+	@media (min-width: 640px) {
+		.hero-brand-logo {
+			height: clamp(3.2rem, 8vw, 6.5rem);
+		}
+	}
+</style>
