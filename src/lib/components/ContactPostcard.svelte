@@ -209,7 +209,7 @@
 							076-340 72 37
 						</a>
 					</div>
-					
+
 					<!-- Photos on mobile -->
 					<div class="mt-6 flex items-end gap-4 md:hidden">
 						<div
