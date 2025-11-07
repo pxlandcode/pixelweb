@@ -195,15 +195,17 @@
 	.scroll-gallery {
 		position: relative;
 		min-height: var(--min-height, 240vh);
-		--gap: clamp(10px, 3vw, 40px);
+		--gap: clamp(12px, 2vw, 32px);
 		--gutter: 2rem;
-		--grid-padding: clamp(2rem, 4vw, 4rem); /* Padding around the final grid */
+		--grid-padding-inline: clamp(1.25rem, 3vw, 3rem); /* Horizontal padding around the final grid */
+		--grid-padding-block: clamp(0.75rem, 2vh, 1.75rem); /* Vertical padding around the final grid */
 	}
 
 	@media (max-width: 600px) {
 		.scroll-gallery {
 			--gutter: 1rem;
-			--grid-padding: clamp(1rem, 3vw, 2rem);
+			--grid-padding-inline: clamp(1rem, 5vw, 2rem);
+			--grid-padding-block: clamp(0.5rem, 4vw, 1.25rem);
 		}
 	}
 
@@ -220,7 +222,20 @@
 
 	.grid {
 		--offset: 0;
-		width: min(1600px, calc(100vw - (2 * var(--grid-padding))));
+		--image-aspect: 1.25;
+		--image-aspect-inverse: 0.8; /* 1 / 1.25 */
+		--card-extra: clamp(2.5rem, 4vw, 4rem); /* padding + caption height */
+		--grid-inline-span: max(0px, calc(100vw - (2 * var(--grid-padding-inline))));
+		--grid-block-span: max(0px, calc(100vh - (2 * var(--grid-padding-block))));
+		--grid-row-slot: max(0px, calc(var(--grid-block-span) - (2 * var(--gap))));
+		--row-height-cap: calc(var(--grid-row-slot) / 3);
+		--col-width-fit-height: max(
+			0px,
+			calc((var(--row-height-cap) - var(--card-extra)) * var(--image-aspect-inverse))
+		);
+		--grid-width-fit-height: calc((var(--col-width-fit-height) * 5) + (var(--gap) * 4));
+		--grid-width: min(1600px, var(--grid-inline-span), var(--grid-width-fit-height));
+		width: var(--grid-width);
 		display: grid;
 		grid-template-columns: repeat(5, 1fr);
 		grid-template-rows: repeat(3, auto);
@@ -231,7 +246,7 @@
 		top: 50%;
 		left: 50%;
 		translate: -50% -50%;
-		padding: var(--grid-padding);
+		padding: var(--grid-padding-block) var(--grid-padding-inline);
 	}
 
 	@media (max-width: 600px) {
@@ -409,7 +424,7 @@
 		}
 		100% {
 			/* Final width should match one grid column (accounting for padding and gaps) */
-			width: calc((min(1600px, 100vw - (2 * var(--grid-padding))) - (4 * var(--gap))) / 5);
+			width: calc((var(--grid-width) - (4 * var(--gap))) / 5);
 		}
 	}
 
@@ -420,9 +435,7 @@
 		}
 		100% {
 			/* Final height based on aspect ratio of grid cells */
-			height: calc(
-				((min(1600px, 100vw - (2 * var(--grid-padding))) - (4 * var(--gap))) / 5) * 1.25
-			);
+			height: calc(((var(--grid-width) - (4 * var(--gap))) / 5) * 1.25);
 		}
 	}
 
