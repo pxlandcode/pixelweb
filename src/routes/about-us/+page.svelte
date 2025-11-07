@@ -9,6 +9,8 @@
 	import peopleAndCultureLogoUrl from '$lib/assets/peopleandculturelogo.svg?url';
 	import { contactModal } from '$lib/stores/contactModal';
 	import NeonSign from '$lib/components/NeonSign.svelte';
+	import AboutSection from '$components/AboutSection.svelte';
+	import RollingText from '$components/rolling-text/RollingText.svelte';
 
 	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 
@@ -51,11 +53,17 @@
 
 	<!-- Scroll Gallery Section -->
 	<ScrollGallery images={galleryImages} title={galleryTitle} />
-
+	<AnimatedHeadline
+		text="People. Culture. & Code."
+		minHeight="clamp(130vh, 165vh + 4vw, 200vh)"
+		stickyMinHeight="clamp(65vh, 80vh, 90vh)"
+		stickAt="50vh"
+	/>
+	<AboutSection />
 	<AnimatedHeadline
 		text="And our Discord is always buzzing."
 		minHeight="clamp(120vh, 150vh + 4vw, 180vh)"
-		stickyMinHeight="clamp(15vh, 20vh, 90vh)"
+		stickyMinHeight="clamp(15vh, 60vh, 90vh)"
 		stickAt="50vh"
 	/>
 	<DiscordCulture
@@ -63,46 +71,17 @@
 		paddingTop="min(8vh, 5rem)"
 		paddingBottom="min(8vh, 5rem)"
 	/>
+
 	<AnimatedHeadline
-		text="People. Culture. & Code."
-		minHeight="clamp(130vh, 165vh + 4vw, 200vh)"
-		stickyMinHeight="clamp(65vh, 80vh, 90vh)"
+		text="We're growing, one good person at a time!"
+		minHeight="clamp(140vh, 170vh + 4vw, 180vh)"
+		stickyMinHeight="clamp(50vh, 60vh, 70vh)"
 		stickAt="50vh"
 	/>
 
-	<section
-		id="culture"
-		class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-24 md:px-12 lg:px-20"
-	>
-		<div class="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
-			<div class="flex flex-col gap-5">
-				<p class="text-xs font-semibold tracking-[0.35em] text-primary/70 uppercase">How we work</p>
-				<h2 class="text-3xl font-semibold text-white md:text-4xl">
-					We look for teammates who love to learn out loud.
-				</h2>
-				<p class="text-lg leading-relaxed text-[#d4d4d8]">
-					Our projects span early-stage ventures and enterprise product teams. The thread that
-					connects them is a hunger for thoughtful collaboration, clarity in strategy, and a bias
-					toward action.
-				</p>
-			</div>
-
-			<div class="grid gap-6">
-				{#each culturePillars as pillar}
-					<article
-						class="rounded-3xl border border-white/5 bg-white/[0.02] p-6 shadow-[0_25px_60px_rgba(8,8,18,0.45)]"
-					>
-						<h3 class="text-xl font-semibold text-white">{pillar.title}</h3>
-						<p class="mt-2 text-[#cbd5f5]">{pillar.description}</p>
-					</article>
-				{/each}
-			</div>
-		</div>
-	</section>
-
 	<!-- Closing CTA -->
 	<section
-		class="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-8 px-6 py-24 text-center md:px-12 lg:px-20"
+		class="relative mx-auto flex w-full flex-col items-center gap-8 overflow-x-clip px-6 pb-60 text-center md:px-12 lg:px-20"
 	>
 		<div
 			class="pointer-events-none absolute inset-0 z-0 flex items-center justify-end"
@@ -110,20 +89,17 @@
 		>
 			<NeonSign
 				decorative
-				className="relative right-[-12%] opacity-55 mix-blend-screen"
-				size="clamp(14rem, 38vw, 28rem)"
+				className="relative opacity-55 mix-blend-screen mb-50"
+				size="clamp(14rem, 28vw, 28rem)"
 			/>
 		</div>
 
 		<div class="relative z-10 flex flex-col items-center gap-6">
-			<p class="text-xs font-semibold tracking-[0.35em] text-primary/70 uppercase">
-				The office glow
-			</p>
-			<h2 class="text-4xl font-semibold text-white md:text-5xl">
-				Ready to build something amazing together?
+			<h2 class="max-w-180 text-left text-4xl font-semibold text-white md:text-5xl">
+				Sounds like a place where you’d thrive? <br />We’d love to hear from you!
 			</h2>
 			<p class="max-w-2xl text-lg leading-relaxed text-[#d4d4d8]">
-				Let's talk about how you can join our team and make an impact.
+				And the good part is, we are only a phone call away and coffee’s on us!
 			</p>
 			<div class="flex justify-center">
 				<Button
@@ -131,8 +107,10 @@
 					onclick={(e) => {
 						e.preventDefault();
 						contactModal.open();
-					}}>Start the conversation</Button
+					}}
 				>
+					<RollingText>Start the conversation</RollingText>
+				</Button>
 			</div>
 		</div>
 	</section>

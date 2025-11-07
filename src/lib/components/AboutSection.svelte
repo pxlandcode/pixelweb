@@ -1,195 +1,233 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+	import { soloImages } from '$lib/images/manifest';
 
-  const introParagraphs = [
-    'We started Pixel&Code_ with a simple idea: to build a place where good people and meaningful work grow side by side.',
-    'A team where curiosity and craft matter as much as delivery — and where culture is something we live, not just talk about.'
-  ];
+	const leftImage = soloImages.ivoGladShuffle;
+	const rightImage = soloImages.gang;
 
-  const offerIntro = "What we offer isn’t just projects — it’s a way of working.";
+	const bodyTextPart1 =
+		"with lots of freedom and the strength of trusted partners. Our work spans banking, insurance, the public sector, and growing ventures. What connects it all is curiosity and the drive to make things work better, not just look better. Here, you'll find space to learn, experiment, and evolve.";
 
-  const offerParagraphs = [
-    'At Pixel&Code_, you get the best of both worlds: the freedom and closeness of a small team, backed by the stability and support of strong partners.',
-    'You’ll work in environments that challenge you — from complex systems in banking, insurance, and the public sector to ventures finding their next phase of growth.',
-    'Along the way, you’ll have the space to experiment, learn, and shape your own path.',
-    'Our open pay model, transparent structure, and trust-based culture mean you always know where you stand — and that your effort creates real impact, for both you and your clients.'
-  ];
-
-  let introVisible = introParagraphs.map(() => false);
-  let offerVisible = offerParagraphs.map(() => false);
-  let labelVisible = false;
-  let titleVisible = false;
-  let dividerVisible = false;
-  let offerHeadingVisible = false;
-  let scrollY = 0;
-
-  const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
-
-  $: parallaxOffset = -(scrollY * 0.15);
-
-  function observe(node: HTMLElement, params: { onEnter: () => void; once?: boolean } = { onEnter: () => {} }) {
-    const { onEnter, once = true } = params;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            onEnter?.();
-            if (once) {
-              observer.unobserve(node);
-            }
-          }
-        });
-      },
-      { threshold: 0.25 }
-    );
-
-    observer.observe(node);
-
-    return {
-      destroy() {
-        observer.disconnect();
-      }
-    };
-  }
-
-  onMount(() => {
-    const handleScroll = () => {
-      scrollY = window.scrollY;
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  });
+	const bodyTextPart2 =
+		"We keep things transparent, from pay to process, so everyone knows where they stand and what we're building toward.";
 </script>
 
-<section class="relative isolate overflow-hidden py-24 sm:py-32">
-  <div
-    class="pointer-events-none absolute inset-0 -z-10 transform-gpu"
-    style={`transform: translate3d(0, ${parallaxOffset}px, 0); transition: transform 0.6s ${easing};`}
-  >
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(120,113,198,0.25),transparent_60%)] dark:bg-[radial-gradient(circle_at_top,_rgba(76,29,149,0.35),transparent_65%)]"></div>
-    <div class="absolute inset-0 bg-gradient-to-br from-neutral-100 via-neutral-50 to-neutral-200 opacity-80 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950"></div>
-  </div>
+<section class="relative w-full bg-background text-white">
+	<div class="mx-auto max-w-7xl px-6 py-16 md:py-20 lg:py-24">
+		<!-- Main headline with animation -->
+		<h2
+			class="headline-motion m-0 mx-auto max-w-3xl text-left text-5xl leading-tight font-semibold
+             whitespace-pre-line text-white sm:text-5xl md:text-6xl lg:text-[3.5rem]"
+		>
+			Pixel&Code_ began as a simple idea. A place where good people and meaningful work meet.
+		</h2>
 
-  <div class="relative mx-auto flex max-w-3xl flex-col gap-12 px-6 text-neutral-900 dark:text-neutral-100">
-    <header class="space-y-6 text-center">
-      <p
-        use:observe={{
-          onEnter: () => {
-            labelVisible = true;
-          }
-        }}
-        class={`mx-auto max-w-2xl text-sm uppercase tracking-[0.3em] text-neutral-600 transition-all duration-700 dark:text-neutral-400 ${
-          labelVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-        style={`transition-timing-function: ${easing};`}
-      >
-        About Pixel&Code_
-      </p>
-      <h2
-        use:observe={{
-          onEnter: () => {
-            titleVisible = true;
-          }
-        }}
-        class={`text-2xl font-medium tracking-tight text-neutral-900 transition-all duration-700 sm:text-3xl md:text-4xl dark:text-neutral-50 ${
-          titleVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-        }`}
-        style={`transition-delay: 120ms; transition-timing-function: ${easing};`}
-      >
-        A calm space for meaningful digital craft
-      </h2>
-      <div class="space-y-6 text-left md:text-lg text-base text-neutral-700 dark:text-neutral-200/90">
-        {#each introParagraphs as paragraph, index}
-          <p
-            use:observe={{
-              onEnter: () => {
-                introVisible = introVisible.map((visible, i) => (i === index ? true : visible));
-              }
-            }}
-            class={`transition-all duration-700 ${
-              introVisible[index] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
-            style={`transition-delay: ${index * 120 + 180}ms; transition-timing-function: ${easing};`}
-          >
-            {paragraph}
-          </p>
-        {/each}
-      </div>
-    </header>
+		<!-- Sticky section with images and text -->
+		<div class="sticky-section-wrapper">
+			<div class="sticky-section-content">
+				<!-- Images section -->
+				<div
+					class="mt-20 grid gap-6 md:mt-28 md:grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] md:items-start md:pl-12 lg:pl-20"
+				>
+					<img
+						src={leftImage.src}
+						srcset={leftImage.srcset}
+						alt={leftImage.alt}
+						class="image-left aspect-[3/4] w-full max-w-xs border border-white/5 object-cover shadow-lg"
+						loading="lazy"
+					/>
+					<img
+						src={rightImage.src}
+						srcset={rightImage.srcset}
+						alt={rightImage.alt}
+						class="image-right aspect-video w-full border border-white/5 object-cover object-top shadow-lg"
+						loading="lazy"
+					/>
+				</div>
 
-    <div class="flex flex-col items-center gap-10 text-center">
-      <div class="relative h-px w-full max-w-xl overflow-hidden">
-        <span
-          use:observe={{
-            onEnter: () => {
-              dividerVisible = true;
-            }
-          }}
-          class={`block h-full w-full origin-center rounded-full bg-gradient-to-r from-transparent via-violet-500/70 to-transparent transition-all duration-700 ${
-            dividerVisible ? 'scale-x-100 opacity-100' : 'scale-x-50 opacity-0'
-          }`}
-          style={`transition-timing-function: ${easing};`}
-        />
-        <span class="absolute inset-x-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-400/60 blur-[2px]"></span>
-      </div>
-      <p
-        use:observe={{
-          onEnter: () => {
-            offerHeadingVisible = true;
-          }
-        }}
-        class={`text-lg font-medium text-neutral-800 transition-all duration-700 dark:text-neutral-200/90 ${
-          offerHeadingVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-        style={`transition-delay: 120ms; transition-timing-function: ${easing};`}
-      >
-        {offerIntro}
-      </p>
-    </div>
-
-    <div class="space-y-8 text-left text-base leading-relaxed text-neutral-700 md:text-lg dark:text-neutral-200/90">
-      {#each offerParagraphs as paragraph, index}
-        <p
-          use:observe={{
-            onEnter: () => {
-              offerVisible = offerVisible.map((visible, i) => (i === index ? true : visible));
-            }
-          }}
-          class={`transition-all duration-700 ${
-            offerVisible[index] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-          style={`transition-delay: ${index * 140 + 120}ms; transition-timing-function: ${easing};`}
-        >
-          {paragraph}
-        </p>
-      {/each}
-    </div>
-  </div>
+				<!-- Bottom text section with scroll reveal -->
+				<div
+					class="mt-16 grid gap-8 md:mt-20 md:grid-cols-[minmax(0,0.25fr)_minmax(0,1fr)] md:items-start"
+				>
+					<p class="label-text text-sm font-semibold tracking-[0.35em] text-primary uppercase"></p>
+					<div class="body-text-container space-y-6 text-base leading-relaxed md:text-lg">
+						<p class="body-text font-regular">
+							<span class="font-semibold text-primary">And now we're a small company </span>
+							<span class="tab-space"></span>{#each bodyTextPart1.split('') as char, i}<span
+									class="char"
+									style="animation-delay: {i * 0.002}s">{char}</span
+								>{/each}
+						</p>
+						<p class="body-text font-regular">
+							{#each bodyTextPart2.split('') as char, i}<span
+									class="char"
+									style="animation-delay: {(bodyTextPart1.length + i) * 0.002}s">{char}</span
+								>{/each}
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </section>
 
 <style>
-  section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    backdrop-filter: blur(20px);
-    opacity: 0.4;
-    pointer-events: none;
-  }
+	:global(:root) {
+		--about-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+	}
 
-  :global(body.dark) section::before {
-    opacity: 0.2;
-  }
+	/* Headline animation - rises up on scroll (matches ImageFeaturePair) */
+	.headline-motion {
+		--headline-shift: clamp(5rem, 12vw, 8rem);
+		translate: 0 var(--headline-shift);
+		animation: headline-rise 1.4s var(--about-motion-ease) forwards;
+		animation-delay: 0.1s;
+		will-change: translate;
+	}
 
-  @media (prefers-reduced-motion: reduce) {
-    section :global(*) {
-      transition-duration: 0s !important;
-      animation-duration: 0s !important;
-    }
-  }
+	/* Use scroll-driven animation when supported */
+	@supports (animation-timeline: view()) {
+		.headline-motion {
+			animation-delay: 0s;
+			animation-timeline: view(block);
+			animation-range: entry 70% contain 40%;
+		}
+	}
+
+	/* Images animation with scroll support */
+	.image-left,
+	.image-right {
+		--image-distance: clamp(4rem, 10vw, 8rem);
+		translate: 0 var(--image-distance);
+		animation: image-pull 1.8s var(--about-motion-ease) forwards;
+		will-change: translate;
+		view-timeline-name: --image;
+		view-timeline-axis: block;
+	}
+
+	.image-left {
+		animation-delay: 0.2s;
+	}
+
+	.image-right {
+		animation-delay: 0.6s;
+	}
+
+	@supports (animation-timeline: view()) {
+		.image-left,
+		.image-right {
+			animation-delay: 0s;
+			animation-timeline: --image;
+		}
+
+		.image-left {
+			animation-range: entry 40% contain 25%;
+		}
+
+		.image-right {
+			animation-range: entry 70% contain 45%;
+		}
+	}
+
+	/* Label text animation */
+	.label-text {
+		--label-distance: clamp(3rem, 8vw, 6rem);
+		translate: 0 var(--label-distance);
+		animation: label-pull 1.4s var(--about-motion-ease) forwards;
+		animation-delay: 0.6s;
+		will-change: translate;
+	}
+
+	/* Sticky scroll wrapper for entire section (images + text) */
+	.sticky-section-wrapper {
+		min-height: 200vh;
+		position: relative;
+	}
+
+	.sticky-section-content {
+		position: sticky;
+		top: 10vh;
+		padding-bottom: 2rem;
+	}
+
+	/* Body text container */
+	.body-text-container {
+		view-timeline-name: --body-text;
+		view-timeline-axis: block;
+	}
+
+	.body-text {
+		display: block;
+	}
+
+	/* Tab space after orange label */
+	.tab-space {
+		display: inline-block;
+		width: 10ch;
+	}
+
+	/* Individual characters - start gray and animate to white */
+	.char {
+		color: rgb(255 255 255 / 0.3);
+		animation: char-reveal 0.4s var(--about-motion-ease) forwards;
+		animation-timeline: --body-text;
+		animation-range: contain 10% contain 90%;
+	}
+
+	/* Fallback for browsers without scroll-driven animations */
+	@supports not (animation-timeline: view()) {
+		.char {
+			animation-timeline: auto;
+		}
+	}
+
+	@keyframes char-reveal {
+		from {
+			color: rgb(255 255 255 / 0.3);
+		}
+		to {
+			color: rgb(255 255 255 / 1);
+		}
+	}
+
+	@keyframes headline-rise {
+		from {
+			translate: 0 var(--headline-shift);
+		}
+		to {
+			translate: 0;
+		}
+	}
+
+	@keyframes image-pull {
+		from {
+			translate: 0 var(--image-distance);
+		}
+		to {
+			translate: 0;
+		}
+	}
+
+	@keyframes label-pull {
+		from {
+			translate: 0 var(--label-distance);
+		}
+		to {
+			translate: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.headline-motion,
+		.image-left,
+		.image-right,
+		.label-text,
+		.char {
+			animation: none;
+			translate: none;
+		}
+
+		.char {
+			color: rgb(255 255 255 / 1);
+		}
+	}
 </style>

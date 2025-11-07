@@ -2,6 +2,8 @@
 	import { RollingText } from '$components/rolling-text';
 	import type { NavLink } from '$types';
 	import { contactModal } from '$lib/stores/contactModal';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	export let links: NavLink[] = [];
 
@@ -11,6 +13,23 @@
 		if (href === '#contact') {
 			e.preventDefault();
 			contactModal.open();
+			return;
+		}
+
+		// Check if it's an internal anchor link (starts with /#)
+		if (href.startsWith('/#')) {
+			const targetId = href.slice(2); // Remove the '/#'
+			const currentPath = $page.url.pathname;
+
+			// If we're on the home page, smooth scroll to the element
+			if (currentPath === '/') {
+				e.preventDefault();
+				const targetElement = document.getElementById(targetId);
+				if (targetElement) {
+					targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}
+			// If on another page, SvelteKit will navigate and jump to the anchor
 		}
 	}
 </script>
