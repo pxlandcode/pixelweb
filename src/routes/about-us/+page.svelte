@@ -55,21 +55,21 @@
 	<ScrollGallery images={galleryImages} title={galleryTitle} />
 	<AnimatedHeadline
 		text="People. Culture. & Code."
-		minHeight="clamp(130vh, 165vh + 4vw, 200vh)"
-		stickyMinHeight="clamp(65vh, 80vh, 90vh)"
+		minHeight="clamp(80vh, 100vh + 4vw, 120vh)"
+		stickyMinHeight="clamp(50vh, 60vh, 70vh)"
 		stickAt="50vh"
 	/>
 	<AboutSection />
 	<AnimatedHeadline
 		text="And our Discord is always buzzing."
-		minHeight="clamp(120vh, 150vh + 4vw, 180vh)"
-		stickyMinHeight="clamp(15vh, 60vh, 90vh)"
+		minHeight="clamp(70vh, 90vh + 4vw, 110vh)"
+		stickyMinHeight="clamp(15vh, 40vh, 60vh)"
 		stickAt="50vh"
 	/>
 	<DiscordCulture
-		minHeight="clamp(130vh, 160vh + 4vw, 190vh)"
-		paddingTop="min(8vh, 5rem)"
-		paddingBottom="min(8vh, 5rem)"
+		minHeight="clamp(130vh, 150vh + 4vw, 190vh)"
+		paddingTop="min(2vh, 1rem)"
+		paddingBottom="min(4vh, 2rem)"
 	/>
 
 	<AnimatedHeadline
