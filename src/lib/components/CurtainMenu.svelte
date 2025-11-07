@@ -6,6 +6,7 @@
 	import { curtainMenu } from '$lib/stores/curtainMenu';
 	import { contactModal } from '$lib/stores/contactModal';
 	import { Button } from '@pixelcode_/blocks/components';
+	import { page } from '$app/stores';
 
 	export let links: NavLink[] = [];
 	export let logoSrc: string;
@@ -22,9 +23,30 @@
 			closeCurtainMenu();
 			// Small delay to let curtain close first
 			setTimeout(() => contactModal.open(), 300);
-		} else {
-			closeCurtainMenu();
+			return;
 		}
+
+		// Check if it's an internal anchor link (starts with /#)
+		if (href.startsWith('/#')) {
+			const targetId = href.slice(2); // Remove the '/#'
+			const currentPath = $page.url.pathname;
+
+			// If we're on the home page, smooth scroll to the element
+			if (currentPath === '/') {
+				e.preventDefault();
+				closeCurtainMenu();
+				// Delay the scroll to let the curtain menu close
+				setTimeout(() => {
+					const targetElement = document.getElementById(targetId);
+					if (targetElement) {
+						targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+				}, 300);
+				return;
+			}
+		}
+
+		closeCurtainMenu();
 	}
 
 	function handleKeydown(event: KeyboardEvent) {

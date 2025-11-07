@@ -102,7 +102,7 @@
 					<p
 						class="m-0 font-['Fave_Script',_cursive,_serif] text-[1.75rem] leading-[1.3] text-primary md:text-[1.75rem]"
 					>
-						Drop us a line, we'd love to hear from you!
+						Say "hello", we'd love to hear from you!
 					</p>
 
 					<!-- Photos -->
@@ -153,13 +153,10 @@
 
 					<div class="flex flex-col gap-[0.3rem] border-b border-[#e5e5e5] pb-2">
 						<div class="flex items-baseline gap-2">
-							<span
-								class="font-[system-ui,-apple-system,sans-serif] text-base font-normal text-[#2d3748]"
-								>Mail:</span
-							>
+							<span class=" text-base font-normal text-[#2d3748]">Mail:</span>
 							<a
 								href="mailto:hello@pixelcode.se"
-								class="font-[system-ui,-apple-system,sans-serif] text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
+								class=" text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
 							>
 								hello@pixelcode.se
 							</a>
@@ -167,46 +164,38 @@
 					</div>
 
 					<div class="flex flex-col gap-[0.3rem] border-b border-[#e5e5e5] pb-2">
-						<div
-							class="font-[system-ui,-apple-system,sans-serif] text-base font-normal text-[#2d3748]"
-						>
-							Nicklas:
-						</div>
+						<div class=" text-base font-normal text-[#2d3748]">Nicklas:</div>
 						<div class="m-0 h-px bg-[#e5e5e5]"></div>
 						<a
 							href="mailto:nicklas@pixelcode.se"
-							class="font-[system-ui,-apple-system,sans-serif] text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
+							class=" text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
 						>
 							nicklas@pixelcode.se
 						</a>
 						<div class="m-0 h-px bg-[#e5e5e5]"></div>
 						<a
-							href="tel:070-645 00 03"
-							class="font-[system-ui,-apple-system,sans-serif] text-2xl font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
+							href="tel:+46706450003"
+							class=" text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
 						>
-							070-645 00 03
+							+46 70-645 00 03
 						</a>
 					</div>
 
 					<div class="flex flex-col gap-[0.3rem] border-b border-[#e5e5e5] pb-2">
-						<div
-							class="font-[system-ui,-apple-system,sans-serif] text-base font-normal text-[#2d3748]"
-						>
-							Pierre:
-						</div>
+						<div class=" text-base font-normal text-[#2d3748]">Pierre:</div>
 						<div class="m-0 h-px bg-[#e5e5e5]"></div>
 						<a
 							href="mailto:pierre@pixelcode.se"
-							class="font-[system-ui,-apple-system,sans-serif] text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
+							class=" text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
 						>
 							pierre@pixelcode.se
 						</a>
 						<div class="m-0 h-px bg-[#e5e5e5]"></div>
 						<a
-							href="tel:076-340 72 37"
-							class="font-[system-ui,-apple-system,sans-serif] text-2xl font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
+							href="tel:+46763407237"
+							class="text-lg font-normal text-primary no-underline transition-opacity duration-200 hover:opacity-70"
 						>
-							076-340 72 37
+							+46 76-340 72 37
 						</a>
 					</div>
 

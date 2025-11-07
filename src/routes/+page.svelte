@@ -1,15 +1,15 @@
 <script lang="ts">
-        import Cardstack from '$lib/components/Cardstack.svelte';
-        import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
-        import NewsPreview from '$lib/components/NewsPreview.component.svelte';
-        import type { ActionData, PageData } from './$types';
+	import Cardstack from '$lib/components/Cardstack.svelte';
+	import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
+	import NewsPreview from '$lib/components/NewsPreview.component.svelte';
+	import type { ActionData, PageData } from './$types';
 
-        import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
+	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
 
-        import ImageHeadline from '$components/ImageHeadline.svelte';
-        import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
+	import ImageHeadline from '$components/ImageHeadline.svelte';
+	import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
 
-        import { soloImages } from '$lib/images/manifest';
+	import { soloImages } from '$lib/images/manifest';
 
 	const logoImports = import.meta.glob('../lib/assets/logos/*.svg', {
 		query: '?url',
@@ -17,7 +17,7 @@
 		eager: true
 	});
 
-        const discoveredLogos = Object.values(logoImports) as string[];
+	const discoveredLogos = Object.values(logoImports) as string[];
 
 	const logos = (discoveredLogos.length ? [...discoveredLogos].sort() : []) satisfies string[];
 	const leadTitle =
@@ -54,8 +54,13 @@
 	/>
 
 	<!-- Parallax banner -->
-	<ImageHeadline imageSrc={soloImages.meetingRoom.src} title={bannerTitle} parallax={0.25} />
+	<ImageHeadline
+		id="for-clients"
+		imageSrc={soloImages.meetingRoom.src}
+		title={bannerTitle}
+		parallax={0.25}
+	/>
 
-        <Cardstack />
+	<Cardstack />
 	<NewsPreview posts={newsPosts} error={newsError} />
 </main>

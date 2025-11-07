@@ -1,4 +1,5 @@
 <script lang="ts">
+	export let id: string = '';
 	export let imageSrc: string;
 	export let title: string; // large white text over the image
 	export let subtitle: string = ''; // optional, smaller line under the title
@@ -8,6 +9,7 @@
 
 <!-- Wrapper -->
 <section
+	{id}
 	class="image-headline relative isolate h-dvh w-full overflow-hidden bg-black"
 	style={`--parallax-strength: ${parallax};`}
 >

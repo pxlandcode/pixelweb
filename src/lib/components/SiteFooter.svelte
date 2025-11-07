@@ -3,11 +3,38 @@
 	import type { NavLink } from '$types';
 	import worldclassUrl from '$lib/assets/worldclass.svg?url';
 	import InteractiveBackground from './backgrounds/InteractiveBackground.svelte';
+	import { page } from '$app/stores';
+	import { contactModal } from '$lib/stores/contactModal';
+
 	type Props = {
 		links?: NavLink[];
 	};
 
 	let { links = [] }: Props = $props();
+
+	function handleLinkClick(e: MouseEvent, href: string) {
+		if (href === '#contact') {
+			e.preventDefault();
+			contactModal.open();
+			return;
+		}
+
+		// Check if it's an internal anchor link (starts with /#)
+		if (href.startsWith('/#')) {
+			const targetId = href.slice(2); // Remove the '/#'
+			const currentPath = $page.url.pathname;
+
+			// If we're on the home page, smooth scroll to the element
+			if (currentPath === '/') {
+				e.preventDefault();
+				const targetElement = document.getElementById(targetId);
+				if (targetElement) {
+					targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}
+			// If on another page, SvelteKit will navigate and jump to the anchor
+		}
+	}
 </script>
 
 <footer class="relative border-t border-white/10 bg-background text-[#f0f0f0]">
@@ -35,6 +62,7 @@
 								<a
 									class="group inline-flex items-center transition-colors hover:text-white focus-visible:text-white"
 									{href}
+									onclick={(e) => handleLinkClick(e, href)}
 								>
 									<RollingText text={label} size="3xl" />
 								</a>
@@ -79,10 +107,10 @@
 							><RollingText size="sm" text="hello@pixelcode.se" /></a
 						>
 						<a
-							href="tel:+46763407237"
+							href="tel:+46706450003"
 							class="text-sm tracking-[0.08em] text-white/70 uppercase transition-colors hover:text-primary focus-visible:text-primary md:text-base"
 						>
-							<RollingText size="sm" text="+46 76 340 72 37" />
+							<RollingText size="sm" text="+46 70-645 00 03" />
 						</a>
 					</div>
 				</div>
