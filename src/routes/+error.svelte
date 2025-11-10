@@ -63,7 +63,7 @@
 	let showSubmissionForm = $state(false);
 	let showLeaderboard = $state(false);
 
-	let isMobileDevice = false;
+	let isMobileDevice = $state(false);
 
 	let ampersandPath2D: Path2D | null = null;
 	let ampersandColor = '#f35b3f';
