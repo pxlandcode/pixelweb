@@ -6,6 +6,7 @@ import {
 	createSupabaseServerClient,
 	getSupabaseAdminClient
 } from '$lib/server/supabase';
+import { siteMeta, type PageMetaInput } from '$lib/seo';
 
 type Role = 'admin' | 'cms_admin' | 'employee';
 
@@ -18,6 +19,7 @@ type LoadResult = {
         user: { id: string; email?: string } | null;
         profile: Profile | null;
         role: Role | null;
+        meta?: PageMetaInput;
 };
 
 const normalizePath = (pathname: string) => pathname.replace(/\/$/, '') || '/';
@@ -51,17 +53,24 @@ const guardRoute = (pathname: string, role: Role | null): string | null => {
         return null;
 };
 
+const internalMeta = (pathname: string): PageMetaInput => ({
+	title: `${siteMeta.name} — Internal workspace`,
+	description: 'Secure workspace for the Pixelcode team to manage content and customer data.',
+	path: pathname,
+	noindex: true
+});
+
 export const load: LayoutServerLoad = async ({ cookies, url }) => {
-        const pathname = normalizePath(url.pathname);
+	const pathname = normalizePath(url.pathname);
         const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
 
-        if (!accessToken) {
-                if (PUBLIC_PATHS.includes(pathname as (typeof PUBLIC_PATHS)[number])) {
-                        return { user: null, profile: null, role: null } satisfies LoadResult;
-                }
+	if (!accessToken) {
+		if (PUBLIC_PATHS.includes(pathname as (typeof PUBLIC_PATHS)[number])) {
+			return { user: null, profile: null, role: null, meta: internalMeta(pathname) };
+		}
 
-                throw redirect(303, '/internal/login');
-        }
+		throw redirect(303, '/internal/login');
+	}
 
         if (pathname === '/internal/login') {
                 throw redirect(303, '/internal');
@@ -150,7 +159,8 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 		return {
 			user: { id: userId, email: userData.user.email ?? undefined },
 			profile: (profileData as Profile | null) ?? null,
-			role
+			role,
+			meta: internalMeta(pathname)
 		} satisfies LoadResult;
 	} catch (error) {
 		console.error('[internal layout] load error', error);

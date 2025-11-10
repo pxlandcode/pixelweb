@@ -44,10 +44,6 @@
 	};
 </script>
 
-<svelte:head>
-	<title>About Us - Join Our Team | Pixelcode</title>
-</svelte:head>
-
 <main class="flex min-h-screen flex-col bg-background text-[#f5f5f5]">
 	<HeroFirstFold {logos} heroProps={heroSectionProps} />
 

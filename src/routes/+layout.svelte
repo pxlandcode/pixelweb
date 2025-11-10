@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '$lib/assets/and.svg';
 	import CurtainMenu from '$components/CurtainMenu.svelte';
 	import SiteHeader from '$components/SiteHeader.svelte';
 	import SiteFooter from '$components/SiteFooter.svelte';
@@ -23,6 +23,7 @@
 	import Lenis from 'lenis';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
+	import { siteMeta, withMetaDefaults } from '$lib/seo';
 
 	let { children } = $props();
 
@@ -73,6 +74,13 @@
 	});
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
+	$: resolvedMeta = withMetaDefaults($page.data?.meta, $page.url.pathname);
+	$: jsonLdEntries =
+		resolvedMeta.jsonLd
+			? Array.isArray(resolvedMeta.jsonLd)
+				? resolvedMeta.jsonLd
+				: [resolvedMeta.jsonLd]
+			: [];
 
 	let lenis: Lenis | undefined;
 	let rafId: number | null = null;
@@ -149,7 +157,31 @@
 </script>
 
 <svelte:head>
+	<title>{resolvedMeta.title}</title>
+	<meta name="description" content={resolvedMeta.description} />
+	<meta name="robots" content={resolvedMeta.noindex ? 'noindex,nofollow' : 'index,follow'} />
+	<link rel="canonical" href={resolvedMeta.canonical} />
+	<meta property="og:site_name" content={siteMeta.name} />
+	<meta property="og:title" content={resolvedMeta.title} />
+	<meta property="og:description" content={resolvedMeta.description} />
+	<meta property="og:url" content={resolvedMeta.canonical} />
+	<meta property="og:type" content={resolvedMeta.type} />
+	{#if resolvedMeta.ogImage}
+		<meta property="og:image" content={resolvedMeta.ogImage} />
+	{/if}
+	<meta name="twitter:card" content={resolvedMeta.twitterCard} />
+	<meta name="twitter:title" content={resolvedMeta.title} />
+	<meta name="twitter:description" content={resolvedMeta.description} />
+	{#if resolvedMeta.ogImage}
+		<meta name="twitter:image" content={resolvedMeta.ogImage} />
+	{/if}
+	<meta name="theme-color" content="#0f172a" />
 	<link rel="icon" href={favicon} />
+	{#if jsonLdEntries.length}
+		{#each jsonLdEntries as schema}
+			<script type="application/ld+json">{JSON.stringify(schema)}</script>
+		{/each}
+	{/if}
 </svelte:head>
 
 <CurtainMenu links={navLinks} logoSrc={pixelLogoUrl} />

@@ -1,5 +1,7 @@
-import { fail, type Actions } from '@sveltejs/kit';
+import { error, fail, type Actions } from '@sveltejs/kit';
 import { ENABLE_RANKING } from '$env/static/private';
+import { env as privateEnv } from '$env/dynamic/private';
+import { dev } from '$app/environment';
 import { getModel } from '$lib/server/openai';
 import {
 	calculateReadability,
@@ -18,13 +20,30 @@ import {
 } from '$lib/server/analyzers';
 import { scoreWithLLM, type AnalyzerSnapshot, type PresenceReport } from '$lib/server/llmScore';
 import type { PageServerLoad } from '../$types';
+import { siteMeta } from '$lib/seo';
 
 const RANKING_ENABLED = ENABLE_RANKING?.trim() === '1';
+const AI_CHECKER_ENABLED =
+	privateEnv.ENABLE_AI_COMPATIBILITY_CHECKER?.trim() === '1' || dev;
+const aiCheckerMeta = {
+	title: `AI Compatibility Checker | ${siteMeta.name}`,
+	description:
+		'Paste any marketing page and quickly see how language models interpret the copy, structure and technical signals on your site.',
+	path: '/ai-compatibility-checker',
+	noindex: true
+};
 
-export const load: PageServerLoad = async () => ({
-	model: getModel(),
-	rankingEnabled: RANKING_ENABLED
-});
+export const load: PageServerLoad = async () => {
+	if (!AI_CHECKER_ENABLED) {
+		throw error(404, 'Not found');
+	}
+
+	return {
+		model: getModel(),
+		rankingEnabled: RANKING_ENABLED,
+		meta: aiCheckerMeta
+	};
+};
 
 type CompositeScores = {
 	discoverabilityScore: number;
@@ -199,6 +218,10 @@ const buildSnapshot = (
 
 export const actions: Actions = {
 	evaluate: async ({ request, fetch }) => {
+		if (!AI_CHECKER_ENABLED) {
+			throw error(404, 'Not found');
+		}
+
 		const formData = await request.formData();
 		const urlValue = formData.get('url');
 

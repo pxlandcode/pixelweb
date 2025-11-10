@@ -118,10 +118,6 @@
 		'inline-flex size-7 items-center justify-center rounded-full border border-transparent text-muted-fg transition-colors hover:border-border hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2';
 </script>
 
-<svelte:head>
-	<title>AI Compatibility Checker</title>
-</svelte:head>
-
 <main class="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-12">
 	<header class="flex flex-col gap-4">
 		<Badge variant="info" class="w-fit tracking-wide uppercase">

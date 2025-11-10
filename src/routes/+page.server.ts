@@ -7,6 +7,7 @@ import type { LeadInput } from '$lib/types';
 import { fetchNewsPosts } from '$lib/server/news';
 import { mockNewsPosts } from '$lib/mockdata/newsPosts';
 import { dev } from '$app/environment';
+import { buildOrganizationSchema, buildWebsiteSchema } from '$lib/seo';
 
 const LeadSchema = z.object({
 	website_url: z
@@ -20,12 +21,20 @@ const LeadSchema = z.object({
 const mapZodError = (issues: z.ZodIssue[]): string =>
 	issues[0]?.message ?? 'Kontrollera att alla fält är korrekt ifyllda.';
 
+const homeMeta = {
+	title: 'Pixel&Code_ — Your partner in digital growth',
+	description:
+		'We help organizations design, build, and evolve digital solutions that create measurable value.',
+	path: '/',
+	jsonLd: [buildOrganizationSchema(), buildWebsiteSchema()]
+};
+
 export const load: PageServerLoad = async (_event) => {
 	// Always try to fetch from Supabase first so CMS content is the source of truth.
 	const news = await fetchNewsPosts();
 
 	if (news.posts.length > 0 || !news.error) {
-		return { news };
+		return { news, meta: homeMeta };
 	}
 
 	// Fall back to mock posts only when explicitly in dev mode and nothing was returned.
@@ -34,11 +43,12 @@ export const load: PageServerLoad = async (_event) => {
 			news: {
 				posts: mockNewsPosts,
 				error: news.error
-			}
+			},
+			meta: homeMeta
 		};
 	}
 
-	return { news };
+	return { news, meta: homeMeta };
 };
 export const actions: Actions = {
 	default: async (event) => {
