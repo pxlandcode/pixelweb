@@ -31,12 +31,15 @@ export type SitemapEntry = {
 	lastmod?: string;
 };
 
+const DEFAULT_OG_PATH = '/og/default.png';
+
 export const siteMeta = {
 	name: 'Pixelcode',
 	url: 'https://pixelcode.se',
 	tagline: 'Digital products with real business value',
 	defaultDescription: 'We design, build and support digital products that create real business value.',
-	logoPath: '/and.svg'
+	logoPath: '/and.svg',
+	defaultOgImage: DEFAULT_OG_PATH
 };
 
 export const marketingRoutes: SitemapEntry[] = [
@@ -55,6 +58,13 @@ export const absoluteUrl = (path: string): string => {
 	}
 };
 
+const normalizeOgImage = (image?: string): string => {
+	if (!image || image.trim().length === 0) {
+		return absoluteUrl(siteMeta.defaultOgImage);
+	}
+	return /^https?:\/\//.test(image) ? image : absoluteUrl(image);
+};
+
 export const withMetaDefaults = (meta?: PageMetaInput, currentPath = '/'): PageMeta => {
 	const resolvedPath = meta?.path ?? currentPath ?? '/';
 	return {
@@ -62,7 +72,7 @@ export const withMetaDefaults = (meta?: PageMetaInput, currentPath = '/'): PageM
 		description: meta?.description ?? siteMeta.defaultDescription,
 		path: resolvedPath,
 		canonical: meta?.canonical ?? absoluteUrl(resolvedPath),
-		ogImage: meta?.ogImage,
+		ogImage: normalizeOgImage(meta?.ogImage),
 		type: meta?.type ?? 'website',
 		twitterCard: meta?.twitterCard ?? 'summary_large_image',
 		noindex: meta?.noindex ?? false,

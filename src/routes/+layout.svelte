@@ -74,13 +74,14 @@
 	});
 
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
-	$: resolvedMeta = withMetaDefaults($page.data?.meta, $page.url.pathname);
-	$: jsonLdEntries =
+	const resolvedMeta = $derived(withMetaDefaults($page.data?.meta, $page.url.pathname));
+	const jsonLdEntries = $derived(
 		resolvedMeta.jsonLd
 			? Array.isArray(resolvedMeta.jsonLd)
 				? resolvedMeta.jsonLd
 				: [resolvedMeta.jsonLd]
-			: [];
+			: []
+	);
 
 	let lenis: Lenis | undefined;
 	let rafId: number | null = null;
