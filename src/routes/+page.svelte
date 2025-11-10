@@ -59,8 +59,9 @@
 		imageSrc={soloImages.meetingRoom.src}
 		title={bannerTitle}
 		parallax={0.25}
+		pillHref="#cases"
 	/>
 
-	<Cardstack />
+	<Cardstack id="cases" />
 	<NewsPreview posts={newsPosts} error={newsError} />
 </main>

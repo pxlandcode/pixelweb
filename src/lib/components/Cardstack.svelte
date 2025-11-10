@@ -4,6 +4,12 @@
 	import type { CaseRecord } from '$lib/types';
 	import CardstackItem from './CardstackItem.svelte';
 
+	type CardstackProps = {
+		id?: string;
+	};
+
+	let { id = '' } = $props<CardstackProps>();
+
 	let cases: CaseRecord[] = $state([]);
 	let isLoading = $state(true);
 	let loadError = $state<string | null>(null);
@@ -248,6 +254,7 @@
 </script>
 
 <section
+	id={id || undefined}
 	class="relative isolate grid min-h-screen gap-[clamp(3rem,7vw,6rem)] bg-background text-white [--stack-gap:clamp(3rem,6vw,5rem)]"
 >
 	{#if loadError}

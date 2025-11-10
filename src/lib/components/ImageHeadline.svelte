@@ -1,15 +1,51 @@
 <script lang="ts">
-	export let id: string = '';
-	export let imageSrc: string;
-	export let title: string; // large white text over the image
-	export let subtitle: string = ''; // optional, smaller line under the title
-	export let parallax = 0.25; // 0–1 (how much the image moves while scrolling)
-	export let pillText: string = `We've got proof`;
+	import RollingText from '$components/rolling-text/RollingText.svelte';
+
+	type ImageHeadlineProps = {
+		id?: string;
+		imageSrc: string;
+		title: string;
+		subtitle?: string;
+		parallax?: number;
+		pillText?: string;
+		pillHref?: string;
+	};
+
+	let {
+		id = '',
+		imageSrc,
+		title,
+		subtitle = '',
+		parallax = 0.25,
+		pillText = `We've got proof`,
+		pillHref = '#'
+	} = $props<ImageHeadlineProps>();
+
+	function getAnchorId(href: string): string | null {
+		if (!href) return null;
+		if (href.startsWith('#')) {
+			return href.slice(1);
+		}
+		if (href.startsWith('/#')) {
+			return href.slice(2);
+		}
+		return null;
+	}
+
+	function handlePillClick(event: MouseEvent) {
+		if (typeof document === 'undefined') return;
+		const targetId = getAnchorId(pillHref);
+		if (!targetId) return;
+		const targetElement = document.getElementById(targetId);
+		if (!targetElement) return;
+		event.preventDefault();
+		targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 </script>
 
 <!-- Wrapper -->
 <section
-	{id}
+	id={id || undefined}
 	class="image-headline relative isolate h-dvh w-full overflow-hidden bg-black"
 	style={`--parallax-strength: ${parallax};`}
 >
@@ -32,8 +68,8 @@
 			</p>
 		{/if}
 	</div>
-	<div class="cta-pill" aria-label={pillText}>
-		<span class="cta-pill__text">{pillText}</span>
+	<a class="cta-pill" aria-label={pillText} href={pillHref} role="button" onclick={handlePillClick}>
+		<RollingText class="cta-pill__text" text={pillText} />
 		<span class="cta-pill__arrow" aria-hidden="true">
 			<svg
 				viewBox="0 0 24 24"
@@ -47,7 +83,7 @@
 				<path d="M18 13l-6 6-6-6" />
 			</svg>
 		</span>
-	</div>
+	</a>
 </section>
 
 <style>
@@ -134,6 +170,7 @@
 		font-weight: 600;
 		letter-spacing: 0.05em;
 		pointer-events: auto;
+		text-decoration: none;
 	}
 
 	.cta-pill__text {

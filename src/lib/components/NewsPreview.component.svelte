@@ -404,17 +404,6 @@
 				<div bind:this={observerTarget} class="observer-target min-w-[1px]"></div>
 			</div>
 
-			<!-- Loading indicator -->
-			{#if isLoadingMore}
-				<div class="mt-8 flex justify-center">
-					<div class="flex items-center gap-2 text-sm text-text/70">
-						<div
-							class="h-5 w-5 animate-spin rounded-full border-2 border-text/20 border-t-text/70"
-						></div>
-						<span>Loading more posts...</span>
-					</div>
-				</div>
-			{/if}
 		</div>
 	{:else}
 		<div class="mx-auto max-w-7xl px-6">
