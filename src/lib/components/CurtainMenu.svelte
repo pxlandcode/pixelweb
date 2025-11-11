@@ -112,7 +112,12 @@
 					}`}
 					style={`transition-delay: ${$curtainMenu ? 22 + 220 : 0}ms`}
 				>
-					<RollingText text="Close" size="sm" />
+					<RollingText
+						initialTextClass="text-white"
+						rollingTextClass="text-primary"
+						text="Close"
+						size="sm"
+					/>
 				</span>
 			</Button>
 		</div>
@@ -130,7 +135,13 @@
 							{href}
 							on:click={(e) => handleLinkClick(e, href)}
 						>
-							<RollingText text={label} size="3xl" class="md:text-7xl" />
+							<RollingText
+								initialTextClass="text-white"
+								rollingTextClass="text-primary"
+								text={label}
+								size="3xl"
+								class="md:text-7xl"
+							/>
 						</a>
 					</li>
 				{/each}
@@ -152,7 +163,12 @@
 					}`}
 					style={`transition-delay: ${$curtainMenu ? 240 + links.length * 60 : 0}ms`}
 				>
-					<RollingText text="LinkedIn" size="sm" />
+					<RollingText
+						initialTextClass="text-white"
+						rollingTextClass="text-primary"
+						text="LinkedIn"
+						size="sm"
+					/>
 				</span>
 			</a>
 			<div
@@ -169,7 +185,12 @@
 						}`}
 						style={`transition-delay: ${$curtainMenu ? 260 + links.length * 60 : 0}ms`}
 					>
-						<RollingText text="Privacy Policy" size="xs" />
+						<RollingText
+							initialTextClass="text-white/50"
+							rollingTextClass="text-primary"
+							text="Privacy Policy"
+							size="xs"
+						/>
 					</span>
 				</a>
 				<a
@@ -183,7 +204,12 @@
 						}`}
 						style={`transition-delay: ${$curtainMenu ? 280 + links.length * 60 : 0}ms`}
 					>
-						<RollingText text="Terms of Service" size="xs" />
+						<RollingText
+							initialTextClass="text-white/50"
+							rollingTextClass="text-primary"
+							text="Terms of Service"
+							size="xs"
+						/>
 					</span>
 				</a>
 			</div>

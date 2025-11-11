@@ -1,11 +1,23 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import type { PeopleImageId } from '$lib/images/definitions';
+	import { buildSupabaseImageSrc, imageDefinitions } from '$lib/images/manifest';
 
-export let minHeight = 'clamp(160vh, 200vh + 5vw, 220vh)';
-export let paddingTop = 'min(12vh, 8rem)';
-export let paddingBottom = 'min(10vh, 6rem)';
+	type DiscordReaction = { emoji: string; count: number };
+	type DiscordMessage = {
+		user: string;
+		text: string;
+		reactions: DiscordReaction[];
+		link?: string;
+		linkText?: string;
+		gif?: string;
+		avatarId?: PeopleImageId;
+	};
 
-export let messages = [
+	const DEFAULT_MIN_HEIGHT = 'clamp(160vh, 200vh + 5vw, 220vh)';
+	const DEFAULT_PADDING_TOP = 'min(12vh, 8rem)';
+	const DEFAULT_PADDING_BOTTOM = 'min(10vh, 6rem)';
+
+	const defaultMessages: DiscordMessage[] = [
 		{
 			user: 'Oliver',
 			text: 'Anyone tried the new SvelteKit release yet? 🤔',
@@ -13,7 +25,8 @@ export let messages = [
 				{ emoji: '🚀', count: 5 },
 				{ emoji: '🔥', count: 8 },
 				{ emoji: '👀', count: 3 }
-			]
+			],
+			avatarId: 'oliverPortrait'
 		},
 		{
 			user: 'Emilia',
@@ -22,7 +35,8 @@ export let messages = [
 				{ emoji: '✅', count: 7 },
 				{ emoji: '☕️', count: 9 },
 				{ emoji: '🙌', count: 4 }
-			]
+			],
+			avatarId: 'emiliaPortrait'
 		},
 		{
 			user: 'Linus',
@@ -31,10 +45,11 @@ export let messages = [
 				{ emoji: '🎤', count: 6 },
 				{ emoji: '🎸', count: 5 },
 				{ emoji: '🔊', count: 4 }
-			]
+			],
+			avatarId: 'linusPortrait'
 		},
 		{
-			user: 'Ernst',
+			user: 'Martin',
 			text: 'Gooooood morning Pixel&Code! 👋☀️',
 			gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2ZkNzZ5OWJ4bGV2djZjODRhcnRzN3p2dng3Z2g4ODlsOHA2dWMzNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JYMDARH3gR27e/giphy.gif',
 			reactions: [
@@ -42,7 +57,8 @@ export let messages = [
 				{ emoji: '😴', count: 3 },
 				{ emoji: '🌅', count: 5 },
 				{ emoji: '💪', count: 4 }
-			]
+			],
+			avatarId: 'martinPortrait'
 		},
 		{
 			user: 'Nicklas',
@@ -51,7 +67,8 @@ export let messages = [
 				{ emoji: '🎬', count: 6 },
 				{ emoji: '🙋', count: 8 },
 				{ emoji: '👍', count: 5 }
-			]
+			],
+			avatarId: 'nicklasPortrait'
 		},
 		{
 			user: 'Pierre',
@@ -60,7 +77,8 @@ export let messages = [
 				{ emoji: '🔥', count: 10 },
 				{ emoji: '💯', count: 7 },
 				{ emoji: '👏', count: 6 }
-			]
+			],
+			avatarId: 'pierrePortrait'
 		},
 		{
 			user: 'Andreas',
@@ -71,21 +89,73 @@ export let messages = [
 				{ emoji: '🧡', count: 15 },
 				{ emoji: '💬', count: 10 },
 				{ emoji: '🎉', count: 12 }
-			]
+			],
+			avatarId: 'andreasPortrait'
 		}
 	];
+
+	const avatarFallbacks: Record<string, PeopleImageId> = {
+		Oliver: 'oliverPortrait',
+		Emilia: 'emiliaPortrait',
+		Linus: 'linusPortrait',
+		Martin: 'martinPortrait',
+		Nicklas: 'nicklasPortrait',
+		Pierre: 'pierrePortrait',
+		Andreas: 'andreasPortrait'
+	};
+
+	const AVATAR_TRANSFORM = { width: 96, height: 96, resize: 'cover', quality: 80 } as const;
+
+	const props = $props<{
+		minHeight?: string;
+		paddingTop?: string;
+		paddingBottom?: string;
+		messages?: DiscordMessage[];
+	}>();
+
+	const minHeight = $derived(props.minHeight ?? DEFAULT_MIN_HEIGHT);
+	const paddingTop = $derived(props.paddingTop ?? DEFAULT_PADDING_TOP);
+	const paddingBottom = $derived(props.paddingBottom ?? DEFAULT_PADDING_BOTTOM);
+	const messages = $derived(props.messages ?? defaultMessages);
+
+	const preparedMessages = $derived(
+		messages.map((message) => {
+			const avatarId = message.avatarId ?? avatarFallbacks[message.user];
+			const avatarDefinition = avatarId ? imageDefinitions[avatarId] : undefined;
+
+			return {
+				...message,
+				avatarId,
+				avatarSrc: avatarDefinition
+					? buildSupabaseImageSrc(avatarDefinition.supabasePath, AVATAR_TRANSFORM)
+					: undefined,
+				avatarAlt: avatarDefinition?.alt ?? `${message.user} avatar`
+			};
+		})
+	);
 </script>
 
 <section
-	class="discord-sim text-white"
+	class="discord-sim px-4 text-white md:px-0"
 	style:--section-min-height={minHeight}
 	style:--section-padding-top={paddingTop}
 	style:--section-padding-bottom={paddingBottom}
 >
 	<div class="chat-wrapper">
-		{#each messages as msg, i}
+		{#each preparedMessages as msg, i}
 			<div class="message" style={`--i:${i};`}>
-				<div class="avatar"></div>
+				<div class="avatar" aria-hidden={!msg.avatarSrc}>
+					{#if msg.avatarSrc}
+						<img
+							src={msg.avatarSrc}
+							alt={msg.avatarAlt}
+							loading="lazy"
+							decoding="async"
+							width="48"
+							height="48"
+						/>
+					{/if}
+				</div>
 				<div class="bubble">
 					<div class="name">{msg.user}</div>
 					<p class="text">
@@ -148,11 +218,23 @@ export let messages = [
 	}
 
 	.avatar {
-		width: 42px;
-		height: 42px;
+		width: 48px;
+		height: 48px;
 		border-radius: 50%;
 		background: #222;
 		flex-shrink: 0;
+		overflow: hidden;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+	}
+
+	.avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
 	}
 
 	.bubble {

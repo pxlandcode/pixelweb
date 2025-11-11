@@ -3,7 +3,6 @@
 	import type { NavLink } from '$types';
 	import { contactModal } from '$lib/stores/contactModal';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 
 	export let links: NavLink[] = [];
 
@@ -16,12 +15,10 @@
 			return;
 		}
 
-		// Check if it's an internal anchor link (starts with /#)
 		if (href.startsWith('/#')) {
-			const targetId = href.slice(2); // Remove the '/#'
+			const targetId = href.slice(2);
 			const currentPath = $page.url.pathname;
 
-			// If we're on the home page, smooth scroll to the element
 			if (currentPath === '/') {
 				e.preventDefault();
 				const targetElement = document.getElementById(targetId);
@@ -29,7 +26,6 @@
 					targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}
 			}
-			// If on another page, SvelteKit will navigate and jump to the anchor
 		}
 	}
 </script>
@@ -48,16 +44,21 @@
 	</a>
 	<nav class="hidden md:block">
 		<ul
-			class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white/70 transition-colors md:justify-start"
+			class="-ml-4 flex flex-wrap items-center justify-center gap-y-3 text-white/70 transition-colors md:justify-start"
 		>
 			{#each links as { label, href }}
 				<li>
 					<a
-						class="transition-colors hover:text-white focus-visible:text-white"
+						class="group p-4 transition-colors hover:text-white focus-visible:text-white"
 						{href}
 						onclick={(e) => handleLinkClick(e, href)}
 					>
-						<RollingText text={label} />
+						<RollingText
+							initialTextClass="text-white/70"
+							rollingTextClass="text-primary"
+							inheritParentHover
+							text={label}
+						/>
 					</a>
 				</li>
 			{/each}

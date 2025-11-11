@@ -203,8 +203,47 @@ export const cultureImages = [
 	}
 ] as const satisfies ReadonlyArray<ImageDefinition>;
 
+export const peopleImages = [
+	{
+		id: 'andreasPortrait',
+		alt: 'Portrait of Andreas',
+		supabasePath: 'other/andreas.png'
+	},
+	{
+		id: 'emiliaPortrait',
+		alt: 'Portrait of Emilia',
+		supabasePath: 'other/emilia.png'
+	},
+	{
+		id: 'linusPortrait',
+		alt: 'Portrait of Linus',
+		supabasePath: 'other/linus.png'
+	},
+	{
+		id: 'martinPortrait',
+		alt: 'Portrait of Martin',
+		supabasePath: 'other/martin.png'
+	},
+	{
+		id: 'nicklasPortrait',
+		alt: 'Portrait of Nicklas',
+		supabasePath: 'other/nicklas.jpeg'
+	},
+	{
+		id: 'oliverPortrait',
+		alt: 'Portrait of Oliver',
+		supabasePath: 'other/oliver.jpeg'
+	},
+	{
+		id: 'pierrePortrait',
+		alt: 'Portrait of Pierre',
+		supabasePath: 'other/pierre.jpeg'
+	}
+] as const satisfies ReadonlyArray<ImageDefinition>;
+
 export const imageDefinitionBuckets = {
-	culture: cultureImages
+	culture: cultureImages,
+	people: peopleImages
 } as const;
 
 type BucketMap = typeof imageDefinitionBuckets;
@@ -216,3 +255,6 @@ export type ImageId = ImageDefinitionEntry['id'];
 export const imageDefinitionList = Object.values(
 	imageDefinitionBuckets
 ).flat() as ImageDefinitionEntry[];
+
+export type PeopleImageDefinition = (typeof peopleImages)[number];
+export type PeopleImageId = PeopleImageDefinition['id'];

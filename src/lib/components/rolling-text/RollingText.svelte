@@ -12,6 +12,8 @@
 		size?: RollingTextSize;
 		as?: keyof HTMLElementTagNameMap;
 		class?: ClassNameValue;
+		initialTextClass?: ClassNameValue;
+		rollingTextClass?: ClassNameValue;
 		duration?: number;
 		easing?: string;
 		offset?: string;
@@ -24,6 +26,8 @@
 		size,
 		as = 'span',
 		class: className,
+		initialTextClass,
+		rollingTextClass,
 		duration = 500,
 		easing = 'cubic-bezier(0.34, 1.56, 0.64, 1)',
 		offset = '110%',
@@ -52,7 +56,10 @@
 >
 	<span class="flex overflow-hidden">
 		<span
-			class="block whitespace-nowrap transition-transform [transition-duration:var(--rolling-duration)] [transition-timing-function:var(--rolling-easing)] will-change-transform group-hover:-translate-y-[var(--rolling-offset)] group-focus-visible:-translate-y-[var(--rolling-offset)] motion-reduce:transform-none motion-reduce:transition-none"
+			class={cn(
+				'block whitespace-nowrap transition-transform [transition-duration:var(--rolling-duration)] [transition-timing-function:var(--rolling-easing)] will-change-transform group-hover:-translate-y-[var(--rolling-offset)] group-focus-visible:-translate-y-[var(--rolling-offset)] motion-reduce:transform-none motion-reduce:transition-none',
+				initialTextClass
+			)}
 		>
 			{#if children}
 				{@render children()}
@@ -66,7 +73,10 @@
 		aria-hidden="true"
 	>
 		<span
-			class="block translate-y-[var(--rolling-offset)] whitespace-nowrap transition-transform [transition-duration:var(--rolling-duration)] [transition-timing-function:var(--rolling-easing)] will-change-transform group-hover:translate-y-0 group-focus-visible:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
+			class={cn(
+				'block translate-y-[var(--rolling-offset)] whitespace-nowrap transition-transform [transition-duration:var(--rolling-duration)] [transition-timing-function:var(--rolling-easing)] will-change-transform group-hover:translate-y-0 group-focus-visible:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none',
+				rollingTextClass
+			)}
 		>
 			{#if children}
 				{@render children()}

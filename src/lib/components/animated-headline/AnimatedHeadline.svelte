@@ -58,7 +58,7 @@ $: segments = segmentText(text);
 >
 	<div class="content" style:--sticky-min-height={stickyMinHeight}>
 		<h1
-			class="headline text-center text-5xl font-semibold tracking-tight select-none md:text-6xl"
+			class="headline px-4 text-center text-5xl font-semibold tracking-tight select-none md:px-0 md:text-6xl"
 			aria-label={text}
 		>
 			{#each segments as segment}

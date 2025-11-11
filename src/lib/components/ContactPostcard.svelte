@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { PeopleImageId } from '$lib/images/definitions';
+	import { buildSupabaseImageSrc, imageDefinitions } from '$lib/images/manifest';
 	import { contactModal } from '$lib/stores/contactModal';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
 	import { fly } from 'svelte/transition';
@@ -40,6 +42,40 @@
 	}
 
 	$effect(() => fxToggleModal());
+
+	type ContactPortrait = {
+		name: string;
+		imageId: PeopleImageId;
+		rotation: number;
+	};
+
+	const CONTACT_PORTRAITS: ContactPortrait[] = [
+		{ name: 'Pierre Elmén', imageId: 'pierrePortrait', rotation: -3 },
+		{ name: 'Nicklas Arleij', imageId: 'nicklasPortrait', rotation: 4 }
+	];
+
+	const getPortraitImage = (imageId: PeopleImageId, size: number) => {
+		const definition = imageDefinitions[imageId];
+
+		return {
+			src: buildSupabaseImageSrc(definition.supabasePath, {
+				width: size,
+				height: size,
+				resize: 'cover',
+				quality: 85
+			}),
+			alt: definition.alt
+		};
+	};
+
+	const createPortraits = (size: number) =>
+		CONTACT_PORTRAITS.map((portrait) => ({
+			...portrait,
+			image: getPortraitImage(portrait.imageId, size)
+		}));
+
+	const desktopPortraits = createPortraits(140);
+	const mobilePortraits = createPortraits(96);
 </script>
 
 {#key open}
@@ -97,7 +133,7 @@
 								href="https://maps.app.goo.gl/L9eSZFmUp4ZVzMYz6"
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-primary no-underline transition-opacity duration-200 hover:opacity-70"
+								class="underline-offset text-primary underline transition-opacity duration-200 hover:opacity-70"
 							>
 								Tegnérgatan 34 <MapPin size={18} class="mb-[3px] inline-block" />
 							</a>
@@ -115,42 +151,26 @@
 
 						<!-- Photos -->
 						<div class="mt-4 flex items-end gap-6">
-							<div
-								class="bg-white p-2 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.08)] transition-all duration-200 hover:!rotate-0 hover:shadow-[0_4px_8px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.12)]"
-								style="transform: rotate(-3deg);"
-							>
-								<img
-									src="https://hpywaqmiynhexqjvrlww.supabase.co/storage/v1/object/public/other/pierre.jpeg"
-									alt="Pierre Elmén"
-									class="block h-[120px] w-[120px] object-cover md:h-[120px] md:w-[120px]"
-									loading="lazy"
-									decoding="async"
-									fetchpriority="low"
-								/>
-								<p
-									class="mt-2 mb-0 text-center font-['Fave_Script',_cursive,_serif] text-xl text-primary"
+							{#each desktopPortraits as portrait (portrait.name)}
+								<div
+									class="bg-white p-2 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.08)] transition-all duration-200 hover:!rotate-0 hover:shadow-[0_4px_8px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.12)]"
+									style={`transform: rotate(${portrait.rotation}deg);`}
 								>
-									Pierre Elmén
-								</p>
-							</div>
-							<div
-								class="bg-white p-2 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.08)] transition-all duration-200 hover:!rotate-0 hover:shadow-[0_4px_8px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.12)]"
-								style="transform: rotate(4deg);"
-							>
-								<img
-									src="https://hpywaqmiynhexqjvrlww.supabase.co/storage/v1/object/public/other/nicklas.jpeg"
-									alt="Nicklas Arleij"
-									class="block h-[120px] w-[120px] object-cover md:h-[120px] md:w-[120px]"
-									loading="lazy"
-									decoding="async"
-									fetchpriority="low"
-								/>
-								<p
-									class="mt-2 mb-0 text-center font-['Fave_Script',_cursive,_serif] text-xl text-primary"
-								>
-									Nicklas Arleij
-								</p>
-							</div>
+									<img
+										src={portrait.image.src}
+										alt={portrait.image.alt}
+										class="block h-[120px] w-[120px] object-cover md:h-[120px] md:w-[120px]"
+										loading="lazy"
+										decoding="async"
+										fetchpriority="low"
+									/>
+									<p
+										class="mt-2 mb-0 text-center font-['Fave_Script',_cursive,_serif] text-xl text-primary"
+									>
+										{portrait.name}
+									</p>
+								</div>
+							{/each}
 						</div>
 					</div>
 
@@ -215,42 +235,26 @@
 
 						<!-- Photos on mobile -->
 						<div class="mt-6 flex items-end gap-4 md:hidden">
-							<div
-								class="bg-white p-2 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.08)] transition-all duration-200 hover:!rotate-0 hover:shadow-[0_4px_8px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.12)]"
-								style="transform: rotate(-3deg);"
-							>
-								<img
-									src="https://hpywaqmiynhexqjvrlww.supabase.co/storage/v1/object/public/other/pierre.jpeg"
-									alt="Pierre Elmén"
-									class="block h-[90px] w-[90px] object-cover"
-									loading="lazy"
-									decoding="async"
-									fetchpriority="low"
-								/>
-								<p
-									class="mt-2 mb-0 text-center font-['Fave_Script',_cursive,_serif] text-base text-primary"
+							{#each mobilePortraits as portrait (portrait.name)}
+								<div
+									class="bg-white p-2 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.08)] transition-all duration-200 hover:!rotate-0 hover:shadow-[0_4px_8px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.12)]"
+									style={`transform: rotate(${portrait.rotation}deg);`}
 								>
-									Pierre Elmén
-								</p>
-							</div>
-							<div
-								class="bg-white p-2 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.08)] transition-all duration-200 hover:!rotate-0 hover:shadow-[0_4px_8px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.12)]"
-								style="transform: rotate(4deg);"
-							>
-								<img
-									src="https://hpywaqmiynhexqjvrlww.supabase.co/storage/v1/object/public/other/nicklas.jpeg"
-									alt="Nicklas Arleij"
-									class="block h-[90px] w-[90px] object-cover"
-									loading="lazy"
-									decoding="async"
-									fetchpriority="low"
-								/>
-								<p
-									class="mt-2 mb-0 text-center font-['Fave_Script',_cursive,_serif] text-base text-primary"
-								>
-									Nicklas Arleij
-								</p>
-							</div>
+									<img
+										src={portrait.image.src}
+										alt={portrait.image.alt}
+										class="block h-[90px] w-[90px] object-cover"
+										loading="lazy"
+										decoding="async"
+										fetchpriority="low"
+									/>
+									<p
+										class="mt-2 mb-0 text-center font-['Fave_Script',_cursive,_serif] text-base text-primary"
+									>
+										{portrait.name}
+									</p>
+								</div>
+							{/each}
 						</div>
 					</div>
 				</div>

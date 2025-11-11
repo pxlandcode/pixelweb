@@ -60,11 +60,16 @@
 						{#each links as { label, href }}
 							<li>
 								<a
-									class="group inline-flex items-center transition-colors hover:text-white focus-visible:text-white"
+									class="group inline-flex items-center transition-colors focus-visible:text-white"
 									{href}
 									onclick={(e) => handleLinkClick(e, href)}
 								>
-									<RollingText text={label} size="3xl" />
+									<RollingText
+										text={label}
+										size="3xl"
+										initialTextClass="text-white/70"
+										rollingTextClass="text-primary"
+									/>
 								</a>
 							</li>
 						{/each}
@@ -99,18 +104,33 @@
 						<a
 							class="text-sm tracking-[0.08em] text-white/70 uppercase transition-colors hover:text-primary focus-visible:text-primary md:text-base"
 							href="https://maps.app.goo.gl/L9eSZFmUp4ZVzMYz6"
-							><RollingText size="sm" text="Tegnergatan 34" /></a
+							><RollingText
+								size="sm"
+								text="Tegnergatan 34"
+								initialTextClass="text-white/70"
+								rollingTextClass="text-primary"
+							/></a
 						>
 						<a
 							class="text-sm tracking-[0.08em] text-white/70 uppercase transition-colors hover:text-primary focus-visible:text-primary md:text-base"
 							href="mailto:hello@pixelcode.se"
-							><RollingText size="sm" text="hello@pixelcode.se" /></a
+							><RollingText
+								size="sm"
+								text="hello@pixelcode.se"
+								initialTextClass="text-white/70"
+								rollingTextClass="text-primary"
+							/></a
 						>
 						<a
 							href="tel:+46706450003"
 							class="text-sm tracking-[0.08em] text-white/70 uppercase transition-colors hover:text-primary focus-visible:text-primary md:text-base"
 						>
-							<RollingText size="sm" text="+46 70-645 00 03" />
+							<RollingText
+								size="sm"
+								text="+46 70-645 00 03"
+								initialTextClass="text-white/70"
+								rollingTextClass="text-primary"
+							/>
 						</a>
 					</div>
 				</div>
