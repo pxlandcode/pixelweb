@@ -7,6 +7,7 @@
 	import SiteHeader from '$components/SiteHeader.svelte';
 	import SiteFooter from '$components/SiteFooter.svelte';
 	import { ContactPostcard } from '$lib/components';
+	import LaunchCountdownOverlay from '$lib/components/LaunchCountdownOverlay.svelte';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
@@ -24,6 +25,8 @@
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
 	import { siteMeta, withMetaDefaults } from '$lib/seo';
+
+	const LAUNCH_COUNTDOWN_TARGET = '2025-11-18T17:00:00+01:00';
 
 	let { children } = $props();
 
@@ -180,12 +183,18 @@
 	<link rel="icon" href={favicon} />
 	{#if jsonLdEntries.length}
 		{#each jsonLdEntries as schema}
-			<script type="application/ld+json">{JSON.stringify(schema)}</script>
+			<script type="application/ld+json">
+{JSON.stringify(schema)}
+			</script>
 		{/each}
 	{/if}
 </svelte:head>
 
 <CurtainMenu links={navLinks} logoSrc={pixelLogoUrl} />
+
+{#if !$page.url.pathname.startsWith('/internal')}
+	<LaunchCountdownOverlay targetIso={LAUNCH_COUNTDOWN_TARGET} />
+{/if}
 
 <div
 	class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
