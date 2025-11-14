@@ -8,7 +8,7 @@ import {
 } from '$lib/server/supabase';
 import { siteMeta, type PageMetaInput } from '$lib/seo';
 
-type Role = 'admin' | 'cms_admin' | 'employee';
+type Role = 'admin' | 'cms_admin' | 'employee' | 'employer';
 
 type Profile = {
         first_name: string | null;
@@ -30,7 +30,8 @@ const PUBLIC_PATHS = ['/internal/login', '/internal/reset-password'] as const;
 const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
         { pattern: /^\/internal$/, roles: ['admin', 'cms_admin'] },
         { pattern: /^\/internal\/users/, roles: ['admin'] },
-        { pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] }
+        { pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
+        { pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] }
 ];
 
 const guardRoute = (pathname: string, role: Role | null): string | null => {
@@ -43,9 +44,9 @@ const guardRoute = (pathname: string, role: Role | null): string | null => {
         }
 
         if (!match.roles.includes(role)) {
-                if (role === 'employee') {
-                        return '/internal/login?unauthorized=1';
-                }
+        if (role === 'employee' || role === 'employer') {
+                return '/internal/preboard?unauthorized=1';
+        }
 
                 return '/internal?unauthorized=1';
         }
@@ -69,7 +70,8 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 			return { user: null, profile: null, role: null, meta: internalMeta(pathname) };
 		}
 
-		throw redirect(303, '/internal/login');
+		const redirectParam = encodeURIComponent(pathname);
+		throw redirect(303, `/internal/login?redirect=${redirectParam}`);
 	}
 
         if (pathname === '/internal/login') {

@@ -5,7 +5,7 @@
 
 	const dispatch = createEventDispatcher<{ logout: void }>();
 
-	export type AdminRole = 'admin' | 'cms_admin' | 'employee';
+	export type AdminRole = 'admin' | 'cms_admin' | 'employee' | 'employer';
 
 	interface Profile {
 		first_name: string | null;

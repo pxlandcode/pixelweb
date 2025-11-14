@@ -1,0 +1,5 @@
+# Project-wide instructions for OpenAI Codex
+Always generate code using Svelte 5.
+Prefer Svelte 5 runes: $state, $derived, $props, $effect, $inspect.
+Do not generate Svelte 4 syntax such as `$:` reactive labels or stores.
+Assume Svelte 5 as the default for all components and utilities.

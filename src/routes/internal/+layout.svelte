@@ -5,9 +5,12 @@
 
 	const { data, children } = $props();
 
+	const plainRoutes = new Set(['/internal/login', '/internal/reset-password', '/internal/preboard']);
+	const routeId = $derived($page.route.id ?? '');
+
 </script>
 
-{#if $page.route.id === '/internal/login' || $page.route.id === '/internal/reset-password'}
+{#if plainRoutes.has(routeId)}
 	{@render children?.()}
 {:else}
 	{@const unauthorizedMessage =

@@ -2,7 +2,7 @@
         import { Alert, Button, FormControl, Input, Select } from '@pixelcode_/blocks/components';
         import { createEventDispatcher } from 'svelte';
 
-        export type UserRole = 'admin' | 'cms_admin' | 'employee';
+        export type UserRole = 'admin' | 'cms_admin' | 'employee' | 'employer';
 
         const dispatch = createEventDispatcher<
                 { success: { message?: string }; close: void; error: { message?: string } }
@@ -112,6 +112,7 @@
                                                 <option value="admin">Admin</option>
                                                 <option value="cms_admin">CMS Admin</option>
                                                 <option value="employee">Employee</option>
+                                                <option value="employer">Employer</option>
                                         </Select>
                                 </FormControl>
 

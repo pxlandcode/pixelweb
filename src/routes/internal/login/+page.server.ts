@@ -16,6 +16,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const email = formData.get('email');
 		const password = formData.get('password');
+                const redirectTo = formData.get('redirectTo');
 
                 if (typeof email !== 'string' || typeof password !== 'string') {
                         return fail(400, { message: 'Email and password are required.' });
@@ -52,6 +53,11 @@ export const actions: Actions = {
                         maxAge: 60 * 60 * 24 * 30
                 });
 
-		throw redirect(303, '/internal');
+		const destination =
+                        typeof redirectTo === 'string' && redirectTo.startsWith('/internal')
+                                ? redirectTo
+                                : '/internal';
+
+		throw redirect(303, destination);
 	}
 };

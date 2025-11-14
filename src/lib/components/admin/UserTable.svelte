@@ -88,6 +88,7 @@
                                                         <option value="admin">Admin</option>
                                                         <option value="cms_admin">CMS Admin</option>
                                                         <option value="employee">Employee</option>
+                                                        <option value="employer">Employer</option>
                                                 </Select>
                                                 <Button variant="primary" size="sm" type="submit">
                                                         Update

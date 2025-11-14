@@ -4,7 +4,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { Button, FormControl, Input } from '@pixelcode_/blocks/components';
 
-	const { form = null, ...rest } = $props();
+	const { form = null, redirectTo = null, ...rest } = $props();
 
 	let pending = $state(false);
 
@@ -53,6 +53,10 @@
 
 	{#if form?.message}
 		<p class="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-600">{form.message}</p>
+	{/if}
+
+	{#if redirectTo}
+		<input type="hidden" name="redirectTo" value={redirectTo} />
 	{/if}
 
 	<Button

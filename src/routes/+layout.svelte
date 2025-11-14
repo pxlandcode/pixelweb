@@ -196,54 +196,37 @@
 	<LaunchCountdownOverlay targetIso={LAUNCH_COUNTDOWN_TARGET} />
 {/if}
 
-<div
-	class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
-	bind:this={headerWrapper}
-	style:transform={`translate3d(0, ${-$siteHeaderState.parallaxOffset}px, 0)`}
->
-	<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
-</div>
-
-<div
-	class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
->
-	{#if $floatingNavState.active}
-		<div
-			class="pointer-events-auto flex items-center gap-3"
-			transition:fly={{ y: 50, duration: 220, delay: 50 }}
-		>
-			<Button
-				size="md"
-				variant="primary"
-				onclick={contactModal.open}
-				class="border border-white/20 transition-transform duration-200"
-			>
-				<RollingText>Get in touch</RollingText>
-			</Button>
-		</div>
-	{/if}
-
+{#if !$page.url.pathname.startsWith('/internal')}
 	<div
-		class="pointer-events-auto flex items-center gap-3 md:hidden"
-		class:md:block={$floatingNavState.active}
+		class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
+		bind:this={headerWrapper}
+		style:transform={`translate3d(0, ${-$siteHeaderState.parallaxOffset}px, 0)`}
 	>
-		<Button
-			class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-			aria-label="Open main menu"
-			aria-expanded={$curtainMenu ? 'true' : 'false'}
-			aria-controls="curtain-menu"
-			onclick={curtainMenu.open}
-		>
-			<RollingText>
-				<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
-			</RollingText>
-		</Button>
+		<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
 	</div>
 
-	{#if $floatingNavState.active}
+	<div
+		class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
+	>
+		{#if $floatingNavState.active}
+			<div
+				class="pointer-events-auto flex items-center gap-3"
+				transition:fly={{ y: 50, duration: 220, delay: 50 }}
+			>
+				<Button
+					size="md"
+					variant="primary"
+					onclick={contactModal.open}
+					class="border border-white/20 transition-transform duration-200"
+				>
+					<RollingText>Get in touch</RollingText>
+				</Button>
+			</div>
+		{/if}
+
 		<div
-			class="pointer-events-auto hidden items-center gap-3 md:flex"
-			transition:fly={{ y: 50, duration: 220 }}
+			class="pointer-events-auto flex items-center gap-3 md:hidden"
+			class:md:block={$floatingNavState.active}
 		>
 			<Button
 				class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -257,8 +240,27 @@
 				</RollingText>
 			</Button>
 		</div>
-	{/if}
-</div>
+
+		{#if $floatingNavState.active}
+			<div
+				class="pointer-events-auto hidden items-center gap-3 md:flex"
+				transition:fly={{ y: 50, duration: 220 }}
+			>
+				<Button
+					class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+					aria-label="Open main menu"
+					aria-expanded={$curtainMenu ? 'true' : 'false'}
+					aria-controls="curtain-menu"
+					onclick={curtainMenu.open}
+				>
+					<RollingText>
+						<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
+					</RollingText>
+				</Button>
+			</div>
+		{/if}
+	</div>
+{/if}
 
 {@render children?.()}
 {#if !$page.url.pathname.startsWith('/internal')}

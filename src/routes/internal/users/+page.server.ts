@@ -48,7 +48,9 @@ export const load: PageServerLoad = async ({ cookies }) => {
                 id: profile.id,
                 first_name: profile.first_name,
                 last_name: profile.last_name,
-                role: (roleMap.get(profile.id) as 'admin' | 'cms_admin' | 'employee' | undefined) ?? 'employee'
+                role:
+                        (roleMap.get(profile.id) as 'admin' | 'cms_admin' | 'employee' | 'employer' | undefined) ??
+                        'employee'
         }));
 
         return { users };
