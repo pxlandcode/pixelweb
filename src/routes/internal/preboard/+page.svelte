@@ -420,245 +420,368 @@
 			</div>
 		</div>
 	</section>
+	<section class="bg-background text-white">
+		<div class="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 py-20 sm:px-6 lg:px-8">
+			<section class="space-y-8">
+				<header class="space-y-2">
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Resources</p>
+					<h2 class="text-3xl font-semibold text-white">The basic resources</h2>
+					<p class="text-base text-white/70">
+						The essentials you need to plug in quickly. Expand a topic to see the nitty-gritty
+						details.
+					</p>
+				</header>
 
-	<div class="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pt-12 sm:px-6 lg:px-8">
-		<section class="space-y-8">
-			<header class="space-y-2">
-				<p class="text-sm tracking-[0.35em] text-text/50 uppercase">Resources</p>
-				<h2 class="text-3xl font-semibold">The basic resources</h2>
-				<p class="text-base text-text/70">
-					The essentials you need to plug in quickly. Expand a topic to see the nitty-gritty
-					details.
-				</p>
-			</header>
+				<Card
+					class="overflow-hidden border border-white/10 bg-white/5 p-0 text-white backdrop-blur-xl"
+				>
+					{#each resources as resource, index}
+						<Accordion
+							label={resource.title}
+							open={index === 0}
+							class="text-left text-white"
+							content-classes="border-t border-white/5 bg-white/5 px-4 pb-5"
+						>
+							<div class="space-y-3 px-4 py-4 text-sm text-white/80">
+								{#each resource.description as detail}
+									<p>{detail}</p>
+								{/each}
 
-			<Card class="overflow-hidden border border-white/70 bg-white/75 p-0 backdrop-blur-xl">
-				{#each resources as resource, index}
-					<Accordion
-						label={resource.title}
-						open={index === 0}
-						class="text-left text-text"
-						content-classes="bg-white/70 px-4 pb-5"
-					>
-						<div class="space-y-3 px-4 py-4 text-sm text-text/80">
-							{#each resource.description as detail}
-								<p>{detail}</p>
-							{/each}
+								{#if resource.contact}
+									<div
+										class="rounded-lg border border-white/10 bg-white/5 p-3 text-xs tracking-[0.3em] text-white/60 uppercase"
+									>
+										<p>Email: {resource.contact.email}</p>
+										<p>Phone: {resource.contact.phone}</p>
+									</div>
+								{/if}
 
-							{#if resource.contact}
-								<div
-									class="rounded-lg border border-black/5 bg-white/60 p-3 text-xs tracking-[0.3em] text-text/70 uppercase"
-								>
-									<p>Email: {resource.contact.email}</p>
-									<p>Phone: {resource.contact.phone}</p>
-								</div>
-							{/if}
+								{#if resource.link}
+									<Button
+										variant="ghost"
+										href={resource.link.href}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="w-fit border border-white/20 bg-white/10 text-sm text-white hover:bg-white/20"
+									>
+										{resource.link.label}
+									</Button>
+								{/if}
+							</div>
+						</Accordion>
+					{/each}
+				</Card>
+			</section>
 
-							{#if resource.link}
-								<Button
-									variant="ghost"
-									href={resource.link.href}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="w-fit border border-black/10 bg-white/40 text-sm text-text hover:bg-white/70"
-								>
-									{resource.link.label}
-								</Button>
-							{/if}
+			<section class="grid gap-8 lg:grid-cols-[2fr,3fr] lg:items-center">
+				<div
+					class="space-y-4 rounded-3xl border border-white/10 bg-[#111216]/80 p-6 shadow-2xl shadow-black/40 backdrop-blur"
+				>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Who we are</p>
+					<h2 class="text-3xl font-semibold">Why Pixel&Code exists</h2>
+					<p class="text-base text-white/75">
+						Pixel&Code was founded to revolutionize and simplify the tech consulting industry. Our
+						mission is to bring together a world-class team and offer unparalleled opportunities for
+						personal and professional growth.
+					</p>
+					<p class="text-base text-white/75">
+						We believe inspired employees create inspired clients, and together we can deliver
+						world-class results. Competitive compensation, meaningful benefits and a truly inspiring
+						work environment are the pillars we build on.
+					</p>
+				</div>
+				<div
+					class="overflow-hidden rounded-3xl border border-white/10 bg-[#0b0c10] shadow-2xl shadow-black/40"
+				>
+					<img
+						src="https://pixelcode.se/wp-content/uploads/2023/01/hero_2_2-1024x585.jpg"
+						alt="Team collaborating in the lounge"
+						class="h-full w-full object-cover opacity-90 transition duration-500 hover:scale-105"
+						loading="lazy"
+					/>
+				</div>
+			</section>
+
+			<section class="space-y-6">
+				<header>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">FAQ</p>
+					<h2 class="text-3xl font-semibold">Questions we often get</h2>
+				</header>
+				<Card class="border border-white/10 bg-white/5 p-0 text-white backdrop-blur-xl">
+					{#each faqItems as item}
+						<Accordion
+							label={item.question}
+							class="text-left text-white"
+							content-classes="border-t border-white/5 bg-white/5 px-4 pb-4"
+						>
+							<p class="px-4 py-4 text-sm text-white/80">{item.answer}</p>
+						</Accordion>
+					{/each}
+				</Card>
+			</section>
+
+			{#each imagePairs as pair}
+				<section class="grid gap-4 md:grid-cols-2">
+					{#each pair as image}
+						<div
+							class="overflow-hidden rounded-3xl border border-white/10 bg-[#0b0c10] shadow-2xl shadow-black/40"
+						>
+							<img
+								src={image.src}
+								alt={image.alt}
+								class="h-full w-full object-cover transition duration-500 hover:scale-105"
+								loading="lazy"
+							/>
 						</div>
-					</Accordion>
-				{/each}
-			</Card>
-		</section>
+					{/each}
+				</section>
+			{/each}
 
-		<section class="grid gap-8 lg:grid-cols-[2fr,3fr] lg:items-center">
-			<div
-				class="space-y-4 rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg shadow-black/10 backdrop-blur-xl"
-			>
-				<p class="text-sm tracking-[0.35em] text-text/50 uppercase">Who we are</p>
-				<h2 class="text-3xl font-semibold">Why Pixel&Code exists</h2>
-				<p class="text-base text-text/80">
-					Pixel&Code was founded to revolutionize and simplify the tech consulting industry. Our
-					mission is to bring together a world-class team and offer unparalleled opportunities for
-					personal and professional growth.
-				</p>
-				<p class="text-base text-text/80">
-					We believe inspired employees create inspired clients, and together we can deliver
-					world-class results. Competitive compensation, meaningful benefits and a truly inspiring
-					work environment are the pillars we build on.
-				</p>
-			</div>
-			<div class="overflow-hidden rounded-3xl border border-white/70 shadow-2xl shadow-black/10">
-				<img
-					src="https://pixelcode.se/wp-content/uploads/2023/01/hero_2_2-1024x585.jpg"
-					alt="Team collaborating in the lounge"
-					class="h-full w-full object-cover"
-					loading="lazy"
-				/>
-			</div>
-		</section>
+			<section class="space-y-4 text-white/75">
+				<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Economy</p>
+				<h2 class="text-3xl font-semibold text-white">
+					Only the essentials, the rest arrives during onboarding.
+				</h2>
+			</section>
 
-		<section class="space-y-6">
-			<header>
-				<p class="text-sm tracking-[0.35em] text-text/50 uppercase">FAQ</p>
-				<h2 class="text-3xl font-semibold">Questions we often get</h2>
-			</header>
-			<Card class="border border-white/70 bg-white/75 p-0 backdrop-blur-xl">
-				{#each faqItems as item}
-					<Accordion
-						label={item.question}
-						class="text-left text-text"
-						content-classes="bg-white/70 px-4 pb-4"
-					>
-						<p class="px-4 py-4 text-sm text-text/80">{item.answer}</p>
-					</Accordion>
-				{/each}
-			</Card>
-		</section>
-
-		{#each imagePairs as pair}
-			<section class="grid gap-4 md:grid-cols-2">
-				{#each pair as image}
-					<div
-						class="overflow-hidden rounded-3xl border border-white/70 shadow-2xl shadow-black/10 backdrop-blur"
-					>
-						<img
-							src={image.src}
-							alt={image.alt}
-							class="h-full w-full object-cover"
-							loading="lazy"
-						/>
-					</div>
+			<section class="grid gap-6 md:grid-cols-2">
+				{#each economyDetails as note}
+					<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
+						<h3 class="text-xl font-semibold">{note.title}</h3>
+						<ul class="mt-4 space-y-3 text-sm text-white/75">
+							{#each note.body as bullet}
+								<li class="flex gap-2">
+									<span class="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+									<span>{bullet}</span>
+								</li>
+							{/each}
+						</ul>
+					</Card>
 				{/each}
 			</section>
-		{/each}
 
-		<section class="space-y-4 text-text/80">
-			<p class="text-sm tracking-[0.35em] text-text/50 uppercase">Economy</p>
-			<h2 class="text-3xl font-semibold">
-				Only the essentials, the rest arrives during onboarding.
-			</h2>
-		</section>
-
-		<section class="grid gap-6 md:grid-cols-2">
-			{#each economyDetails as note}
-				<Card class="border border-white/70 bg-white/75 p-6 backdrop-blur-xl">
-					<h3 class="text-xl font-semibold text-text">{note.title}</h3>
-					<ul class="mt-4 space-y-3 text-sm text-text/80">
-						{#each note.body as bullet}
-							<li class="flex gap-2">
-								<span class="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
-								<span>{bullet}</span>
-							</li>
-						{/each}
-					</ul>
-				</Card>
-			{/each}
-		</section>
-
-		<section class="space-y-6">
-			<header class="space-y-2">
-				<p class="text-sm tracking-[0.35em] text-text/50 uppercase">General contact information</p>
-				<h2 class="text-3xl font-semibold">Need help? Reach out anytime.</h2>
-			</header>
-
-			<div class="grid gap-6 md:grid-cols-2">
-				<Card class="border border-white/70 bg-white/75 p-6 backdrop-blur-xl">
-					<h3 class="text-xl font-semibold text-text">{companyInfo.name}</h3>
-					<div class="mt-3 space-y-2 text-sm text-text/80">
-						{#each companyInfo.address as line}
-							<p>{line}</p>
-						{/each}
-						<p>Org nr: {companyInfo.orgNumber}</p>
-						<p>Email: {companyInfo.email}</p>
-					</div>
-					<Button
-						variant="ghost"
-						href="mailto:hello@pixelcode.se"
-						class="mt-4 w-fit border border-black/10 bg-white/40 text-text hover:bg-white/70"
-					>
-						Email us
-					</Button>
-				</Card>
-
-				<Card class="border border-white/70 bg-white/75 p-6 backdrop-blur-xl">
-					<h3 class="text-xl font-semibold text-text">People team</h3>
-					<div class="mt-4 space-y-4">
-						{#each contactPeople as person}
-							<div class="space-y-1 text-sm text-text/80">
-								<p class="font-semibold text-text">{person.name}</p>
-								<p>Phone: {person.phone}</p>
-								<p>Email: {person.email}</p>
-							</div>
-						{/each}
-					</div>
-				</Card>
-			</div>
-		</section>
-
-		<section class="grid gap-6 lg:grid-cols-2">
-			<Card class="border border-white/70 bg-white/75 p-6 backdrop-blur-xl">
-				<h3 class="text-2xl font-semibold text-text">Feedback makes us stronger</h3>
-				<p class="mt-2 text-sm text-text/80">
-					Missing something? Share feedback and help us improve this experience for the next
-					teammate.
-				</p>
-				<form class="mt-4 space-y-4">
-					<FormControl
-						label="How can this preboarding page get better?"
-						class="text-sm text-text/80"
-					>
-						<TextArea
-							name="feedback"
-							rows={5}
-							bind:value={feedbackMessage}
-							placeholder="Missing something? Let us know!"
-							class="bg-white/60 text-text placeholder:text-text/50"
-						/>
-					</FormControl>
-					<Button
-						variant="primary"
-						href={feedbackHref}
-						class="bg-primary text-white hover:bg-[#ff765a]"
-					>
-						Send feedback
-					</Button>
-				</form>
-			</Card>
-
-			<Card class="border border-white/70 bg-white/80 p-6 text-text backdrop-blur-xl">
-				<div class="space-y-3">
-					<p class="text-sm tracking-[0.35em] text-text/60 uppercase">
-						With a license to be awesome
+			<section class="space-y-6">
+				<header class="space-y-2">
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">
+						General contact information
 					</p>
-					<h3 class="text-2xl font-semibold">We are here to support your journey.</h3>
-					<p class="text-sm text-text/80">
-						Stay connected with us on LinkedIn for news, events and glimpses into life at
-						Pixel&Code.
-					</p>
-					<Button
-						variant="ghost"
-						href="https://www.linkedin.com/company/pixelandcode"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="w-fit border border-black/10 bg-white/40 text-text hover:bg-white/70"
-					>
-						LinkedIn
-					</Button>
+					<h2 class="text-3xl font-semibold">Need help? Reach out anytime.</h2>
+				</header>
+
+				<div class="grid gap-6 md:grid-cols-2">
+					<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
+						<h3 class="text-xl font-semibold">{companyInfo.name}</h3>
+						<div class="mt-3 space-y-2 text-sm text-white/75">
+							{#each companyInfo.address as line}
+								<p>{line}</p>
+							{/each}
+							<p>Org nr: {companyInfo.orgNumber}</p>
+							<p>Email: {companyInfo.email}</p>
+						</div>
+						<Button
+							variant="ghost"
+							href="mailto:hello@pixelcode.se"
+							class="mt-4 w-fit border border-white/20 bg-white/10 text-white hover:bg-white/20"
+						>
+							Email us
+						</Button>
+					</Card>
+
+					<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
+						<h3 class="text-xl font-semibold">People team</h3>
+						<div class="mt-4 space-y-4">
+							{#each contactPeople as person}
+								<div class="space-y-1 text-sm text-white/75">
+									<p class="font-semibold text-white">{person.name}</p>
+									<p>Phone: {person.phone}</p>
+									<p>Email: {person.email}</p>
+								</div>
+							{/each}
+						</div>
+					</Card>
 				</div>
-			</Card>
-		</section>
+			</section>
 
-		<footer
-			class="flex flex-col gap-3 border-t border-black/5 pt-8 text-sm text-text/70 md:flex-row md:items-center md:justify-between"
-		>
-			<p>© 2025 Pixel&Code AB – All rights reserved.</p>
-			<a
-				class="text-text hover:text-primary"
-				href="https://pixelcode.se/privacy/"
-				target="_blank"
-				rel="noopener noreferrer">Privacy policy</a
+			<section class="grid gap-6 lg:grid-cols-2">
+				<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
+					<h3 class="text-2xl font-semibold">Feedback makes us stronger</h3>
+					<p class="mt-2 text-sm text-white/75">
+						Missing something? Share feedback and help us improve this experience for the next
+						teammate.
+					</p>
+					<form class="mt-4 space-y-4">
+						<FormControl
+							label="How can this preboarding page get better?"
+							class="text-sm text-white/70"
+						>
+							<TextArea
+								name="feedback"
+								rows={5}
+								bind:value={feedbackMessage}
+								placeholder="Missing something? Let us know!"
+								class="border border-white/10 bg-white/5 text-white placeholder:text-white/50"
+							/>
+						</FormControl>
+						<Button
+							variant="primary"
+							href={feedbackHref}
+							class="bg-primary text-white hover:bg-[#ff765a]"
+						>
+							Send feedback
+						</Button>
+					</form>
+				</Card>
+
+				<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
+					<div class="space-y-3">
+						<p class="text-sm tracking-[0.35em] text-white/60 uppercase">
+							With a license to be awesome
+						</p>
+						<h3 class="text-2xl font-semibold">We are here to support your journey.</h3>
+						<p class="text-sm text-white/75">
+							Stay connected with us on LinkedIn for news, events and glimpses into life at
+							Pixel&Code.
+						</p>
+						<Button
+							variant="ghost"
+							href="https://www.linkedin.com/company/pixelandcode"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="w-fit border border-white/20 bg-white/10 text-white hover:bg-white/20"
+						>
+							LinkedIn
+						</Button>
+					</div>
+				</Card>
+			</section>
+
+			<footer
+				class="flex flex-col gap-3 border-t border-white/10 pt-8 text-sm text-white/60 md:flex-row md:items-center md:justify-between"
 			>
-		</footer>
-	</div>
+				<p>© 2025 Pixel&Code AB – All rights reserved.</p>
+				<a
+					class="text-white hover:text-primary"
+					href="https://pixelcode.se/privacy/"
+					target="_blank"
+					rel="noopener noreferrer">Privacy policy</a
+				>
+			</footer>
+		</div>
+	</section>
 </div>
+
+<style>
+	:global(.preboard-section) {
+		position: relative;
+		background-color: #0f0f11;
+		transition: background-color 0.6s ease;
+	}
+
+	:global(.preboard-section--alt) {
+		background-color: white;
+		color: #0f0f11;
+	}
+
+	@supports (animation-timeline: view()) {
+		:global(.preboard-section) {
+			animation: sectionDark 1ms linear both;
+			animation-timeline: view();
+			animation-range: entry 0% exit 100%;
+		}
+
+		:global(.preboard-section--alt) {
+			animation-name: sectionLight;
+		}
+
+		@keyframes sectionDark {
+			0%,
+			100% {
+				background-color: #0f0f11;
+				color: white;
+			}
+			50% {
+				background-color: #0f0f11;
+				color: white;
+			}
+		}
+
+		@keyframes sectionLight {
+			0% {
+				background-color: #0f0f11;
+				color: white;
+			}
+			35%,
+			65% {
+				background-color: white;
+				color: #0f0f11;
+			}
+			100% {
+				background-color: #0f0f11;
+				color: white;
+			}
+		}
+	}
+
+	:global(.timeline-card) {
+		opacity: 0;
+		transform: translateY(40px);
+		transition:
+			opacity 0.4s ease,
+			transform 0.4s ease;
+	}
+
+	:global(.timeline-connector),
+	:global(.timeline-arrow) {
+		opacity: 0;
+		transform: translateY(20px);
+		transition:
+			opacity 0.4s ease,
+			transform 0.4s ease;
+	}
+
+	@supports not (animation-timeline: view()) {
+		:global(.timeline-card),
+		:global(.timeline-connector),
+		:global(.timeline-arrow) {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@supports (animation-timeline: view()) {
+		:global(.timeline-card) {
+			animation: cardReveal 1ms ease-out both;
+			animation-timeline: view();
+			animation-range: entry 0% exit 40%;
+		}
+
+		:global(.timeline-connector),
+		:global(.timeline-arrow) {
+			animation: connectorReveal 1ms ease-out both;
+			animation-timeline: view();
+			animation-range: entry 0% exit 30%;
+		}
+	}
+
+	@keyframes cardReveal {
+		from {
+			opacity: 0;
+			transform: translateY(40px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes connectorReveal {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>
