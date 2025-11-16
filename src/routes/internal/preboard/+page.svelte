@@ -9,120 +9,118 @@
 		FormControl,
 		TextArea
 	} from '@pixelcode_/blocks/components';
-	import { page } from '$app/stores';
+	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
+	import { soloImages } from '$lib/images/manifest';
+	import worldclassUrl from '$lib/assets/worldclass.svg?url';
+	import type { ImageId } from '$lib/images/definitions';
+	import { browser } from '$app/environment';
 	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
+	import type { PageData } from './$types';
+	import * as messages from '$lib/paraglide/messages';
 
-	const heroSlides = [
+	type Language = 'sv' | 'en';
+	type MessageFn = (args?: Record<string, unknown>, options?: { locale?: Language }) => string;
+
+	const heroSlideSpecs = [
+		{ imageId: 'forrestPixel', altMessage: messages.preboard_hero_slide_1_alt },
+		{ imageId: 'oliverShuffle', altMessage: messages.preboard_hero_slide_2_alt },
+		{ imageId: 'pixelChristmas', altMessage: messages.preboard_hero_slide_3_alt },
+		{ imageId: 'workHard', altMessage: messages.preboard_hero_slide_4_alt },
+		{ imageId: 'weArePixel', altMessage: messages.preboard_hero_slide_5_alt },
+		{ imageId: 'linusFrisbee', altMessage: messages.preboard_hero_slide_6_alt }
+	] satisfies ReadonlyArray<{ imageId: ImageId; altMessage: MessageFn }>;
+
+	const galleryImageSpecs = [
+		[
+			{ imageId: 'onboardDanny', altMessage: messages.preboard_gallery_image_1_alt },
+			{ imageId: 'oliverAzraDiscussion', altMessage: messages.preboard_gallery_image_2_alt }
+		],
+		[
+			{ imageId: 'pixelEating', altMessage: messages.preboard_gallery_image_3_alt },
+			{ imageId: 'feelingsShuffle', altMessage: messages.preboard_gallery_image_4_alt }
+		]
+	] satisfies ReadonlyArray<ReadonlyArray<{ imageId: ImageId; altMessage: MessageFn }>>;
+
+	const timelineStepsConfig = [
 		{
-			src: 'https://pixelcode.se/wp-content/uploads/2023/10/grupp_ute_Ivo_Danny_1.jpeg',
-			alt: 'Team hangout in the sun'
+			title: messages.preboard_timeline_step_1_title,
+			subtitle: messages.preboard_timeline_step_1_subtitle,
+			description: [
+				messages.preboard_timeline_step_1_desc_1,
+				messages.preboard_timeline_step_1_desc_2,
+				messages.preboard_timeline_step_1_desc_3
+			]
 		},
 		{
-			src: 'https://pixelcode.se/wp-content/uploads/2023/10/Oliver_Pierre_1.jpeg',
-			alt: 'Oliver and Pierre at the office'
+			title: messages.preboard_timeline_step_2_title,
+			subtitle: messages.preboard_timeline_step_2_subtitle,
+			description: [
+				messages.preboard_timeline_step_2_desc_1,
+				messages.preboard_timeline_step_2_desc_2
+			]
 		},
 		{
-			src: 'https://pixelcode.se/wp-content/uploads/2023/10/Azra_terrass_vision_1.jpeg',
-			alt: 'Azra sharing product vision on the terrace'
+			title: messages.preboard_timeline_step_3_title,
+			subtitle: messages.preboard_timeline_step_3_subtitle,
+			description: [
+				messages.preboard_timeline_step_3_desc_1,
+				messages.preboard_timeline_step_3_desc_2
+			]
 		},
 		{
-			src: 'https://pixelcode.se/wp-content/uploads/2023/10/Pierre_fokus_terrass_1.jpeg',
-			alt: 'Pierre focused on the onboarding kit'
-		},
-		{
-			src: 'https://pixelcode.se/wp-content/uploads/2023/10/Nicklas_Jocke_1.jpeg',
-			alt: 'Nicklas and Joakim talking strategy'
-		},
-		{
-			src: 'https://pixelcode.se/wp-content/uploads/2023/10/terrass_Pierre_Ivo_1.jpeg',
-			alt: 'Pierre and Ivo collaborating outdoors'
+			title: messages.preboard_timeline_step_4_title,
+			subtitle: messages.preboard_timeline_step_4_subtitle,
+			description: [
+				messages.preboard_timeline_step_4_desc_1,
+				messages.preboard_timeline_step_4_desc_2
+			]
 		}
 	];
 
-	const heroParagraphs = [
-		"Welcome to Pixel&Code and this preboarding express! We're so thrilled to have you on board. Our aim is to integrate you into the team, starting right now. This page outlines your journey from the day of your contract signing to your start date.",
-		'Our employees are our greatest asset and we are committed to create a workplace that inspires and offers competitive compensation, success and well-being. We encourage open communication, teamwork, and mutual respect. We prioritize work-life balance and we foster a culture of professional development, innovation and creativity.',
-		"Before we start, if you haven't already done so, please take a moment to fill out this form with your basic information."
-	];
-
-	type TimelineStep = {
-		title: string;
-		subtitle: string;
-		description: string[];
+	type ResourceConfig = {
+		title: MessageFn;
+		description: MessageFn[];
+		link?: { href: string; label?: string; labelMessage?: MessageFn };
+		contact?: { email: string; phone: string };
 	};
 
-	const timelineSteps: TimelineStep[] = [
+	const resourceConfig: ResourceConfig[] = [
 		{
-			title: '1. Get started',
-			subtitle: 'Things we can do right away.',
+			title: messages.preboard_resource_m365_title,
 			description: [
-				'We want you to become a part of the team as soon as possible. Access to your email, Discord, Microsoft 365 account and more will be provided within a couple of weeks.',
-				'We will create your first Pixel&Code CV for you so that we are ready when an exciting client reaches out.',
-				"You also have the opportunity to be paired with a buddy. This Pixel&Code insider is available as your personal guide if you choose to use them. They're here to lend a hand, answer questions, and support you in a way that feels comfortable."
-			]
-		},
-		{
-			title: '2. Meet the team',
-			subtitle: 'You will get invited to events.',
-			description: [
-				'You will get invited to various social events. This is an opportunity for you to form early connections, learn from others, and start feeling like part of the team.',
-				"We're excited to introduce you to all of us. Remember, while we encourage participation, all of the activities are optional."
-			]
-		},
-		{
-			title: '3. Get involved',
-			subtitle: 'Get a head start.',
-			description: [
-				"Hopefully you'll hear more about possible assignments that could be relevant to you before your first day. You might even have the opportunity to do an interview.",
-				'We always include you in our dialogues with clients regarding possible assignments. It is important that the assignment and client culture feels right and fun.'
-			]
-		},
-		{
-			title: '4. Onboarding',
-			subtitle: 'Your first day — woho!',
-			description: [
-				'On your first day we walk through everything you need to know. Details may vary a little depending on assignments, but the core is the same.',
-				'If you start on a customer assignment day one, we plan the details with you to make it as smooth as possible. Oh, and lunch is on us!'
-			]
-		}
-	];
-
-	const resources = [
-		{
-			title: 'Microsoft 365 (email etc)',
-			description: [
-				'You get your very own Microsoft 365 license with Outlook, Teams, Word, PowerPoint and Excel.',
-				'Email address: firstname.lastname@pixelcode.se. Username: your email address.',
-				'Default password will be sent separately. Change it when you log in for the first time.'
+				messages.preboard_resource_m365_desc_1,
+				messages.preboard_resource_m365_desc_2,
+				messages.preboard_resource_m365_desc_3
 			],
 			link: { label: 'https://office.com', href: 'https://office.com/' }
 		},
 		{
-			title: 'Discord',
+			title: messages.preboard_resource_discord_title,
 			description: [
-				'Discord is our primary tool for day-to-day communication.',
-				'You will be invited to our server within a couple of weeks.',
-				"Our server: https://discord.gg/BSjy9EAj — come say hi when you're inside."
+				messages.preboard_resource_discord_desc_1,
+				messages.preboard_resource_discord_desc_2,
+				messages.preboard_resource_discord_desc_3
 			],
-			link: { label: 'Join our Discord', href: 'https://discord.gg/BSjy9EAj' }
+			link: {
+				href: 'https://discord.gg/BSjy9EAj',
+				labelMessage: messages.preboard_resource_discord_link_label
+			}
 		},
 		{
-			title: 'Our social media',
-			description: [
-				'We currently focus on LinkedIn. Follow us to stay in the loop and help boost the team.'
-			],
+			title: messages.preboard_resource_social_title,
+			description: [messages.preboard_resource_social_desc_1],
 			link: {
 				label: 'LinkedIn.com/company/pixelandcode',
 				href: 'https://www.linkedin.com/company/pixelandcode'
 			}
 		},
 		{
-			title: 'Telephony (Telefon och mobilabonnemang)',
+			title: messages.preboard_resource_telephony_title,
 			description: [
-				'Our partner in mobile telephony, for both phones and subscriptions, is Comcenter.',
-				'They will help you with new contracts, transferring an existing number, or anything else you need. Reach out before purchasing so we can guide you on preferred stores and agreements.'
+				messages.preboard_resource_telephony_desc_1,
+				messages.preboard_resource_telephony_desc_2
 			],
 			contact: {
 				email: 'Robert@comcenter.nu',
@@ -131,80 +129,36 @@
 		}
 	];
 
-	const faqItems = [
-		{
-			question: 'When will I get access to my email and Discord?',
-			answer:
-				"You'll get access to your work email and other tools like Discord and Microsoft 365 as soon as possible, but it will be within a few weeks from your signing date."
-		},
-		{
-			question: 'Who will be my point of contact during the preboarding process?',
-			answer:
-				'Your main points of contact are your buddy and your hiring manager. They will guide and support you every step of the way.'
-		},
-		{
-			question: 'What kind of information do I need to provide in the personal information form?',
-			answer:
-				'We need the basics needed to create your staff card. This includes bank account details, emergency contact, Social Security Number and similar essentials.'
-		},
-		{
-			question: "What happens if I can't attend a social event?",
-			answer:
-				'All activities are optional. We understand everyone has different commitments and schedules, and we schedule several events so everyone has opportunities to join when they can.'
-		},
-		{
-			question: 'Who will be my buddy and how will they support me?',
-			answer:
-				'We offer a buddy based on your experience and profile, someone who can provide valuable support and insights. Use the relationship how you feel comfortable. We even suggest buddy lunches (our treat) as a relaxed way to get to know each other.'
-		},
-		{
-			question: 'What kind of tasks might I be involved in before my first day?',
-			answer:
-				'Besides social events and chatting with future colleagues, we include you in our client dialogues regarding potential assignments. It is important that you find the assignment and client culture engaging and enjoyable.'
-		},
-		{
-			question: 'What should I expect on my first day?',
-			answer:
-				'We make sure you feel welcome and set up for success. We guide you through system access, time reporting, expense registration, and more. We also make the day enjoyable and treat you to a relaxed lunch.'
-		},
-		{
-			question: 'How does it work with computers, phones, and other tools when I start?',
-			answer:
-				'We value individual choices. If you have great hardware already, feel free to keep using it. If you are missing something, you can purchase it and expense it against your budget. Contact us before purchasing so we can guide you.'
-		},
-		{
-			question: 'How does it work with mobile subscriptions?',
-			answer:
-				'You can continue using your existing plan and expense it monthly. Our partner can also help you find a new plan linked to the company. Email Robert@comcenter.nu or call 08 692 43 01 for support.'
-		},
-		{
-			question: 'How about education and courses?',
-			answer:
-				'It depends on your compensation model. The flexible model gives you a personal budget to use as you see fit. The fixed model includes an annual SEK 12,000 education budget.'
-		},
-		{
-			question: 'Who can I contact if I have questions about the handling of my personal info?',
-			answer:
-				"If you have any questions about how we handle your personal information, contact your hiring manager. We're here to help."
-		}
+	const faqConfig = [
+		{ question: messages.preboard_faq_1_question, answer: messages.preboard_faq_1_answer },
+		{ question: messages.preboard_faq_2_question, answer: messages.preboard_faq_2_answer },
+		{ question: messages.preboard_faq_3_question, answer: messages.preboard_faq_3_answer },
+		{ question: messages.preboard_faq_4_question, answer: messages.preboard_faq_4_answer },
+		{ question: messages.preboard_faq_5_question, answer: messages.preboard_faq_5_answer },
+		{ question: messages.preboard_faq_6_question, answer: messages.preboard_faq_6_answer },
+		{ question: messages.preboard_faq_7_question, answer: messages.preboard_faq_7_answer },
+		{ question: messages.preboard_faq_8_question, answer: messages.preboard_faq_8_answer },
+		{ question: messages.preboard_faq_9_question, answer: messages.preboard_faq_9_answer },
+		{ question: messages.preboard_faq_10_question, answer: messages.preboard_faq_10_answer },
+		{ question: messages.preboard_faq_11_question, answer: messages.preboard_faq_11_answer }
 	];
 
-	const economyDetails = [
+	const economyConfig = [
 		{
-			title: 'General questions regarding expenses & invoices',
+			title: messages.preboard_economy_general_title,
 			body: [
-				'If you have questions, contact your hiring manager first.',
-				'Our economy team helps with expenses, invoices and all financial nuts and bolts.',
-				'Email: pixelcode@customer.kleer.se · Phone: 08 400 260 40.',
-				'Invoices can be sent to pixelcode@invoice.kleer.se. Make sure your name is clearly stated so we know who did what.'
+				messages.preboard_economy_general_line_1,
+				messages.preboard_economy_general_line_2,
+				messages.preboard_economy_general_line_3,
+				messages.preboard_economy_general_line_4
 			]
 		},
 		{
-			title: 'Expenses',
+			title: messages.preboard_economy_expenses_title,
 			body: [
-				'Digital receipts from websites, email or apps can be emailed to kvitton@expense.kleer.se from your Pixel&Code email address.',
-				'You can also upload receipts directly in PE via drag and drop.',
-				'Paper receipts can be photographed in the PE app and do not need to be saved afterward.'
+				messages.preboard_economy_expenses_line_1,
+				messages.preboard_economy_expenses_line_2,
+				messages.preboard_economy_expenses_line_3
 			]
 		}
 	];
@@ -229,29 +183,6 @@
 		}
 	];
 
-	const imagePairs = [
-		[
-			{
-				src: 'https://pixelcode.se/wp-content/uploads/2023/01/hero_2_2-1024x585.jpg',
-				alt: 'Team moments in our first office'
-			},
-			{
-				src: 'https://pixelcode.se/wp-content/uploads/2023/10/Oliver_Bill_1.jpeg',
-				alt: 'Oliver and Bill preparing equipment'
-			}
-		],
-		[
-			{
-				src: 'https://pixelcode.se/wp-content/uploads/2023/10/Azra_skratt_1.jpeg',
-				alt: 'Azra sharing feedback'
-			},
-			{
-				src: 'https://pixelcode.se/wp-content/uploads/2023/10/Nicklas_Orjan_1.jpeg',
-				alt: 'Nicklas and Örjan planning the next event'
-			}
-		]
-	];
-
 	const heroFormUrl = 'mailto:hello@pixelcode.se?subject=Preboarding%20basic%20information';
 	const feedbackMailto =
 		'mailto:hello@pixelcode.se?subject=Pixel%20%26%20Code%20preboarding%20feedback';
@@ -259,6 +190,152 @@
 	let activeSlide = $state(0);
 	let slideInterval: ReturnType<typeof setInterval> | null = null;
 	let feedbackMessage = $state('');
+
+	const { data } = $props<{ data: PageData }>();
+	let language: Language = $state(data.lang);
+	const unauthorized = $derived(Boolean(data.unauthorized));
+
+	const localeOptions = $derived({ locale: language });
+
+	const heroSlides = $derived(
+		heroSlideSpecs
+			.map(({ imageId, altMessage }) => {
+				const asset = soloImages[imageId];
+				if (!asset) return null;
+				return { src: asset.src, alt: altMessage({}, localeOptions) };
+			})
+			.filter((slide): slide is { src: string; alt: string } =>
+				Boolean(slide && typeof slide.src === 'string')
+			)
+	);
+
+	const imagePairs = $derived(
+		galleryImageSpecs
+			.map((pair) =>
+				pair
+					.map(({ imageId, altMessage }) => {
+						const asset = soloImages[imageId];
+						if (!asset) return null;
+						return { src: asset.src, alt: altMessage({}, localeOptions) };
+					})
+					.filter((image): image is { src: string; alt: string } =>
+						Boolean(image && typeof image.src === 'string')
+					)
+			)
+			.filter((pair) => pair.length)
+	);
+
+	const timelineSteps = $derived(
+		timelineStepsConfig.map((step) => ({
+			title: step.title({}, localeOptions),
+			subtitle: step.subtitle({}, localeOptions),
+			description: step.description.map((item) => item({}, localeOptions))
+		}))
+	);
+
+	const resources = $derived(
+		resourceConfig.map((resource) => ({
+			title: resource.title({}, localeOptions),
+			description: resource.description.map((item) => item({}, localeOptions)),
+			link: resource.link
+				? {
+						href: resource.link.href,
+						label: resource.link.labelMessage
+							? resource.link.labelMessage({}, localeOptions)
+							: (resource.link.label ?? '')
+					}
+				: undefined,
+			contact: resource.contact
+		}))
+	);
+
+	const faqItems = $derived(
+		faqConfig.map((item) => ({
+			question: item.question({}, localeOptions),
+			answer: item.answer({}, localeOptions)
+		}))
+	);
+
+	const economyDetails = $derived(
+		economyConfig.map((item) => ({
+			title: item.title({}, localeOptions),
+			body: item.body.map((line) => line({}, localeOptions))
+		}))
+	);
+
+	const heroParagraphs = $derived([
+		messages.preboard_hero_paragraph_1({}, localeOptions),
+		messages.preboard_hero_paragraph_2({}, localeOptions),
+		messages.preboard_hero_paragraph_3({}, localeOptions)
+	]);
+
+	const pageTitle = $derived(messages.preboard_page_title({}, localeOptions));
+	const heroBadge = $derived(messages.preboard_hero_badge({}, localeOptions));
+	const heroTitle = $derived(messages.preboard_hero_title({}, localeOptions));
+	const heroPrimaryCta = $derived(messages.preboard_hero_primary_cta({}, localeOptions));
+	const heroSecondaryCta = $derived(messages.preboard_hero_secondary_cta({}, localeOptions));
+	const alertCopy = $derived(messages.preboard_alert_message({}, localeOptions));
+	const timelineLabel = $derived(messages.preboard_timeline_label({}, localeOptions));
+	const timelineHeader = $derived(messages.preboard_timeline_title({}, localeOptions));
+	const timelineIntro = $derived(messages.preboard_timeline_intro({}, localeOptions));
+	const resourcesLabel = $derived(messages.preboard_resources_label({}, localeOptions));
+	const resourcesTitle = $derived(messages.preboard_resources_title({}, localeOptions));
+	const resourcesIntro = $derived(messages.preboard_resources_intro({}, localeOptions));
+	const storyLabel = $derived(messages.preboard_story_label({}, localeOptions));
+	const storyTitle = $derived(messages.preboard_story_title({}, localeOptions));
+	const storyParagraphs = $derived([
+		messages.preboard_story_paragraph_1({}, localeOptions),
+		messages.preboard_story_paragraph_2({}, localeOptions)
+	]);
+	const storyImageAlt = $derived(messages.preboard_story_image_alt({}, localeOptions));
+	const faqLabel = $derived(messages.preboard_faq_label({}, localeOptions));
+	const faqTitle = $derived(messages.preboard_faq_title({}, localeOptions));
+	const economyLabel = $derived(messages.preboard_economy_label({}, localeOptions));
+	const economyTitle = $derived(messages.preboard_economy_title({}, localeOptions));
+	const contactLabel = $derived(messages.preboard_contact_label({}, localeOptions));
+	const contactTitle = $derived(messages.preboard_contact_title({}, localeOptions));
+	const contactButton = $derived(messages.preboard_contact_button({}, localeOptions));
+	const contactPeopleTitle = $derived(messages.preboard_contact_people_title({}, localeOptions));
+	const emailLabel = $derived(messages.preboard_label_email({}, localeOptions));
+	const phoneLabel = $derived(messages.preboard_label_phone({}, localeOptions));
+	const orgLabel = $derived(messages.preboard_label_org({}, localeOptions));
+	const feedbackTitleCopy = $derived(messages.preboard_feedback_title({}, localeOptions));
+	const feedbackDescription = $derived(messages.preboard_feedback_description({}, localeOptions));
+	const feedbackLabelCopy = $derived(messages.preboard_feedback_label({}, localeOptions));
+	const feedbackPlaceholder = $derived(messages.preboard_feedback_placeholder({}, localeOptions));
+	const feedbackCta = $derived(messages.preboard_feedback_cta({}, localeOptions));
+	const linkedinLabel = $derived(messages.preboard_linkedin_label({}, localeOptions));
+	const linkedinTitle = $derived(messages.preboard_linkedin_title({}, localeOptions));
+	const linkedinDescription = $derived(messages.preboard_linkedin_description({}, localeOptions));
+	const linkedinCta = $derived(messages.preboard_linkedin_cta({}, localeOptions));
+	const footerNotice = $derived(messages.preboard_footer_notice({}, localeOptions));
+	const footerPrivacy = $derived(messages.preboard_footer_privacy({}, localeOptions));
+	const languageToggleAria = $derived(messages.preboard_language_toggle_sr({}, localeOptions));
+	const languageCode = $derived(language.toUpperCase());
+	const nextLanguage = $derived((language === 'sv' ? 'en' : 'sv') as Language);
+	const toggleBackgroundClass = $derived(
+		language === 'sv'
+			? 'bg-[#003b8e] hover:bg-[#0a4eb5]'
+			: 'bg-white hover:bg-white/90 border border-[#002f92]'
+	);
+	const toggleIconColor = $derived(language === 'sv' ? 'text-[#ffd200]' : 'text-[#003dff]');
+	const toggleTextColor = $derived(language === 'sv' ? 'text-[#ffd200]' : 'text-[#ff003c]');
+
+	const feedbackHref = $derived(
+		`${feedbackMailto}&body=${encodeURIComponent(feedbackMessage ?? '')}`
+	);
+
+	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
+
+	function switchLanguage(next: Language) {
+		if (language === next) return;
+		language = next;
+		if (browser) {
+			const url = new URL(window.location.href);
+			url.searchParams.set('lang', next);
+			window.history.replaceState({}, '', `${url.pathname}${url.search}`);
+		}
+	}
 
 	onMount(() => {
 		if (heroSlides.length <= 1) return;
@@ -272,21 +349,29 @@
 			clearInterval(slideInterval);
 		}
 	});
-	const unauthorized = $derived($page.url.searchParams.get('unauthorized'));
-	const feedbackHref = $derived(
-		`${feedbackMailto}&body=${encodeURIComponent(feedbackMessage ?? '')}`
-	);
-	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 </script>
 
 <svelte:head>
-	<title>Pixel&Code — Preboarding</title>
+	<title>{pageTitle}</title>
 </svelte:head>
 
 <div class="min-h-screen bg-white pb-24 text-text">
 	<section
-		class="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-black"
+		class="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-background"
 	>
+		<button
+			type="button"
+			class={`group absolute top-6 right-6 z-20 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-white transition ${toggleBackgroundClass} cursor-pointer`}
+			aria-label={languageToggleAria}
+			on:click={() => switchLanguage(nextLanguage)}
+		>
+			<RollingText>
+				<Icon icon={PixelCodeLucideIcon} size="md" class={`${toggleIconColor}`} />
+			</RollingText>
+			<span class={`text-sm font-semibold tracking-[0.4em] uppercase ${toggleTextColor}`}
+				>{languageCode}</span
+			>
+		</button>
 		{#each heroSlides as slide, index}
 			<div
 				class={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ${
@@ -299,14 +384,18 @@
 		{/each}
 
 		<div class="relative z-10 mx-auto flex max-w-5xl flex-col gap-6 px-6 text-white">
-			<Badge variant="info" size="xs" class="w-fit tracking-[0.3em] text-white uppercase"
-				>Preboarding express</Badge
-			>
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<Badge variant="info" size="xs" class="w-fit tracking-[0.3em] text-white uppercase">
+					{heroBadge}
+				</Badge>
+			</div>
 			<div class="space-y-4">
-				<h1 class="text-3xl font-semibold sm:text-5xl">Welcome to the team</h1>
+				<h1 class="text-3xl font-semibold sm:text-5xl">{heroTitle}</h1>
 				<div class="space-y-4 text-base text-white/90 sm:text-lg">
 					{#each heroParagraphs as copy, idx}
-						<p class={idx === heroParagraphs.length - 1 ? 'font-medium text-white' : ''}>{copy}</p>
+						<p class={idx === heroParagraphs.length - 1 ? 'font-semibold text-white' : ''}>
+							{copy}
+						</p>
 					{/each}
 				</div>
 			</div>
@@ -318,7 +407,7 @@
 					href={heroFormUrl}
 					class="bg-primary text-white hover:bg-[#ff765a]"
 				>
-					Your basic information
+					{heroPrimaryCta}
 				</Button>
 				<Button
 					variant="ghost"
@@ -328,7 +417,7 @@
 					rel="noopener noreferrer"
 					class="border border-white/60 bg-transparent text-white hover:bg-white/10"
 				>
-					LinkedIn
+					{heroSecondaryCta}
 				</Button>
 			</div>
 		</div>
@@ -341,27 +430,21 @@
 				size="sm"
 				class="border border-amber-100 bg-amber-50/90 text-amber-900 backdrop-blur"
 			>
-				<p class="text-sm">
-					You do not have permission to open that admin area. This preboarding space is always here
-					for you instead.
-				</p>
+				<p class="text-sm">{alertCopy}</p>
 			</Alert>
 		</div>
 	{/if}
 
-	<section class="bg-[#0f0f11] text-white">
+	<section class="bg-background text-white">
 		<div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:px-8">
 			<header
 				class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"
 				transition:fly={{ y: 40, duration: 350 }}
 			>
 				<div class="space-y-2">
-					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Timeline</p>
-					<h2 class="text-3xl font-semibold sm:text-4xl">What happens now?</h2>
-					<p class="text-base text-white/80">
-						We start integrating you today. Follow the steps to know exactly what's next before day
-						one.
-					</p>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{timelineLabel}</p>
+					<h2 class="text-3xl font-semibold sm:text-4xl">{timelineHeader}</h2>
+					<p class="text-base text-white/80">{timelineIntro}</p>
 				</div>
 				<Icon icon={PixelCodeLucideIcon} class="h-20 w-20 text-white/70 md:h-28 md:w-28" />
 			</header>
@@ -388,9 +471,7 @@
 						>
 							<div class="flex flex-wrap items-center justify-between gap-3">
 								<h3 class="text-xl font-semibold">{step.title}</h3>
-								<p class="text-xs tracking-wide text-white/70 uppercase">
-									{step.subtitle}
-								</p>
+								<p class="text-xs tracking-wide text-white/70 uppercase">{step.subtitle}</p>
 							</div>
 							<ul class="mt-4 space-y-3 text-sm text-white/85">
 								{#each step.description as paragraph}
@@ -424,12 +505,9 @@
 		<div class="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 py-20 sm:px-6 lg:px-8">
 			<section class="space-y-8">
 				<header class="space-y-2">
-					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Resources</p>
-					<h2 class="text-3xl font-semibold text-white">The basic resources</h2>
-					<p class="text-base text-white/70">
-						The essentials you need to plug in quickly. Expand a topic to see the nitty-gritty
-						details.
-					</p>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{resourcesLabel}</p>
+					<h2 class="text-3xl font-semibold text-white">{resourcesTitle}</h2>
+					<p class="text-base text-white/70">{resourcesIntro}</p>
 				</header>
 
 				<Card
@@ -440,7 +518,7 @@
 							label={resource.title}
 							open={index === 0}
 							class="text-left text-white"
-							content-classes="border-t border-white/5 bg-white/5 px-4 pb-5"
+							content-classes="border-t border-white/5 bg-white/5 px-4"
 						>
 							<div class="space-y-3 px-4 py-4 text-sm text-white/80">
 								{#each resource.description as detail}
@@ -451,8 +529,8 @@
 									<div
 										class="rounded-lg border border-white/10 bg-white/5 p-3 text-xs tracking-[0.3em] text-white/60 uppercase"
 									>
-										<p>Email: {resource.contact.email}</p>
-										<p>Phone: {resource.contact.phone}</p>
+										<p>{emailLabel}: {resource.contact.email}</p>
+										<p>{phoneLabel}: {resource.contact.phone}</p>
 									</div>
 								{/if}
 
@@ -477,26 +555,17 @@
 				<div
 					class="space-y-4 rounded-3xl border border-white/10 bg-[#111216]/80 p-6 shadow-2xl shadow-black/40 backdrop-blur"
 				>
-					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Who we are</p>
-					<h2 class="text-3xl font-semibold">Why Pixel&Code exists</h2>
-					<p class="text-base text-white/75">
-						Pixel&Code was founded to revolutionize and simplify the tech consulting industry. Our
-						mission is to bring together a world-class team and offer unparalleled opportunities for
-						personal and professional growth.
-					</p>
-					<p class="text-base text-white/75">
-						We believe inspired employees create inspired clients, and together we can deliver
-						world-class results. Competitive compensation, meaningful benefits and a truly inspiring
-						work environment are the pillars we build on.
-					</p>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{storyLabel}</p>
+					<h2 class="text-3xl font-semibold">{storyTitle}</h2>
+					{#each storyParagraphs as paragraph}
+						<p class="text-base text-white/75">{paragraph}</p>
+					{/each}
 				</div>
-				<div
-					class="overflow-hidden rounded-3xl border border-white/10 bg-[#0b0c10] shadow-2xl shadow-black/40"
-				>
+				<div>
 					<img
-						src="https://pixelcode.se/wp-content/uploads/2023/01/hero_2_2-1024x585.jpg"
-						alt="Team collaborating in the lounge"
-						class="h-full w-full object-cover opacity-90 transition duration-500 hover:scale-105"
+						src={worldclassUrl}
+						alt={storyImageAlt}
+						class="h-full w-full object-contain p-6 transition duration-500 hover:scale-105"
 						loading="lazy"
 					/>
 				</div>
@@ -504,15 +573,15 @@
 
 			<section class="space-y-6">
 				<header>
-					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">FAQ</p>
-					<h2 class="text-3xl font-semibold">Questions we often get</h2>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{faqLabel}</p>
+					<h2 class="text-3xl font-semibold">{faqTitle}</h2>
 				</header>
 				<Card class="border border-white/10 bg-white/5 p-0 text-white backdrop-blur-xl">
 					{#each faqItems as item}
 						<Accordion
 							label={item.question}
 							class="text-left text-white"
-							content-classes="border-t border-white/5 bg-white/5 px-4 pb-4"
+							content-classes="border-t border-white/5 bg-white/5 px-4 "
 						>
 							<p class="px-4 py-4 text-sm text-white/80">{item.answer}</p>
 						</Accordion>
@@ -538,10 +607,8 @@
 			{/each}
 
 			<section class="space-y-4 text-white/75">
-				<p class="text-sm tracking-[0.35em] text-white/60 uppercase">Economy</p>
-				<h2 class="text-3xl font-semibold text-white">
-					Only the essentials, the rest arrives during onboarding.
-				</h2>
+				<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{economyLabel}</p>
+				<h2 class="text-3xl font-semibold text-white">{economyTitle}</h2>
 			</section>
 
 			<section class="grid gap-6 md:grid-cols-2">
@@ -562,10 +629,8 @@
 
 			<section class="space-y-6">
 				<header class="space-y-2">
-					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">
-						General contact information
-					</p>
-					<h2 class="text-3xl font-semibold">Need help? Reach out anytime.</h2>
+					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{contactLabel}</p>
+					<h2 class="text-3xl font-semibold">{contactTitle}</h2>
 				</header>
 
 				<div class="grid gap-6 md:grid-cols-2">
@@ -575,26 +640,26 @@
 							{#each companyInfo.address as line}
 								<p>{line}</p>
 							{/each}
-							<p>Org nr: {companyInfo.orgNumber}</p>
-							<p>Email: {companyInfo.email}</p>
+							<p>{orgLabel}: {companyInfo.orgNumber}</p>
+							<p>{emailLabel}: {companyInfo.email}</p>
 						</div>
 						<Button
 							variant="ghost"
 							href="mailto:hello@pixelcode.se"
 							class="mt-4 w-fit border border-white/20 bg-white/10 text-white hover:bg-white/20"
 						>
-							Email us
+							{contactButton}
 						</Button>
 					</Card>
 
 					<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
-						<h3 class="text-xl font-semibold">People team</h3>
+						<h3 class="text-xl font-semibold">{contactPeopleTitle}</h3>
 						<div class="mt-4 space-y-4">
 							{#each contactPeople as person}
 								<div class="space-y-1 text-sm text-white/75">
 									<p class="font-semibold text-white">{person.name}</p>
-									<p>Phone: {person.phone}</p>
-									<p>Email: {person.email}</p>
+									<p>{phoneLabel}: {person.phone}</p>
+									<p>{emailLabel}: {person.email}</p>
 								</div>
 							{/each}
 						</div>
@@ -604,21 +669,15 @@
 
 			<section class="grid gap-6 lg:grid-cols-2">
 				<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
-					<h3 class="text-2xl font-semibold">Feedback makes us stronger</h3>
-					<p class="mt-2 text-sm text-white/75">
-						Missing something? Share feedback and help us improve this experience for the next
-						teammate.
-					</p>
+					<h3 class="text-2xl font-semibold">{feedbackTitleCopy}</h3>
+					<p class="mt-2 text-sm text-white/75">{feedbackDescription}</p>
 					<form class="mt-4 space-y-4">
-						<FormControl
-							label="How can this preboarding page get better?"
-							class="text-sm text-white/70"
-						>
+						<FormControl label={feedbackLabelCopy} class="text-sm text-white/70">
 							<TextArea
 								name="feedback"
 								rows={5}
 								bind:value={feedbackMessage}
-								placeholder="Missing something? Let us know!"
+								placeholder={feedbackPlaceholder}
 								class="border border-white/10 bg-white/5 text-white placeholder:text-white/50"
 							/>
 						</FormControl>
@@ -627,21 +686,16 @@
 							href={feedbackHref}
 							class="bg-primary text-white hover:bg-[#ff765a]"
 						>
-							Send feedback
+							{feedbackCta}
 						</Button>
 					</form>
 				</Card>
 
 				<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
 					<div class="space-y-3">
-						<p class="text-sm tracking-[0.35em] text-white/60 uppercase">
-							With a license to be awesome
-						</p>
-						<h3 class="text-2xl font-semibold">We are here to support your journey.</h3>
-						<p class="text-sm text-white/75">
-							Stay connected with us on LinkedIn for news, events and glimpses into life at
-							Pixel&Code.
-						</p>
+						<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{linkedinLabel}</p>
+						<h3 class="text-2xl font-semibold">{linkedinTitle}</h3>
+						<p class="text-sm text-white/75">{linkedinDescription}</p>
 						<Button
 							variant="ghost"
 							href="https://www.linkedin.com/company/pixelandcode"
@@ -649,7 +703,7 @@
 							rel="noopener noreferrer"
 							class="w-fit border border-white/20 bg-white/10 text-white hover:bg-white/20"
 						>
-							LinkedIn
+							{linkedinCta}
 						</Button>
 					</div>
 				</Card>
@@ -658,13 +712,15 @@
 			<footer
 				class="flex flex-col gap-3 border-t border-white/10 pt-8 text-sm text-white/60 md:flex-row md:items-center md:justify-between"
 			>
-				<p>© 2025 Pixel&Code AB – All rights reserved.</p>
+				<p>{footerNotice}</p>
 				<a
 					class="text-white hover:text-primary"
 					href="https://pixelcode.se/privacy/"
 					target="_blank"
-					rel="noopener noreferrer">Privacy policy</a
+					rel="noopener noreferrer"
 				>
+					{footerPrivacy}
+				</a>
 			</footer>
 		</div>
 	</section>
