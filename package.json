@@ -6,8 +6,10 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"prebuild": "npm run generate:paraglide",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"generate:paraglide": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
