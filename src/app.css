@@ -227,3 +227,19 @@
 		animation-play-state: paused;
 	}
 }
+
+@media print {
+        body {
+                background: white;
+                color: #0f172a;
+        }
+
+        .resume-print-page {
+                page-break-inside: avoid;
+                padding: 2rem;
+        }
+
+        .resume-print-section {
+                margin-bottom: 1.5rem;
+        }
+}
