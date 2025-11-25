@@ -134,3 +134,28 @@ create policy "admin manage access" on public.resume_client_access
 
 create policy "client read own access" on public.resume_client_access
   for select using (public.is_employer() and client_user_id = auth.uid());
+
+-- Suggested updates after review
+alter table public.resume_versions
+  add column if not exists updated_at timestamptz not null default now();
+
+drop trigger if exists trg_resume_versions_updated_at on public.resume_versions;
+create trigger trg_resume_versions_updated_at
+  before update on public.resume_versions
+  for each row
+  execute function public.touch_updated_at();
+
+-- Safe view for public/service-role reads of main, active resumes only
+create or replace view public.resume_public_main as
+select
+  r.id,
+  r.user_id,
+  r.version_name,
+  r.allow_word_export,
+  r.content,
+  r.preview_html,
+  r.updated_at
+from public.resumes r
+where r.is_main = true and r.is_active = true;
+
+grant select on public.resume_public_main to anon, authenticated;
