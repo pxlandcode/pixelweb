@@ -1,5 +1,7 @@
 <script lang="ts">
 	import '../app.css';
+	import '@uppy/core/dist/style.min.css';
+	import '@uppy/dashboard/dist/style.min.css';
 	import { fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import favicon from '$lib/assets/and.svg';

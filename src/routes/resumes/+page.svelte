@@ -1,5 +1,5 @@
 <script lang="ts">
-        import { Card, Button, Stack } from '@pixelcode_/blocks/components';
+        import { Card, Button } from '@pixelcode_/blocks/components';
         import ResumePreview from '$lib/components/resumes/ResumePreview.svelte';
         import type { ResumeBlock } from '$lib/services/resumes';
         let { data } = $props();
@@ -13,12 +13,13 @@
                 <p class="text-sm text-gray-300">Public-facing list of consultant profiles using the main version.</p>
         </div>
 
-        <Stack spacing="md" class="mt-6">
+        <div class="mt-6 space-y-6">
                 <div class="grid gap-6 md:grid-cols-2">
                         {#each data.resumes as resume}
+                                {@const header = findHeader(resume.content)}
                                 <Card class="bg-white text-slate-900">
                                         <div class="flex items-center justify-between pb-3">
-                                                {#if findHeader(resume.content) as header}
+                                                {#if header}
                                                         <div>
                                                                 <p class="text-xl font-semibold text-slate-900">{header.name}</p>
                                                                 <p class="text-sm text-slate-700">{header.title}</p>
@@ -32,5 +33,5 @@
                                 </Card>
                         {/each}
                 </div>
-        </Stack>
+        </div>
 </section>

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import AdminLayout from '$lib/components/AdminLayout.svelte';
+	import { Mode } from '@pixelcode_/blocks/components';
 	import { page } from '$app/stores';
 	import './internal.css';
+	import './app.css';
 
 	const { data, children } = $props();
 
@@ -10,6 +12,7 @@
 
 </script>
 
+<Mode.Watcher defaultMode="light" />
 {#if plainRoutes.has(routeId)}
 	{@render children?.()}
 {:else}

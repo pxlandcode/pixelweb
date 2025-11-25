@@ -1,5 +1,5 @@
 <script lang="ts">
-        import { Button, Card, Input, Stack, Tag } from '@pixelcode_/blocks/components';
+        import { Badge, Button, Card, Input } from '@pixelcode_/blocks/components';
         import type { ResumeBlock } from '$lib/services/resumes';
         let { data } = $props();
         let search = $state('');
@@ -15,7 +15,7 @@
         <Button variant="primary" size="md" href="/internal/resumes/new">New resume</Button>
 </div>
 
-<Stack spacing="md" class="mt-6">
+<div class="mt-6 space-y-6">
         <div class="flex flex-wrap items-center gap-3">
                 <Input placeholder="Search consultant or title" bind:value={search} class="w-72" />
         </div>
@@ -27,7 +27,8 @@
                                 if (!header) return true;
                                 return `${header.name} ${header.title}`.toLowerCase().includes(search.toLowerCase());
                         }) as resume}
-                        {#if findHeader(resume.content) as header}
+                        {@const header = findHeader(resume.content)}
+                        {#if header}
                                 <Card class="flex flex-col gap-3 bg-white text-slate-900">
                                         <div class="flex items-start justify-between gap-3">
                                                 <div class="space-y-1">
@@ -37,10 +38,10 @@
                                                 </div>
                                                 <div class="flex flex-col items-end gap-1 text-xs text-slate-700">
                                                         {#if resume.is_main}
-                                                                <Tag tone="positive" size="sm">Main</Tag>
+                                                                <Badge variant="success" size="xs">Main</Badge>
                                                         {/if}
                                                         {#if !resume.is_active}
-                                                                <Tag tone="warning" size="sm">Inactive</Tag>
+                                                                <Badge variant="warning" size="xs">Inactive</Badge>
                                                         {/if}
                                                 </div>
                                         </div>
@@ -61,4 +62,4 @@
                         {/if}
                 {/each}
         </div>
-</Stack>
+</div>
