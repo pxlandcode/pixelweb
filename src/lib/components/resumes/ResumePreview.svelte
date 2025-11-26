@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import { ResumeBlockType } from './constants';
+
 	import ResumeHeader from './ResumeHeader.svelte';
 	import ExperienceItem from './ExperienceItem.svelte';
 	import ExperienceSection from './ExperienceSection.svelte';
@@ -14,34 +15,19 @@
 
 	let { blocks, isEditing = false } = $props<{ blocks: ResumeBlock[]; isEditing?: boolean }>();
 
-	const visibleBlocks = $derived(blocks.filter((b: ResumeBlock) => !b.hidden));
-	const header = $derived(
-		visibleBlocks.find((b: ResumeBlock) => b.type === ResumeBlockType.HEADER)
-	);
-	const skillsGrid = $derived(
-		visibleBlocks.find((b: ResumeBlock) => b.type === ResumeBlockType.SKILLS_GRID)
-	);
+	const visibleBlocks = $derived(blocks.filter((b) => !b.hidden));
+
+	const header = $derived(visibleBlocks.find((b) => b.type === ResumeBlockType.HEADER));
+
+	const skillsGrid = $derived(visibleBlocks.find((b) => b.type === ResumeBlockType.SKILLS_GRID));
+
 	const highlightedExps = $derived(
-		blocks.filter((b: ResumeBlock) => b.type === ResumeBlockType.HIGHLIGHTED_EXPERIENCE)
+		blocks.filter((b) => b.type === ResumeBlockType.HIGHLIGHTED_EXPERIENCE)
 	);
 
-	// Get ALL experience_item blocks (including hidden) for editing
-	const allExperienceItems = $derived(
-		blocks.filter((b: ResumeBlock) => b.type === ResumeBlockType.EXPERIENCE_ITEM) as Extract<
-			ResumeBlock,
-			{ type: 'experience_item' }
-		>[]
-	);
-
-	// For view mode, only show visible experience items
-	const visibleExperienceItems = $derived(
-		visibleBlocks.filter((b: ResumeBlock) => b.type === ResumeBlockType.EXPERIENCE_ITEM)
-	);
-
-	// All other blocks (excluding experience_item since we handle them separately)
 	const otherBlocks = $derived(
 		visibleBlocks.filter(
-			(b: ResumeBlock) =>
+			(b) =>
 				b.type !== ResumeBlockType.HEADER &&
 				b.type !== ResumeBlockType.SKILLS_GRID &&
 				b.type !== ResumeBlockType.HIGHLIGHTED_EXPERIENCE &&
@@ -49,21 +35,28 @@
 		)
 	);
 
-	let editingExpItems = $state<Extract<ResumeBlock, { type: 'experience_item' }>[]>([]);
+	const visibleExperienceItems = $derived(
+		visibleBlocks.filter((b) => b.type === ResumeBlockType.EXPERIENCE_ITEM)
+	);
+
+	const allExperienceItems = $derived(
+		blocks.filter((b) => b.type === ResumeBlockType.EXPERIENCE_ITEM)
+	);
+
+	let editingExpItems = $state([]);
 
 	$effect(() => {
 		if (isEditing) {
-			editingExpItems = allExperienceItems.map((item) => ({ ...item }));
+			editingExpItems = allExperienceItems.map((i) => ({ ...i }));
 		}
 	});
 
 	const moveExpItem = (index: number, direction: 'up' | 'down') => {
 		const newIndex = direction === 'up' ? index - 1 : index + 1;
 		if (newIndex < 0 || newIndex >= editingExpItems.length) return;
-
-		const temp = editingExpItems[index];
+		const tmp = editingExpItems[index];
 		editingExpItems[index] = editingExpItems[newIndex];
-		editingExpItems[newIndex] = temp;
+		editingExpItems[newIndex] = tmp;
 	};
 
 	const removeExpItem = (index: number) => {
@@ -79,7 +72,7 @@
 </script>
 
 <div class="resume-print-page relative bg-white p-10 text-slate-900 shadow-sm">
-	{#if header && header.type === ResumeBlockType.HEADER}
+	{#if header}
 		<ResumeHeader {header} {skillsGrid} {highlightedExps} {isEditing} />
 	{/if}
 
@@ -94,7 +87,7 @@
 						<ExperienceItem
 							block={item}
 							{isEditing}
-							onMove={(direction) => moveExpItem(index, direction)}
+							onMove={(dir) => moveExpItem(index, dir)}
 							onRemove={() => removeExpItem(index)}
 							onToggleVisibility={() => toggleExpVisibility(index)}
 						/>
@@ -122,14 +115,13 @@
 <style>
 	:global(.resume-print-page blockquote) {
 		border-left-width: 2px;
-		border-color: rgb(251 146 60); /* orange-400 */
-		padding-left: 0.75rem; /* pl-3 */
-		font-size: 0.875rem; /* text-sm */
-		color: rgb(51 65 85); /* text-slate-700 */
+		border-color: rgb(251 146 60);
+		padding-left: 0.75rem;
+		font-size: 0.875rem;
+		color: rgb(51 65 85);
 		font-style: italic;
 		margin-top: 0.5rem;
 		margin-bottom: 0.5rem;
-		position: relative;
 	}
 	:global(.resume-print-page blockquote::before) {
 		content: '"';

@@ -1,0 +1,153 @@
+/* ======================================================================
+   PRINT BASE
+   ====================================================================== */
+
+.pdf-mode {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #ffffff !important;
+}
+
+@media print {
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
+
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+/* ======================================================================
+   PAGE CONTAINER (A4)
+   ====================================================================== */
+
+.pdf-mode .resume-print-page {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 15mm !important; /* Uniform padding restored */
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    position: relative !important;
+}
+
+/* Page 1 specific overrides are handled in the component style, 
+   but we ensure the container allows expansion */
+.pdf-mode .resume-print-page.page-1 {
+    /* We want it to fill the first page content area */
+    height: 297mm !important;
+    overflow: hidden !important; /* Prevent spillover from page 1 */
+}
+
+/* ======================================================================
+   HEADER — KEEP IT TOGETHER
+   ====================================================================== */
+
+.pdf-mode .resume-header-content {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.pdf-mode .header-top {
+    flex: 1 !important; /* Allow it to grow */
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.pdf-mode .header-brand {
+    display: block !important;
+    margin-bottom: 6mm !important;
+    margin-top: -15mm !important; /* Remove top padding for header brand */
+    padding-top: 15mm !important; /* Add padding back if needed for background, or keep 0 */
+}
+
+.pdf-mode .header-grid {
+    display: grid !important;
+    grid-template-columns: 180px 1fr !important;
+    gap: 2rem !important;
+    width: 100% !important;
+    flex: 1 !important; /* Fill remaining space */
+}
+
+/* ======================================================================
+   CONSULTANT PROFILE (LEFT COLUMN)
+   ====================================================================== */
+
+.pdf-mode .consultant-profile {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+.pdf-mode .consultant-profile .ampersand-logo {
+    margin-top: auto !important;
+}
+
+/* ======================================================================
+   PAGE BREAK ELEMENT
+   ====================================================================== */
+
+.pdf-mode .page-break {
+    display: block !important;
+    height: 0 !important;
+    page-break-before: always !important;
+    break-before: page !important;
+}
+/* ======================================================================
+   TYPOGRAPHY
+   ====================================================================== */
+
+/* ======================================================================
+   TYPOGRAPHY
+   ====================================================================== */
+
+.pdf-mode .resume-print-page {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 10.5pt !important;
+    line-height: 1.2 !important;
+    color: #0f172a !important; /* Ensure dark text */
+}
+
+/* Aggressively override Tailwind classes for all text elements */
+.pdf-mode .resume-print-page p,
+.pdf-mode .resume-print-page div,
+.pdf-mode .resume-print-page span,
+.pdf-mode .resume-print-page li,
+.pdf-mode .resume-print-page a {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 10.5pt !important;
+    line-height: 1.2 !important;
+}
+
+/* Specifically target skills and contact in consultant profile */
+.pdf-mode .consultant-profile .text-sm,
+.pdf-mode .consultant-profile .text-xs {
+    font-size: 10.5pt !important;
+    line-height: 1.2 !important;
+}
+
+/* Ensure list items or divs in skills grid follow suit */
+.pdf-mode .consultant-profile .space-y-1 > div {
+    line-height: 1.2 !important;
+    margin-bottom: 2px !important; /* Add tiny spacing since line-height is tight */
+}
+
+/* Headers might need to be larger, but let's respect the base for now unless overridden */
+.pdf-mode h1, .pdf-mode h2, .pdf-mode h3, .pdf-mode h4 {
+    font-family: 'Montserrat', sans-serif !important;
+    /* Keep their specific sizes if defined, or let them inherit if needed. 
+       Usually headers should be larger. */
+}
+
+/* Exception: Proudly Presents text */
+.pdf-mode .header-brand p {
+    font-family: 'Fave Script', cursive !important;
+    font-size: 1.5rem !important; /* text-2xl approx */
+    line-height: normal !important;
+    color: #f35b3f !important; /* text-primary */
+}

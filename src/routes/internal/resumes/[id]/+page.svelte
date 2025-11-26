@@ -12,11 +12,14 @@
 	import ResumePreview from '$lib/components/resumes/ResumePreview.svelte';
 	import { resumeStore } from '$lib/stores/resumeStore';
 	import type { ResumeBlock } from '$lib/services/resumes';
+	import { fly } from 'svelte/transition';
 
 	let { data } = $props();
 	let selectedBlockId = $state<string | null>(null);
 	let showEditor = $state(false);
 	let isEditing = $state(false);
+	let showDownloadOptions = $state(false);
+	const isPdfMode = $derived(data.isPdf === true);
 
 	const resumeState = resumeStore.state;
 	const resumeSummary = resumeStore.summary;
@@ -117,84 +120,117 @@
 	];
 </script>
 
-<div class="flex items-center justify-between">
-	<div>
-		<h1 class="text-2xl font-semibold text-gray-50">Resume builder</h1>
-		<p class="text-sm text-gray-300">Side-by-side editor with live preview.</p>
+{#if isPdfMode}
+	<div class="bg-white p-0">
+		<ResumePreview blocks={$resumeState.blocks} pdfMode />
 	</div>
-</div>
-
-<Toaster richColors position="top-center" closeButton />
-
-<!-- Fixed Edit/Save Buttons in Bottom Right -->
-<div class="fixed right-6 bottom-6 z-50 flex gap-2 print:hidden">
-	{#if isEditing}
-		<Button variant="inverted" onclick={handleCancel}>
-			<Icon icon={X} size="sm" />
-			Cancel
-		</Button>
-		<Button variant="primary" onclick={handleSave}>
-			<Icon icon={Save} size="sm" />
-			Save
-		</Button>
-	{:else}
-		<Button variant="inverted" href={`/api/resumes/${data.resume.id}/pdf`}>
-			<Icon icon={Download} size="sm" />
-			Download
-		</Button>
-		<Button variant="primary" onclick={() => (isEditing = true)}>
-			<Icon icon={Edit} size="sm" />
-			Edit
-		</Button>
-	{/if}
-</div>
-
-<div class="mt-6 space-y-4">
-	<Tab.Triggers instance={tabHandler} />
-
-	<Tab.View active={tabHandler.activeView === 0} class="flex items-start gap-4">
-		<div class="flex-1 space-y-4">
-			<Card class="bg-white text-slate-900">
-				<div class="mt-4">
-					<ResumePreview
-						blocks={$resumeState.blocks}
-						{isEditing}
-						editing={showEditor}
-						{selectedBlockId}
-						on:editBlock={(event) => selectBlock(event.detail)}
-					/>
-				</div>
-			</Card>
+{:else}
+	<div class="flex items-center justify-between">
+		<div>
+			<h1 class="text-2xl font-semibold text-gray-50">Resume builder</h1>
+			<p class="text-sm text-gray-300">Side-by-side editor with live preview.</p>
 		</div>
-	</Tab.View>
+	</div>
 
-	<Tab.View active={tabHandler.activeView === 1} class="mt-4">
-		<Card class="flex flex-col gap-3 bg-white text-slate-900">
-			<div class="flex items-center justify-between">
-				<p class="text-sm font-semibold text-slate-900">Versions</p>
-				<Button size="xs" variant="ghost">New version</Button>
-			</div>
-			<div class="flex flex-col divide-y divide-slate-100">
-				{#each data.resume.versions ?? [] as version}
-					<div class="flex items-center justify-between py-3">
-						<div>
-							<p class="text-sm font-semibold text-slate-900">{version.version_name}</p>
-							<p class="text-xs text-slate-600">{version.created_at}</p>
+	<Toaster richColors position="top-center" closeButton />
+
+	<!-- Fixed Edit/Save Buttons in Bottom Right -->
+	<div class="fixed right-6 bottom-6 z-50 flex gap-2 print:hidden">
+		{#if isEditing}
+			<Button variant="inverted" onclick={handleCancel}>
+				<Icon icon={X} size="sm" />
+				Cancel
+			</Button>
+			<Button variant="primary" onclick={handleSave}>
+				<Icon icon={Save} size="sm" />
+				Save
+			</Button>
+		{:else}
+			<div class="relative flex items-center gap-2">
+				{#if showDownloadOptions}
+					<div class="absolute right-0 bottom-14 flex flex-col items-end gap-2">
+						<div transition:fly={{ y: 16, duration: 160 }}>
+							<Button size="sm" variant="secondary" disabled>
+								Word (coming soon)
+							</Button>
 						</div>
-						<div class="flex items-center gap-2 text-xs text-slate-700">
-							{#if version.is_main}<Badge variant="success" size="xs">Main</Badge>{/if}
-							{#if !version.is_active}<Badge variant="warning" size="xs">Inactive</Badge>{/if}
+						<div transition:fly={{ y: 22, duration: 200 }}>
 							<Button
-								size="xs"
-								variant="secondary"
-								onclick={() => resumeStore.setActiveVersion(version.id)}
+								size="sm"
+								variant="primary"
+								href={`/api/resumes/${data.resume.id}/pdf`}
+								target="_blank"
+								rel="external"
+								download={`resume-${data.resume.id}.pdf`}
+								onclick={() => (showDownloadOptions = false)}
 							>
-								Load
+								<Icon icon={Download} size="sm" />
+								PDF (Playwright)
 							</Button>
 						</div>
 					</div>
-				{/each}
+				{/if}
+
+				<Button variant="inverted" onclick={() => (showDownloadOptions = !showDownloadOptions)}>
+					<Icon icon={Download} size="sm" />
+					Download
+				</Button>
+				<Button variant="primary" onclick={() => (isEditing = true)}>
+					<Icon icon={Edit} size="sm" />
+					Edit
+				</Button>
 			</div>
-		</Card>
-	</Tab.View>
-</div>
+		{/if}
+	</div>
+
+	<div class="mt-6 space-y-4">
+		<Tab.Triggers instance={tabHandler} />
+
+		<Tab.View active={tabHandler.activeView === 0} class="flex items-start gap-4">
+			<div class="flex-1 space-y-4">
+				<Card class="bg-white text-slate-900">
+					<div class="mt-4">
+						<ResumePreview
+							blocks={$resumeState.blocks}
+							{isEditing}
+							pdfMode={isPdfMode}
+							editing={showEditor}
+							{selectedBlockId}
+							on:editBlock={(event) => selectBlock(event.detail)}
+						/>
+					</div>
+				</Card>
+			</div>
+		</Tab.View>
+
+		<Tab.View active={tabHandler.activeView === 1} class="mt-4">
+			<Card class="flex flex-col gap-3 bg-white text-slate-900">
+				<div class="flex items-center justify-between">
+					<p class="text-sm font-semibold text-slate-900">Versions</p>
+					<Button size="xs" variant="ghost">New version</Button>
+				</div>
+				<div class="flex flex-col divide-y divide-slate-100">
+					{#each data.resume.versions ?? [] as version}
+						<div class="flex items-center justify-between py-3">
+							<div>
+								<p class="text-sm font-semibold text-slate-900">{version.version_name}</p>
+								<p class="text-xs text-slate-600">{version.created_at}</p>
+							</div>
+							<div class="flex items-center gap-2 text-xs text-slate-700">
+								{#if version.is_main}<Badge variant="success" size="xs">Main</Badge>{/if}
+								{#if !version.is_active}<Badge variant="warning" size="xs">Inactive</Badge>{/if}
+								<Button
+									size="xs"
+									variant="secondary"
+									onclick={() => resumeStore.setActiveVersion(version.id)}
+								>
+									Load
+								</Button>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Card>
+		</Tab.View>
+	</div>
+{/if}

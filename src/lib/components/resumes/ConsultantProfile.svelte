@@ -8,12 +8,14 @@
 		header,
 		skillsGrid,
 		andLogo,
-		image = soloImages.pierrePortrait
+		image = soloImages.pierrePortrait,
+		fillHeight = false
 	} = $props<{
 		header: Extract<ResumeBlock, { type: 'header' }>;
 		skillsGrid?: Extract<ResumeBlock, { type: 'skills_grid' }>;
 		andLogo: string;
 		image?: ResumeImage;
+		fillHeight?: boolean;
 	}>();
 
 	const imageSrc = $derived(image?.src ?? image?.fallbackSrc ?? '');
@@ -21,9 +23,11 @@
 	const imageSrcset = $derived(image?.srcset ?? undefined);
 </script>
 
-<div class="space-y-5">
+<div class={`consultant-profile`}>
 	<!-- Consultant Image -->
-	<div class="relative aspect-square w-full overflow-hidden rounded-md border border-slate-200 bg-white">
+	<div
+		class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-white"
+	>
 		{#if imageSrc}
 			<img
 				src={imageSrc}
@@ -34,7 +38,9 @@
 				decoding="async"
 			/>
 		{:else}
-			<div class="absolute inset-0 flex items-center justify-center bg-slate-50 text-sm text-slate-500">
+			<div
+				class="absolute inset-0 flex items-center justify-center bg-slate-50 text-sm text-slate-500"
+			>
 				Image missing
 			</div>
 		{/if}
@@ -42,7 +48,7 @@
 
 	<!-- Skills Section -->
 	{#if skillsGrid}
-		<div class="rounded-md bg-slate-50 p-4">
+		<div class="flex-shrink-0 rounded-md bg-slate-50 p-4">
 			<p class="mb-3 text-xs font-semibold tracking-wide text-slate-700 uppercase">
 				{skillsGrid.title}
 			</p>
@@ -55,7 +61,7 @@
 	{/if}
 
 	<!-- Contact Section -->
-	<div class="space-y-3 rounded-md bg-slate-50 p-4">
+	<div class="flex-shrink-0 space-y-3 rounded-md bg-slate-50 p-4">
 		{#each header.contact_people as contact}
 			<div class="space-y-1">
 				<p class="text-xs font-semibold tracking-wide text-slate-600 uppercase">
@@ -74,8 +80,12 @@
 		{/each}
 	</div>
 
+	{#if fillHeight}
+		<div class="flex-1"></div>
+	{/if}
+
 	<!-- And Logo at Bottom -->
-	<div class="flex justify-center pt-2">
-		<img src={andLogo} alt="&" class="h-16 opacity-70" />
+	<div class="flex flex-shrink-0 justify-center pt-4">
+		<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />
 	</div>
 </div>

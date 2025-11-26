@@ -125,7 +125,7 @@
 	</div>
 {:else}
 	<section class="resume-print-section mb-6">
-		<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+		<div class="grid gap-6 md:grid-cols-[15%_15%_1fr] grid-print-experience">
 			<!-- Column 1: Empty -->
 			<div></div>
 

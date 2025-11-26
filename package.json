@@ -35,6 +35,7 @@
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"sass-embedded": "^1.93.3",
+		"playwright": "^1.49.0",
 		"svelte": "^5.39.6",
 		"svelte-check": "^4.0.0",
 		"tailwind-merge": "^3.3.1",
