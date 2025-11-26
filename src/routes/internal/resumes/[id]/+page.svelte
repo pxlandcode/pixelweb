@@ -1,5 +1,13 @@
 <script lang="ts">
-	import { Button, Card, Tab, TabHandler, Icon, Toaster, toast } from '@pixelcode_/blocks/components';
+	import {
+		Button,
+		Card,
+		Tab,
+		TabHandler,
+		Icon,
+		Toaster,
+		toast
+	} from '@pixelcode_/blocks/components';
 	import { Edit, Save, Download, X } from 'lucide-svelte';
 	import ResumePreview from '$lib/components/resumes/ResumePreview.svelte';
 	import { resumeStore } from '$lib/stores/resumeStore';
@@ -147,34 +155,6 @@
 	<Tab.View active={tabHandler.activeView === 0} class="flex items-start gap-4">
 		<div class="flex-1 space-y-4">
 			<Card class="bg-white text-slate-900">
-				<div class="flex items-center justify-between gap-2">
-					<div>
-						<p class="text-sm font-semibold text-slate-900">Preview</p>
-						<p class="text-xs text-slate-600">Print-aligned layout</p>
-					</div>
-					{#if showEditor}
-						<div class="flex items-center gap-2">
-							<p class="text-xs text-slate-600">
-								{$resumeSummary.visible} visible / {$resumeSummary.total} total
-							</p>
-							<select
-								class="rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-800"
-								on:change={(event) => {
-									const type = (event.currentTarget.value as ResumeBlock['type']) ?? 'header';
-									addBlock(type);
-									event.currentTarget.value = '';
-								}}
-							>
-								<option value="" disabled selected>Add block</option>
-								{#each availableTypes as option}
-									{#if option.value !== 'header' || !$resumeState.blocks.some((b) => b.type === 'header')}
-										<option value={option.value}>{option.label}</option>
-									{/if}
-								{/each}
-							</select>
-						</div>
-					{/if}
-				</div>
 				<div class="mt-4">
 					<ResumePreview
 						blocks={$resumeState.blocks}
