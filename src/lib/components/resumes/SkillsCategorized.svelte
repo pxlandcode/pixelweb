@@ -2,6 +2,7 @@
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import { Input, FormControl, Button } from '@pixelcode_/blocks/components';
 	import TechStackSelector from '../TechStackSelector.svelte';
+	import ResumeSectionRow from './ResumeSectionRow.svelte';
 
 	let { block, isEditing = false } = $props<{
 		block: Extract<ResumeBlock, { type: 'skills_categorized' }>;
@@ -25,6 +26,8 @@
 		if (isLanguage) {
 			editingBlock.items = [...editingBlock.items, { label: '', value: '' }];
 		} else if (isPortfolio) {
+			editingBlock.items = [...editingBlock.items, ''];
+		} else {
 			editingBlock.items = [...editingBlock.items, ''];
 		}
 	};
@@ -86,14 +89,29 @@
 					{/each}
 					<Button variant="outline" size="sm" onclick={addItem}>+ Add URL</Button>
 				</div>
+			{:else}
+				<!-- Fallback for generic lists -->
+				<label class="mb-1 block text-sm font-medium text-slate-700">Items</label>
+				<div class="space-y-2">
+					{#each editingBlock.items as item, index}
+						{#if typeof item === 'string'}
+							<div class="flex gap-2">
+								<Input
+									bind:value={editingBlock.items[index]}
+									class="flex-1 border-slate-300 bg-white"
+								/>
+								<Button variant="ghost" size="sm" onclick={() => removeItem(index)}>Remove</Button>
+							</div>
+						{/if}
+					{/each}
+					<Button variant="outline" size="sm" onclick={addItem}>+ Add Item</Button>
+				</div>
 			{/if}
 		</div>
 	</section>
 {:else}
 	<section class="resume-print-section mb-6">
-		<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-			<div></div>
-			<p class="text-xs font-semibold tracking-wide text-slate-700 uppercase">{block.category}</p>
+		<ResumeSectionRow label={block.category} skipFirstColumn={isTechniqueOrMethod || isPortfolio}>
 			{#if block.category.toLowerCase().includes('language')}
 				<div class="flex flex-col gap-1 text-sm text-slate-800">
 					{#each block.items as item}
@@ -105,7 +123,7 @@
 					{/each}
 				</div>
 			{:else if block.category.toLowerCase().includes('portfolio')}
-				<div class="flex flex-wrap gap-2 text-xs text-slate-800">
+				<div class="flex flex-wrap gap-2 text-sm text-slate-800">
 					{#each block.items as item}
 						{#if typeof item === 'string'}
 							<a
@@ -142,6 +160,6 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
+		</ResumeSectionRow>
 	</section>
 {/if}

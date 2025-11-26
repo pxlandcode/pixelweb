@@ -9,7 +9,7 @@
 }
 
 @media print {
-    body {
+    html, body {
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
@@ -19,6 +19,11 @@
         size: A4;
         margin: 0;
     }
+}
+
+/* Ensure light background when viewing/exporting in browser */
+html, body {
+    background: #ffffff !important;
 }
 
 /* ======================================================================

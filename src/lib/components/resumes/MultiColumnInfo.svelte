@@ -2,16 +2,20 @@
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import { Input, FormControl, Button, TextArea } from '@pixelcode_/blocks/components';
 	import TechStackSelector from '../TechStackSelector.svelte';
+	import ResumeSectionRow from './ResumeSectionRow.svelte';
 
 	let { block, isEditing = false } = $props<{
 		block: Extract<ResumeBlock, { type: 'multi_column_info' }>;
 		isEditing?: boolean;
 	}>();
 
-	let editingBlock = $state({ ...block });
+	const normalizeItems = (items: typeof block.items) =>
+		items.map((item) => ({ ...item, technologies: item.technologies ?? [] }));
+
+	let editingBlock = $state({ ...block, items: normalizeItems(block.items) });
 
 	$effect(() => {
-		editingBlock = { ...block };
+		editingBlock = { ...block, items: normalizeItems(block.items) };
 	});
 
 	const addItem = () => {
@@ -61,12 +65,12 @@
 {:else}
 	<section class="resume-print-section space-y-2">
 		{#each block.items as item}
-			<div class="grid gap-2 md:grid-cols-[140px_1fr] md:items-start">
-				<p class="text-sm font-semibold text-slate-700">{item.label}</p>
+			<ResumeSectionRow label={item.label} skipFirstColumn={true}>
 				<div class="space-y-1 text-sm text-slate-800">
-					<p>{item.description}</p>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					<p>{@html item.description}</p>
 					{#if item.technologies?.length}
-						<div class="flex flex-wrap gap-2">
+						<div class="flex flex-wrap gap-2 pt-1">
 							{#each item.technologies as tech}
 								<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">
 									{tech}
@@ -75,7 +79,7 @@
 						</div>
 					{/if}
 				</div>
-			</div>
+			</ResumeSectionRow>
 		{/each}
 	</section>
 {/if}

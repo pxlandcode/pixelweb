@@ -6,28 +6,40 @@
 	import QuillEditor from '../QuillEditor.svelte';
 	import { Button, Input, FormControl } from '@pixelcode_/blocks/components';
 	import TechStackSelector from '../TechStackSelector.svelte';
-	import { soloImages } from '$lib/images/manifest';
+	import { soloImages, type ImageResource } from '$lib/images/manifest';
 
 	let {
 		header,
 		skillsGrid,
 		highlightedExps = [],
-		isEditing = false
+		isEditing = false,
+		image
 	} = $props<{
 		header: Extract<ResumeBlock, { type: 'header' }>;
 		skillsGrid?: Extract<ResumeBlock, { type: 'skills_grid' }>;
 		highlightedExps?: Extract<ResumeBlock, { type: 'highlighted_experience' }>[];
 		isEditing?: boolean;
+		image?: ImageResource;
 	}>();
 
 	// Local state for editing
 	let editingHeader = $state(header);
 	let editingHighlightedExps = $state(highlightedExps);
+	const buildSkillsGrid = () =>
+		skillsGrid ?? {
+			type: 'skills_grid' as const,
+			id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
+			title: 'Examples of skills',
+			columns: 2,
+			skills: []
+		};
+	let editingSkillsGrid = $state(buildSkillsGrid());
 
 	// Sync prop changes to local state
 	$effect(() => {
 		editingHeader = header;
 		editingHighlightedExps = highlightedExps;
+		editingSkillsGrid = skillsGrid ?? editingSkillsGrid ?? buildSkillsGrid();
 	});
 
 	const addHighlightedExp = () => {
@@ -77,8 +89,6 @@
 		}
 		editingHighlightedExps = [...editingHighlightedExps]; // Trigger reactivity
 	};
-
-	const profileImage = soloImages.pierrePortrait;
 </script>
 
 <div class="resume-header-content">
@@ -96,7 +106,7 @@
 		</div>
 		<div class="header-grid grid flex-1 grid-cols-1 gap-8 md:grid-cols-[180px_1fr]">
 			<!-- Left Column: Image + Skills + Contact -->
-			<ConsultantProfile {header} {skillsGrid} image={profileImage} />
+			<ConsultantProfile header={editingHeader} skillsGrid={editingSkillsGrid} {image} />
 
 			<!-- Right Column: Name + Description + Highlighted Experience -->
 			<div class="space-y-6">
@@ -139,6 +149,28 @@
 						</div>
 					{/if}
 				</div>
+
+				{#if isEditing && editingSkillsGrid}
+					<div class="rounded-md border border-slate-200 bg-slate-50 p-3">
+						<div class="mb-2 flex items-center justify-between">
+							<span class="text-sm font-semibold text-slate-700">Examples of skills</span>
+							<span class="text-xs text-slate-500">Shown in the left column</span>
+						</div>
+						<FormControl label="Title">
+							<Input
+								bind:value={editingSkillsGrid.title}
+								class="border-slate-300 bg-white text-slate-900"
+							/>
+						</FormControl>
+						<div class="mt-3">
+							<label class="mb-1 block text-sm font-medium text-slate-700">Skills</label>
+							<TechStackSelector
+								bind:value={editingSkillsGrid.skills}
+								onchange={(skills) => (editingSkillsGrid.skills = skills ?? [])}
+							/>
+						</div>
+					</div>
+				{/if}
 
 				<!-- Highlighted Experience -->
 				<div class="space-y-4">

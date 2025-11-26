@@ -28,7 +28,17 @@
 
 	$effect(() => {
 		if (data.resume) {
-			resumeStore.setResume(data.resume);
+			const mappedResume = {
+				id: data.resume.id,
+				user_id: data.resume.personId,
+				version_name: data.resume.version,
+				is_main: data.resume.isMain,
+				is_active: true,
+				allow_word_export: false,
+				content: data.resume.content,
+				versions: []
+			};
+			resumeStore.setResume(mappedResume);
 			selectedBlockId = data.resume.content[0]?.id ?? null;
 		}
 	});
@@ -122,7 +132,7 @@
 
 {#if isPdfMode}
 	<div class="bg-white p-0">
-		<ResumePreview blocks={$resumeState.blocks} pdfMode />
+		<ResumePreview blocks={$resumeState.blocks} pdfMode personId={data.resume.personId} />
 	</div>
 {:else}
 	<div class="flex items-center justify-between">
@@ -150,9 +160,7 @@
 				{#if showDownloadOptions}
 					<div class="absolute right-0 bottom-14 flex flex-col items-end gap-2">
 						<div transition:fly={{ y: 16, duration: 160 }}>
-							<Button size="sm" variant="secondary" disabled>
-								Word (coming soon)
-							</Button>
+							<Button size="sm" variant="secondary" disabled>Word (coming soon)</Button>
 						</div>
 						<div transition:fly={{ y: 22, duration: 200 }}>
 							<Button
@@ -196,6 +204,7 @@
 							pdfMode={isPdfMode}
 							editing={showEditor}
 							{selectedBlockId}
+							personId={data.resume.personId}
 							on:editBlock={(event) => selectBlock(event.detail)}
 						/>
 					</div>

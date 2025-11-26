@@ -16,7 +16,13 @@
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
 
-	let { blocks } = $props<{ blocks: ResumeBlock[] }>();
+	import { soloImages } from '$lib/images/manifest';
+	import { MockResumeService } from '$lib/api/mock-resumes';
+
+	let { blocks, personId } = $props<{ blocks: ResumeBlock[]; personId?: string }>();
+
+	const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
+	const image = $derived(person ? soloImages[person.portraitId] : undefined);
 
 	const visibleBlocks = $derived(blocks.filter((b: ResumeBlock) => !b.hidden));
 
@@ -69,12 +75,13 @@
 	<!-- PAGE 1: COVER PAGE -->
 	<div class="resume-print-page page-1 bg-white text-slate-900">
 		{#if header}
-			<ResumeHeader {header} {skillsGrid} {highlightedExps} />
+			<ResumeHeader {header} {skillsGrid} {highlightedExps} {image} />
 		{/if}
 
 		<!-- Ampersand at bottom left -->
 		<div class="ampersand-container">
 			<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />
+			<p class="ampersand-url">www.pixelcode.se</p>
 		</div>
 	</div>
 
@@ -109,6 +116,7 @@
 			<!-- Ampersand at bottom left -->
 			<div class="ampersand-container">
 				<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />
+				<p class="ampersand-url">www.pixelcode.se</p>
 			</div>
 		</div>
 	{/if}
@@ -116,6 +124,15 @@
 
 <style>
 	/* Local overrides */
+	.pdf-mode {
+		background: #fff;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0;
+	}
+
 	.page-1 {
 		display: flex;
 		flex-direction: column;
@@ -130,6 +147,20 @@
 		bottom: 15mm;
 		left: 15mm;
 		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2mm;
+	}
+
+	.ampersand-url {
+		margin: 0;
+		font-size: 8px;
+		color: rgb(148 163 184);
+	}
+
+	:global(body) {
+		background: #fff;
 	}
 
 	:global(.resume-print-page blockquote) {

@@ -13,8 +13,17 @@
 	import Testimonial from './Testimonial.svelte';
 	import ResumeFooter from './ResumeFooter.svelte';
 	import { Button } from '@pixelcode_/blocks/components';
+	import { soloImages } from '$lib/images/manifest';
+	import { MockResumeService } from '$lib/api/mock-resumes';
 
-	let { blocks, isEditing = false } = $props<{ blocks: ResumeBlock[]; isEditing?: boolean }>();
+	let {
+		blocks,
+		isEditing = false,
+		personId
+	} = $props<{ blocks: ResumeBlock[]; isEditing?: boolean; personId?: string }>();
+
+	const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
+	const image = $derived(person ? soloImages[person.portraitId] : undefined);
 
 	const visibleBlocks = $derived(blocks.filter((b) => !b.hidden));
 
@@ -90,7 +99,7 @@
 
 <div class="resume-print-page relative bg-white p-10 text-slate-900 shadow-sm">
 	{#if header}
-		<ResumeHeader {header} {skillsGrid} {highlightedExps} {isEditing} />
+		<ResumeHeader {header} {skillsGrid} {highlightedExps} {isEditing} {image} />
 	{/if}
 
 	{#each otherBlocks as block}
