@@ -21,21 +21,21 @@
 				{/each}
 			</div>
 		{:else if block.category.toLowerCase().includes('portfolio')}
-			<div class="text-sm text-slate-800">
+			<div class="flex flex-wrap gap-2 text-xs text-slate-800">
 				{#each block.items as item}
 					{#if typeof item === 'string'}
 						<a
 							href={item}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="text-blue-600 hover:underline">{item}</a
+							class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700">{item}</a
 						>
 					{:else if item.value}
 						<a
 							href={item.value}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="text-blue-600 hover:underline">{item.value}</a
+							class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700">{item.value}</a
 						>
 					{/if}
 				{/each}

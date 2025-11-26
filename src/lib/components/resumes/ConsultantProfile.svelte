@@ -1,21 +1,43 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
+	import { soloImages } from '$lib/images/manifest';
 
-	let { header, skillsGrid, andLogo } = $props<{
+	type ResumeImage = (typeof soloImages)[keyof typeof soloImages];
+
+	let {
+		header,
+		skillsGrid,
+		andLogo,
+		image = soloImages.pierrePortrait
+	} = $props<{
 		header: Extract<ResumeBlock, { type: 'header' }>;
 		skillsGrid?: Extract<ResumeBlock, { type: 'skills_grid' }>;
 		andLogo: string;
+		image?: ResumeImage;
 	}>();
+
+	const imageSrc = $derived(image?.src ?? image?.fallbackSrc ?? '');
+	const imageAlt = $derived(image?.alt ?? `${header.name} portrait`);
+	const imageSrcset = $derived(image?.srcset ?? undefined);
 </script>
 
 <div class="space-y-5">
 	<!-- Consultant Image -->
-	<div class="border-gray relative aspect-square w-full overflow-hidden border-1">
-		<div class="absolute inset-0 flex items-center justify-center">
-			<div class="flex h-32 w-32 items-center justify-center bg-white/50">
-				<span>Image Missing</span>
+	<div class="relative aspect-square w-full overflow-hidden rounded-md border border-slate-200 bg-white">
+		{#if imageSrc}
+			<img
+				src={imageSrc}
+				srcset={imageSrcset}
+				alt={imageAlt}
+				class="h-full w-full object-cover object-center"
+				loading="lazy"
+				decoding="async"
+			/>
+		{:else}
+			<div class="absolute inset-0 flex items-center justify-center bg-slate-50 text-sm text-slate-500">
+				Image missing
 			</div>
-		</div>
+		{/if}
 	</div>
 
 	<!-- Skills Section -->

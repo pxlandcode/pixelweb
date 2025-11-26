@@ -12,12 +12,30 @@
 		<p class="text-sm font-semibold text-slate-900">{experience.company}</p>
 		<p class="text-sm text-slate-700 italic">{experience.role}</p>
 	</div>
-	<p class="text-sm leading-relaxed text-slate-700">{experience.description}</p>
-	{#if experience.testimonial}
-		<blockquote class="border-l-2 border-orange-400 pl-3 text-sm text-slate-700 italic">
-			"{experience.testimonial}"
-		</blockquote>
-	{/if}
+	<div class="experience-description text-sm leading-relaxed text-slate-700">
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html experience.description}
+	</div>
+
+	<style>
+		:global(.experience-description blockquote) {
+			border-left-width: 2px;
+			border-color: rgb(251 146 60);
+			padding-left: 0.75rem;
+			font-size: 0.875rem;
+			color: rgb(51 65 85);
+			font-style: italic;
+			margin-top: 0.5rem;
+			margin-bottom: 0.5rem;
+			position: relative;
+		}
+		:global(.experience-description blockquote::before) {
+			content: '"';
+		}
+		:global(.experience-description blockquote::after) {
+			content: '"';
+		}
+	</style>
 	<div class="space-y-1">
 		<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Technologies</p>
 		<div class="flex flex-wrap gap-2">

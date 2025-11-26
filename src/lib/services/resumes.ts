@@ -166,7 +166,34 @@ const demoBlocks: ResumeBlock[] = [
 			'UI/UX',
 			'REST API',
 			'GraphQL'
-		]
+		],
+		hidden: false
+	},
+	{
+		type: 'highlighted_experience',
+		company: 'Svenska Spel',
+		role: 'Frontend Lead',
+		description:
+			'Led the frontend development for the new sports betting platform. Focused on performance, accessibility, and real-time data updates.',
+		technologies: ['React', 'Redux', 'WebSocket', 'TypeScript', 'Styled Components'],
+		hidden: false
+	},
+	{
+		type: 'highlighted_experience',
+		company: 'Hidden Startup',
+		role: 'CTO',
+		description:
+			'Co-founded a fintech startup. Built the MVP from scratch and hired the initial engineering team.',
+		technologies: ['Node.js', 'PostgreSQL', 'AWS', 'React Native'],
+		hidden: true
+	},
+	{
+		type: 'highlighted_experience',
+		company: 'Another Hidden Project',
+		role: 'Senior Developer',
+		description: 'Consulted for a major bank to modernize their legacy systems.',
+		technologies: ['Java', 'Spring Boot', 'Angular', 'Oracle'],
+		hidden: true
 	},
 	{ type: 'experience_section', title: 'Previous Experience' },
 	{
@@ -318,14 +345,9 @@ const demoBlocks: ResumeBlock[] = [
 		]
 	},
 	{
-		type: 'multi_column_info',
-		items: [
-			{
-				label: 'Portfolio',
-				description: 'www.pixelcode.se',
-				technologies: ['Brand design', 'Product design']
-			}
-		]
+		type: 'skills_categorized',
+		category: 'Portfolio',
+		items: ['https://elmen.dev']
 	},
 	{
 		type: 'footer',

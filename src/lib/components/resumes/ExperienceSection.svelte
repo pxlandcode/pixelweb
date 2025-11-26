@@ -16,4 +16,8 @@
 			<div class="h-px flex-1 bg-slate-300"></div>
 		</div>
 	</div>
+
+	<div class="mt-4 space-y-4">
+		<slot />
+	</div>
 </section>
