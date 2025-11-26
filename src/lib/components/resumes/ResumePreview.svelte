@@ -12,6 +12,7 @@
 	import MultiColumnInfo from './MultiColumnInfo.svelte';
 	import Testimonial from './Testimonial.svelte';
 	import ResumeFooter from './ResumeFooter.svelte';
+	import { Button } from '@pixelcode_/blocks/components';
 
 	let { blocks, isEditing = false } = $props<{ blocks: ResumeBlock[]; isEditing?: boolean }>();
 
@@ -69,6 +70,22 @@
 			hidden: !editingExpItems[index].hidden
 		};
 	};
+
+	const addExpItem = () => {
+		const newItem: Extract<ResumeBlock, { type: 'experience_item' }> = {
+			type: 'experience_item',
+			id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
+			startDate: new Date().toISOString().split('T')[0],
+			endDate: null,
+			company: 'Company Name',
+			location: 'Location',
+			role: 'Role',
+			description: 'Description of your role and responsibilities.',
+			technologies: [],
+			hidden: false
+		};
+		editingExpItems = [...editingExpItems, newItem];
+	};
 </script>
 
 <div class="resume-print-page relative bg-white p-10 text-slate-900 shadow-sm">
@@ -78,7 +95,7 @@
 
 	{#each otherBlocks as block}
 		{#if block.type === ResumeBlockType.SKILLS_GRID}
-			<SkillsGrid {block} />
+			<SkillsGrid {block} {isEditing} />
 			<HighlightedExperience experience={block} />
 		{:else if block.type === ResumeBlockType.EXPERIENCE_SECTION}
 			<ExperienceSection {block}>
@@ -92,6 +109,16 @@
 							onToggleVisibility={() => toggleExpVisibility(index)}
 						/>
 					{/each}
+
+					{#if isEditing}
+						<Button
+							variant="outline"
+							class="mt-4 w-full border-dashed border-slate-300 text-slate-700 hover:bg-slate-50"
+							onclick={addExpItem}
+						>
+							+ Add Experience
+						</Button>
+					{/if}
 				{:else}
 					{#each visibleExperienceItems as item}
 						<ExperienceItem block={item} />
@@ -101,11 +128,11 @@
 		{:else if block.type === ResumeBlockType.SECTION_HEADER}
 			<SectionHeader {block} />
 		{:else if block.type === ResumeBlockType.SKILLS_CATEGORIZED}
-			<SkillsCategorized {block} />
+			<SkillsCategorized {block} {isEditing} />
 		{:else if block.type === ResumeBlockType.MULTI_COLUMN_INFO}
-			<MultiColumnInfo {block} />
+			<MultiColumnInfo {block} {isEditing} />
 		{:else if block.type === ResumeBlockType.TESTIMONIAL}
-			<Testimonial {block} />
+			<Testimonial {block} {isEditing} />
 		{:else if block.type === ResumeBlockType.FOOTER}
 			<ResumeFooter {block} />
 		{/if}

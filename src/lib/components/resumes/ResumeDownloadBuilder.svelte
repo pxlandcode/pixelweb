@@ -14,6 +14,7 @@
 	import ResumeFooter from './ResumeFooter.svelte';
 
 	import pdfStyles from './pdf-print.css?inline';
+	import andLogo from '$lib/assets/and.svg?url';
 
 	let { blocks } = $props<{ blocks: ResumeBlock[] }>();
 
@@ -70,6 +71,11 @@
 		{#if header}
 			<ResumeHeader {header} {skillsGrid} {highlightedExps} />
 		{/if}
+
+		<!-- Ampersand at bottom left -->
+		<div class="ampersand-container">
+			<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />
+		</div>
 	</div>
 
 	<!-- PAGE 2+: CONTENT -->
@@ -99,6 +105,11 @@
 					<ResumeFooter {block} />
 				{/if}
 			{/each}
+
+			<!-- Ampersand at bottom left -->
+			<div class="ampersand-container">
+				<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />
+			</div>
 		</div>
 	{/if}
 </div>
@@ -111,6 +122,14 @@
 		/* We want the header to take up space, but maybe not vertically center if it looks weird. 
            Let's try to just let it flow but ensure minimum height is enforced by .resume-print-page */
 		min-height: 297mm;
+		position: relative;
+	}
+
+	.ampersand-container {
+		position: absolute;
+		bottom: 15mm;
+		left: 15mm;
+		z-index: 10;
 	}
 
 	:global(.resume-print-page blockquote) {

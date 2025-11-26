@@ -6,8 +6,7 @@
 	}>();
 </script>
 
-<div class="space-y-3 pt-4">
-	<h3 class="text-base font-bold tracking-wide text-slate-900 uppercase">Highlighted Experience</h3>
+<div class="space-y-3">
 	<div>
 		<p class="text-sm font-semibold text-slate-900">{experience.company}</p>
 		<p class="text-sm text-slate-700 italic">{experience.role}</p>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
-	import andLogo from '$lib/assets/and.svg?url';
 	import ConsultantProfile from './ConsultantProfile.svelte';
 	import HighlightedExperience from './HighlightedExperience.svelte';
 	import QuillEditor from '../QuillEditor.svelte';
@@ -65,7 +64,9 @@
 		const exp = editingHighlightedExps[index];
 		if (exp.hidden) {
 			// Trying to show
-			const visibleCount = editingHighlightedExps.filter((e) => !e.hidden).length;
+			const visibleCount = editingHighlightedExps.filter(
+				(e: Extract<ResumeBlock, { type: 'highlighted_experience' }>) => !e.hidden
+			).length;
 			if (visibleCount >= 2) {
 				alert('You can only have 2 highlighted experiences visible at a time.');
 				return;
@@ -95,7 +96,7 @@
 		</div>
 		<div class="header-grid grid flex-1 grid-cols-1 gap-8 md:grid-cols-[180px_1fr]">
 			<!-- Left Column: Image + Skills + Contact -->
-			<ConsultantProfile {header} {skillsGrid} {andLogo} image={profileImage} />
+			<ConsultantProfile {header} {skillsGrid} image={profileImage} />
 
 			<!-- Right Column: Name + Description + Highlighted Experience -->
 			<div class="space-y-6">
@@ -141,6 +142,12 @@
 
 				<!-- Highlighted Experience -->
 				<div class="space-y-4">
+					{#if !isEditing && editingHighlightedExps.filter((e) => !e.hidden).length > 0}
+						<h3 class="pt-4 text-base font-bold tracking-wide text-slate-900 uppercase">
+							Highlighted Experience
+						</h3>
+					{/if}
+
 					{#each isEditing ? editingHighlightedExps : editingHighlightedExps.filter((e) => !e.hidden) as exp, index (exp.id)}
 						<div class="group relative">
 							{#if isEditing}

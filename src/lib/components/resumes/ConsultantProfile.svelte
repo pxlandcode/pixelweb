@@ -7,15 +7,11 @@
 	let {
 		header,
 		skillsGrid,
-		andLogo,
-		image = soloImages.pierrePortrait,
-		fillHeight = false
+		image = soloImages.pierrePortrait
 	} = $props<{
 		header: Extract<ResumeBlock, { type: 'header' }>;
 		skillsGrid?: Extract<ResumeBlock, { type: 'skills_grid' }>;
-		andLogo: string;
 		image?: ResumeImage;
-		fillHeight?: boolean;
 	}>();
 
 	const imageSrc = $derived(image?.src ?? image?.fallbackSrc ?? '');
@@ -78,14 +74,5 @@
 				</div>
 			</div>
 		{/each}
-	</div>
-
-	{#if fillHeight}
-		<div class="flex-1"></div>
-	{/if}
-
-	<!-- And Logo at Bottom -->
-	<div class="flex flex-shrink-0 justify-center pt-4">
-		<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />
 	</div>
 </div>
