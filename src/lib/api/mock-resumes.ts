@@ -126,7 +126,24 @@ const MOCK_PEOPLE: Person[] = [
 		name: 'Pierre',
 		title: 'Tech Lead',
 		portraitId: 'pierrePortrait',
-		bio: 'Pierre leads the technical vision and mentors the team to achieve excellence. He focuses on delivering high-quality software that meets business needs.'
+		bio: 'Pierre leads the technical vision and mentors the team to achieve excellence. He focuses on delivering high-quality software that meets business needs.',
+		techStack: [
+			{
+				id: 'frontend',
+				name: 'Frontend',
+				skills: ['Svelte', 'React', 'Tailwind', 'TypeScript']
+			},
+			{
+				id: 'backend',
+				name: 'Backend',
+				skills: ['Node.js', 'PostgreSQL', 'Supabase']
+			},
+			{
+				id: 'tools',
+				name: 'Tools',
+				skills: ['Git', 'Docker', 'Figma']
+			}
+		]
 	}
 ];
 

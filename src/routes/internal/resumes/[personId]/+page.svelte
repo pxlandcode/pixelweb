@@ -2,27 +2,81 @@
 	import { page } from '$app/stores';
 	import { MockResumeService } from '$lib/api/mock-resumes';
 	import { soloImages } from '$lib/images/manifest';
-	import { Button, Card } from '@pixelcode_/blocks/components';
-	import { ArrowLeft, Calendar, CheckCircle2, FileText, User } from 'lucide-svelte';
+	import { Button, Card, Input, TextArea } from '@pixelcode_/blocks/components';
+	import {
+		ArrowLeft,
+		Calendar,
+		CheckCircle2,
+		FileText,
+		User,
+		Pencil,
+		Save,
+		X
+	} from 'lucide-svelte';
+	import TechStackEditor from '$lib/components/resumes/TechStackEditor.svelte';
 
 	$: personId = $page.params.personId ?? '';
 	$: person = MockResumeService.getPerson(personId);
 	$: personResumes = MockResumeService.getResumesForPerson(personId);
 	$: portrait = person ? soloImages[person.portraitId] : undefined;
+
+	let isEditing = false;
+	let editingPerson = person ? { ...person, techStack: person.techStack ?? [] } : null;
+
+	$: if (person && !isEditing) {
+		editingPerson = { ...person, techStack: person.techStack ?? [] };
+	}
+
+	const toggleEdit = () => {
+		if (isEditing) {
+			// Cancel
+			isEditing = false;
+			editingPerson = person ? { ...person } : null;
+		} else {
+			isEditing = true;
+		}
+	};
+
+	const saveProfile = () => {
+		if (editingPerson && person) {
+			// In a real app, this would be an API call
+			Object.assign(person, editingPerson);
+			isEditing = false;
+		}
+	};
 </script>
 
 <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
 	<div class="mb-8">
-		<Button
-			variant="ghost"
-			href="/internal/resumes"
-			class="mb-6 pl-0 hover:bg-transparent hover:text-indigo-600"
-		>
-			<ArrowLeft size={16} class="mr-2" />
-			Back to all people
-		</Button>
+		<div class="mb-6 flex items-center justify-between">
+			<Button
+				variant="ghost"
+				href="/internal/resumes"
+				class="pl-0 hover:bg-transparent hover:text-indigo-600"
+			>
+				<ArrowLeft size={16} class="mr-2" />
+				Back to all people
+			</Button>
 
-		{#if person}
+			{#if person}
+				<div class="flex gap-2">
+					{#if isEditing}
+						<Button variant="ghost" onclick={toggleEdit}>
+							<X size={16} class="mr-2" /> Cancel
+						</Button>
+						<Button variant="primary" onclick={saveProfile}>
+							<Save size={16} class="mr-2" /> Save Profile
+						</Button>
+					{:else}
+						<Button variant="outline" onclick={toggleEdit}>
+							<Pencil size={16} class="mr-2" /> Edit Profile
+						</Button>
+					{/if}
+				</div>
+			{/if}
+		</div>
+
+		{#if person && editingPerson}
 			<div class="flex flex-col gap-8 md:flex-row md:items-start">
 				<div
 					class="h-32 w-32 flex-shrink-0 overflow-hidden rounded-full border-4 border-white shadow-lg md:h-48 md:w-48"
@@ -41,10 +95,44 @@
 					{/if}
 				</div>
 
-				<div class="flex-1">
-					<h1 class="text-3xl font-bold text-slate-900 sm:text-4xl">{person.name}</h1>
-					<p class="mt-2 text-xl font-medium text-indigo-600">{person.title}</p>
-					<p class="mt-4 max-w-2xl text-lg text-slate-600">{person.bio}</p>
+				<div class="flex-1 space-y-4">
+					{#if isEditing}
+						<div class="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+							<div>
+								<label class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+								<Input
+									bind:value={editingPerson.name}
+									class="border-slate-300 bg-white text-lg font-bold text-slate-900"
+								/>
+							</div>
+							<div>
+								<label class="mb-1 block text-sm font-medium text-slate-700">Title</label>
+								<Input
+									bind:value={editingPerson.title}
+									class="border-slate-300 bg-white font-medium text-indigo-600"
+								/>
+							</div>
+							<div>
+								<label class="mb-1 block text-sm font-medium text-slate-700">Bio</label>
+								<TextArea
+									bind:value={editingPerson.bio}
+									rows={4}
+									class="border-slate-300 bg-white text-slate-900"
+								/>
+							</div>
+						</div>
+					{:else}
+						<div>
+							<h1 class="text-3xl font-bold text-slate-900 sm:text-4xl">{person.name}</h1>
+							<p class="mt-2 text-xl font-medium text-indigo-600">{person.title}</p>
+							<p class="mt-4 max-w-2xl text-lg text-slate-600">{person.bio}</p>
+						</div>
+					{/if}
+
+					<div class="pt-4">
+						<h3 class="mb-4 text-lg font-semibold text-slate-900">Tech Stack</h3>
+						<TechStackEditor bind:categories={editingPerson.techStack} {isEditing} />
+					</div>
 				</div>
 			</div>
 		{:else}
@@ -53,7 +141,7 @@
 	</div>
 
 	{#if person}
-		<div class="mt-12">
+		<div class="mt-12 border-t border-slate-200 pt-12">
 			<div class="mb-6 flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-slate-900">Resumes</h2>
 				<Button variant="outline" size="sm">+ Create New Resume</Button>
@@ -93,26 +181,9 @@
 						</div>
 
 						<div class="flex items-center gap-3">
-							<Button variant="outline" size="sm" href="/internal/resumes/editor/{resume.id}">
+							<Button variant="outline" size="sm" href="/internal/resumes/consultant/{resume.id}">
 								Open Editor
 							</Button>
-							<!-- 
-                                Note: The user mentioned "when opening a resume, we have the resumepreview to use to view and edit, 
-                                and the resumedownloadbuilder when we download. you can see how that works today and that is how we want it to work in the future"
-                                
-                                The existing route for resumes seems to be /internal/resumes/consultant/[id] based on the implementation plan and existing code.
-                                I'll assume that route exists or I should link to it. 
-                                Wait, the user request said:
-                                "Routes:
-                                - /internal/resumes/+page.svelte
-                                - /internal/resumes/[personId]/+page.svelte"
-                                
-                                And "Clicking an employee opens their resume list page... Provide links to open a resume and to open the main resume."
-                                
-                                It didn't explicitly ask me to implement the editor page, but to link to it.
-                                The existing code in `src/routes/resumes/+page.svelte` links to `/internal/resumes/consultant/{resume.id}`.
-                                So I will use that link.
-                            -->
 						</div>
 					</Card>
 				{/each}
