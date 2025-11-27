@@ -9,5 +9,9 @@
 </svelte:head>
 
 <div class="bg-white text-slate-900">
-	<ResumeDownloadBuilder blocks={data.resume.content} personId={data.resume.personId} />
+	<ResumeDownloadBuilder
+		blocks={data.resume.content}
+		personId={data.resume.personId}
+		language={data.language}
+	/>
 </div>

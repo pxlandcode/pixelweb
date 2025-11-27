@@ -17,12 +17,16 @@
 	import andLogo from '$lib/assets/and.svg?url';
 
 	import { soloImages } from '$lib/images/manifest';
-	import { MockResumeService } from '$lib/api/mock-resumes';
+import { MockResumeService } from '$lib/api/mock-resumes';
 
-	let { blocks, personId } = $props<{ blocks: ResumeBlock[]; personId?: string }>();
+let {
+	blocks,
+	personId,
+	language = 'sv'
+} = $props<{ blocks: ResumeBlock[]; personId?: string; language?: 'sv' | 'en' }>();
 
-	const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
-	const image = $derived(person ? soloImages[person.portraitId] : undefined);
+const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
+const image = $derived(person ? soloImages[person.portraitId] : undefined);
 
 	const visibleBlocks = $derived(blocks.filter((b: ResumeBlock) => !b.hidden));
 
@@ -75,7 +79,7 @@
 	<!-- PAGE 1: COVER PAGE -->
 	<div class="resume-print-page page-1 bg-white text-slate-900">
 		{#if header}
-			<ResumeHeader {header} {skillsGrid} {highlightedExps} {image} />
+			<ResumeHeader {header} {skillsGrid} {highlightedExps} {image} {language} />
 		{/if}
 
 		<!-- Ampersand at bottom left -->
@@ -92,24 +96,24 @@
 		<div class="resume-print-page page-2-plus bg-white text-slate-900">
 			{#each otherBlocks as block}
 				{#if block.type === ResumeBlockType.SKILLS_GRID}
-					<SkillsGrid {block} />
-					<HighlightedExperience experience={block} />
+					<SkillsGrid {block} {language} />
+					<HighlightedExperience experience={block} {language} />
 				{:else if block.type === ResumeBlockType.EXPERIENCE_SECTION}
-					<ExperienceSection {block}>
+					<ExperienceSection {block} {language}>
 						{#each visibleExperienceItems as item}
-							<ExperienceItem block={item} />
+							<ExperienceItem block={item} {language} />
 						{/each}
 					</ExperienceSection>
 				{:else if block.type === ResumeBlockType.SECTION_HEADER}
-					<SectionHeader {block} />
+					<SectionHeader {block} {language} />
 				{:else if block.type === ResumeBlockType.SKILLS_CATEGORIZED}
-					<SkillsCategorized {block} />
+					<SkillsCategorized {block} {language} />
 				{:else if block.type === ResumeBlockType.MULTI_COLUMN_INFO}
-					<MultiColumnInfo {block} />
+					<MultiColumnInfo {block} {language} />
 				{:else if block.type === ResumeBlockType.TESTIMONIAL}
-					<Testimonial {block} />
+					<Testimonial {block} {language} />
 				{:else if block.type === ResumeBlockType.FOOTER}
-					<ResumeFooter {block} />
+					<ResumeFooter {block} {language} />
 				{/if}
 			{/each}
 

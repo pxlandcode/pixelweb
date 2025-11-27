@@ -1,8 +1,8 @@
-@source "../node_modules/@pixelcode_/blocks/**/*.{js,ts,svelte}";
 @import 'tailwindcss';
 @import '@pixelcode_/blocks/app.css';
 @import '@uppy/core/dist/style.min.css';
 @import '@uppy/dashboard/dist/style.min.css';
+@source "../node_modules/@pixelcode_/blocks/**/*.{js,ts,svelte}";
 
 @font-face {
 	font-family: 'Montserrat';
@@ -259,4 +259,3 @@
         list-style-type: circle;
         margin-top: 0.25rem;
 }
-
