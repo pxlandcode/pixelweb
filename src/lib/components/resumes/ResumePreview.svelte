@@ -95,24 +95,44 @@
 		};
 		editingExpItems = [...editingExpItems, newItem];
 	};
+	let language: 'sv' | 'en' = $state('sv');
+
+	const toggleLanguage = () => {
+		language = language === 'sv' ? 'en' : 'sv';
+	};
 </script>
 
 <div class="resume-print-page relative bg-white p-10 text-slate-900 shadow-sm">
+	{#if !isEditing}
+		<div class="absolute top-4 right-4 z-10 print:hidden">
+			<button
+				type="button"
+				class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+				onclick={toggleLanguage}
+			>
+				<span class={language === 'sv' ? 'font-bold text-indigo-600' : 'text-slate-500'}>SV</span>
+				<span class="text-slate-300">/</span>
+				<span class={language === 'en' ? 'font-bold text-indigo-600' : 'text-slate-500'}>EN</span>
+			</button>
+		</div>
+	{/if}
+
 	{#if header}
-		<ResumeHeader {header} {skillsGrid} {highlightedExps} {isEditing} {image} />
+		<ResumeHeader {header} {skillsGrid} {highlightedExps} {isEditing} {image} {language} />
 	{/if}
 
 	{#each otherBlocks as block}
 		{#if block.type === ResumeBlockType.SKILLS_GRID}
-			<SkillsGrid {block} {isEditing} />
-			<HighlightedExperience experience={block} />
+			<SkillsGrid {block} {isEditing} {language} />
+			<HighlightedExperience experience={block} {language} />
 		{:else if block.type === ResumeBlockType.EXPERIENCE_SECTION}
-			<ExperienceSection {block}>
+			<ExperienceSection {block} {language}>
 				{#if isEditing}
 					{#each editingExpItems as item, index}
 						<ExperienceItem
 							block={item}
 							{isEditing}
+							{language}
 							onMove={(dir) => moveExpItem(index, dir)}
 							onRemove={() => removeExpItem(index)}
 							onToggleVisibility={() => toggleExpVisibility(index)}
@@ -130,18 +150,18 @@
 					{/if}
 				{:else}
 					{#each visibleExperienceItems as item}
-						<ExperienceItem block={item} />
+						<ExperienceItem block={item} {language} />
 					{/each}
 				{/if}
 			</ExperienceSection>
 		{:else if block.type === ResumeBlockType.SECTION_HEADER}
-			<SectionHeader {block} />
+			<SectionHeader {block} {language} />
 		{:else if block.type === ResumeBlockType.SKILLS_CATEGORIZED}
-			<SkillsCategorized {block} {isEditing} />
+			<SkillsCategorized {block} {isEditing} {language} />
 		{:else if block.type === ResumeBlockType.MULTI_COLUMN_INFO}
-			<MultiColumnInfo {block} {isEditing} />
+			<MultiColumnInfo {block} {isEditing} {language} />
 		{:else if block.type === ResumeBlockType.TESTIMONIAL}
-			<Testimonial {block} {isEditing} />
+			<Testimonial {block} {isEditing} {language} />
 		{:else if block.type === ResumeBlockType.FOOTER}
 			<ResumeFooter {block} />
 		{/if}

@@ -1,26 +1,37 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
-	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
 	import ConsultantProfile from './ConsultantProfile.svelte';
 	import HighlightedExperience from './HighlightedExperience.svelte';
 	import QuillEditor from '../QuillEditor.svelte';
 	import { Button, Input, FormControl } from '@pixelcode_/blocks/components';
 	import TechStackSelector from '../TechStackSelector.svelte';
 	import { soloImages, type ImageResource } from '$lib/images/manifest';
+	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
 
 	let {
 		header,
 		skillsGrid,
 		highlightedExps = [],
 		isEditing = false,
-		image
+		image,
+		language = 'sv'
 	} = $props<{
 		header: Extract<ResumeBlock, { type: 'header' }>;
 		skillsGrid?: Extract<ResumeBlock, { type: 'skills_grid' }>;
 		highlightedExps?: Extract<ResumeBlock, { type: 'highlighted_experience' }>[];
 		isEditing?: boolean;
 		image?: ImageResource;
+		language?: 'sv' | 'en';
 	}>();
+
+	// Helper to resolve localized text
+	const resolveText = (content: any) => {
+		if (!content) return { text: '', missing: false };
+		if (typeof content === 'string') return { text: content, missing: false };
+		if (content[language]) return { text: content[language], missing: false };
+		const other = language === 'sv' ? 'en' : 'sv';
+		return { text: content[other] || '', missing: true };
+	};
 
 	// Local state for editing
 	let editingHeader = $state(header);
@@ -29,7 +40,7 @@
 		skillsGrid ?? {
 			type: 'skills_grid' as const,
 			id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
-			title: 'Examples of skills',
+			title: { sv: 'Exempel på färdigheter', en: 'Examples of skills' },
 			columns: 2,
 			skills: []
 		};
@@ -47,8 +58,8 @@
 			type: 'highlighted_experience',
 			id: crypto.randomUUID(),
 			company: 'Company Name',
-			role: 'Role Title',
-			description: '<p>Description of the experience...</p>',
+			role: { sv: 'Roll', en: 'Role Title' },
+			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
 			technologies: [],
 			hidden: true // Default to hidden
 		};
@@ -106,7 +117,7 @@
 		</div>
 		<div class="header-grid grid flex-1 grid-cols-1 gap-8 md:grid-cols-[180px_1fr]">
 			<!-- Left Column: Image + Skills + Contact -->
-			<ConsultantProfile header={editingHeader} skillsGrid={editingSkillsGrid} {image} />
+			<ConsultantProfile header={editingHeader} skillsGrid={editingSkillsGrid} {image} {language} />
 
 			<!-- Right Column: Name + Description + Highlighted Experience -->
 			<div class="space-y-6">
@@ -121,17 +132,52 @@
 									class="border-slate-300 bg-white text-lg font-bold text-slate-900"
 								/>
 							</FormControl>
-							<FormControl label="Title">
+							<FormControl label="Title (SV)">
 								<Input
-									id="header-title"
-									bind:value={editingHeader.title}
+									id="header-title-sv"
+									value={typeof editingHeader.title === 'string'
+										? editingHeader.title
+										: editingHeader.title.sv}
+									oninput={(e) => {
+										if (typeof editingHeader.title === 'string') {
+											editingHeader.title = { sv: e.currentTarget.value, en: editingHeader.title };
+										} else {
+											editingHeader.title.sv = e.currentTarget.value;
+										}
+									}}
+									class="border-slate-300 bg-white text-slate-900"
+								/>
+							</FormControl>
+							<FormControl label="Title (EN)">
+								<Input
+									id="header-title-en"
+									value={typeof editingHeader.title === 'string'
+										? editingHeader.title
+										: editingHeader.title.en}
+									oninput={(e) => {
+										if (typeof editingHeader.title === 'string') {
+											editingHeader.title = { en: e.currentTarget.value, sv: editingHeader.title };
+										} else {
+											editingHeader.title.en = e.currentTarget.value;
+										}
+									}}
 									class="border-slate-300 bg-white text-slate-900"
 								/>
 							</FormControl>
 						</div>
 					{:else}
+						{@const title = resolveText(editingHeader.title)}
 						<h1 class="mb-2 text-4xl font-bold text-slate-900">{editingHeader.name}</h1>
-						<h2 class="text-xl font-medium text-slate-700">{editingHeader.title}</h2>
+						<h2 class="flex items-center gap-2 text-xl font-medium text-slate-700">
+							{title.text}
+							{#if title.missing}
+								<span
+									class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800"
+								>
+									Missing translation
+								</span>
+							{/if}
+						</h2>
 					{/if}
 				</div>
 
@@ -139,13 +185,49 @@
 				<div>
 					{#if isEditing}
 						<div class="rounded-md border border-slate-200 bg-white p-2">
-							<label class="mb-1 block text-sm font-medium text-slate-700">Summary</label>
-							<QuillEditor bind:content={editingHeader.summary} />
+							<label class="mb-1 block text-sm font-medium text-slate-700">Summary (SV)</label>
+							<QuillEditor
+								content={typeof editingHeader.summary === 'string'
+									? editingHeader.summary
+									: editingHeader.summary.sv}
+								onchange={(html) => {
+									if (typeof editingHeader.summary === 'string') {
+										editingHeader.summary = { sv: html, en: editingHeader.summary };
+									} else {
+										editingHeader.summary.sv = html;
+									}
+								}}
+							/>
+						</div>
+						<div class="mt-4 rounded-md border border-slate-200 bg-white p-2">
+							<label class="mb-1 block text-sm font-medium text-slate-700">Summary (EN)</label>
+							<QuillEditor
+								content={typeof editingHeader.summary === 'string'
+									? editingHeader.summary
+									: editingHeader.summary.en}
+								onchange={(html) => {
+									if (typeof editingHeader.summary === 'string') {
+										editingHeader.summary = { en: html, sv: editingHeader.summary };
+									} else {
+										editingHeader.summary.en = html;
+									}
+								}}
+							/>
 						</div>
 					{:else}
+						{@const summary = resolveText(editingHeader.summary)}
 						<div class="text-sm leading-relaxed text-slate-700">
+							{#if summary.missing}
+								<div class="mb-2">
+									<span
+										class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800"
+									>
+										Missing translation
+									</span>
+								</div>
+							{/if}
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html editingHeader.summary}
+							{@html summary.text}
 						</div>
 					{/if}
 				</div>
@@ -156,9 +238,39 @@
 							<span class="text-sm font-semibold text-slate-700">Examples of skills</span>
 							<span class="text-xs text-slate-500">Shown in the left column</span>
 						</div>
-						<FormControl label="Title">
+						<FormControl label="Title (SV)">
 							<Input
-								bind:value={editingSkillsGrid.title}
+								value={typeof editingSkillsGrid.title === 'string'
+									? editingSkillsGrid.title
+									: editingSkillsGrid.title.sv}
+								oninput={(e) => {
+									if (typeof editingSkillsGrid.title === 'string') {
+										editingSkillsGrid.title = {
+											sv: e.currentTarget.value,
+											en: editingSkillsGrid.title
+										};
+									} else {
+										editingSkillsGrid.title.sv = e.currentTarget.value;
+									}
+								}}
+								class="border-slate-300 bg-white text-slate-900"
+							/>
+						</FormControl>
+						<FormControl label="Title (EN)">
+							<Input
+								value={typeof editingSkillsGrid.title === 'string'
+									? editingSkillsGrid.title
+									: editingSkillsGrid.title.en}
+								oninput={(e) => {
+									if (typeof editingSkillsGrid.title === 'string') {
+										editingSkillsGrid.title = {
+											en: e.currentTarget.value,
+											sv: editingSkillsGrid.title
+										};
+									} else {
+										editingSkillsGrid.title.en = e.currentTarget.value;
+									}
+								}}
 								class="border-slate-300 bg-white text-slate-900"
 							/>
 						</FormControl>
@@ -176,7 +288,7 @@
 				<div class="space-y-4">
 					{#if !isEditing && editingHighlightedExps.filter((e) => !e.hidden).length > 0}
 						<h3 class="pt-4 text-base font-bold tracking-wide text-slate-900 uppercase">
-							Highlighted Experience
+							{language === 'sv' ? 'Utvald Erfarenhet' : 'Highlighted Experience'}
 						</h3>
 					{/if}
 
@@ -237,20 +349,72 @@
 													class="border-slate-300 bg-white text-slate-900"
 												/>
 											</FormControl>
-											<FormControl label="Role">
-												<Input
-													bind:value={exp.role}
-													class="border-slate-300 bg-white text-slate-900"
-												/>
-											</FormControl>
+											<div class="space-y-2">
+												<FormControl label="Role (SV)">
+													<Input
+														value={typeof exp.role === 'string' ? exp.role : exp.role.sv}
+														oninput={(e) => {
+															if (typeof exp.role === 'string') {
+																exp.role = { sv: e.currentTarget.value, en: exp.role };
+															} else {
+																exp.role.sv = e.currentTarget.value;
+															}
+														}}
+														class="border-slate-300 bg-white text-slate-900"
+													/>
+												</FormControl>
+												<FormControl label="Role (EN)">
+													<Input
+														value={typeof exp.role === 'string' ? exp.role : exp.role.en}
+														oninput={(e) => {
+															if (typeof exp.role === 'string') {
+																exp.role = { en: e.currentTarget.value, sv: exp.role };
+															} else {
+																exp.role.en = e.currentTarget.value;
+															}
+														}}
+														class="border-slate-300 bg-white text-slate-900"
+													/>
+												</FormControl>
+											</div>
 										</div>
 
 										<div>
 											<label class="mb-1 block text-sm font-medium text-slate-700"
-												>Description</label
+												>Description (SV)</label
 											>
 											<div class="rounded-md border border-slate-300 bg-white">
-												<QuillEditor bind:content={exp.description} />
+												<QuillEditor
+													content={typeof exp.description === 'string'
+														? exp.description
+														: exp.description.sv}
+													onchange={(html) => {
+														if (typeof exp.description === 'string') {
+															exp.description = { sv: html, en: exp.description };
+														} else {
+															exp.description.sv = html;
+														}
+													}}
+												/>
+											</div>
+										</div>
+										<div>
+											<label class="mb-1 block text-sm font-medium text-slate-700"
+												>Description (EN)</label
+											>
+											<div class="rounded-md border border-slate-300 bg-white">
+												<QuillEditor
+													content={typeof exp.description === 'string'
+														? exp.description
+														: exp.description.en}
+													onchange={(html) => {
+														if (typeof exp.description === 'string') {
+															exp.description = { en: html, sv: exp.description };
+														} else {
+															exp.description.en = html;
+														}
+													}}
+												/>
 											</div>
 										</div>
 
@@ -266,7 +430,7 @@
 									</div>
 								</div>
 							{:else}
-								<HighlightedExperience experience={exp} />
+								<HighlightedExperience experience={exp} {language} />
 							{/if}
 						</div>
 					{/each}

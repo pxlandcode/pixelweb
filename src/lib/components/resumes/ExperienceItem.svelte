@@ -9,13 +9,15 @@
 		isEditing = false,
 		onMove,
 		onRemove,
-		onToggleVisibility
+		onToggleVisibility,
+		language = 'sv'
 	} = $props<{
 		block: Extract<ResumeBlock, { type: 'experience_item' }>;
 		isEditing?: boolean;
 		onMove?: (direction: 'up' | 'down') => void;
 		onRemove?: () => void;
 		onToggleVisibility?: () => void;
+		language?: 'sv' | 'en';
 	}>();
 
 	let editingBlock = $state(block);
@@ -23,6 +25,24 @@
 	$effect(() => {
 		editingBlock = block;
 	});
+
+	const resolveText = (content: any) => {
+		if (!content) return { text: '', missing: false };
+		if (typeof content === 'string') return { text: content, missing: false };
+		if (content[language]) return { text: content[language], missing: false };
+		const other = language === 'sv' ? 'en' : 'sv';
+		return { text: content[other] || '', missing: true };
+	};
+
+	const roleText = $derived(
+		Array.isArray(editingBlock.role)
+			? editingBlock.role.map((r) => resolveText(r).text).join(' / ')
+			: resolveText(editingBlock.role).text
+	);
+	const descriptionText = $derived(resolveText(editingBlock.description));
+	const locationText = $derived(
+		editingBlock.location ? resolveText(editingBlock.location) : { text: '', missing: false }
+	);
 
 	function formatDate(dateString: string | null | undefined): string {
 		if (!dateString) return 'Present';
@@ -94,23 +114,135 @@
 						class="border-slate-300 bg-white text-slate-900"
 					/>
 				</FormControl>
-				<FormControl label="Location (Optional)">
+				<div class="space-y-2">
+					<FormControl label="Location (SV)">
+						<Input
+							value={typeof editingBlock.location === 'string'
+								? editingBlock.location
+								: editingBlock.location?.sv}
+							oninput={(e) => {
+								if (typeof editingBlock.location === 'string' || !editingBlock.location) {
+									editingBlock.location = {
+										sv: e.currentTarget.value,
+										en: typeof editingBlock.location === 'string' ? editingBlock.location : ''
+									};
+								} else {
+									editingBlock.location.sv = e.currentTarget.value;
+								}
+							}}
+							class="border-slate-300 bg-white text-slate-900"
+						/>
+					</FormControl>
+					<FormControl label="Location (EN)">
+						<Input
+							value={typeof editingBlock.location === 'string'
+								? editingBlock.location
+								: editingBlock.location?.en}
+							oninput={(e) => {
+								if (typeof editingBlock.location === 'string' || !editingBlock.location) {
+									editingBlock.location = {
+										en: e.currentTarget.value,
+										sv: typeof editingBlock.location === 'string' ? editingBlock.location : ''
+									};
+								} else {
+									editingBlock.location.en = e.currentTarget.value;
+								}
+							}}
+							class="border-slate-300 bg-white text-slate-900"
+						/>
+					</FormControl>
+				</div>
+			</div>
+
+			<div class="grid grid-cols-2 gap-4">
+				<FormControl label="Role (SV)">
 					<Input
-						bind:value={editingBlock.location}
-						placeholder="City, Country"
+						value={Array.isArray(editingBlock.role)
+							? typeof editingBlock.role[0] === 'string'
+								? editingBlock.role[0]
+								: editingBlock.role[0]?.sv
+							: typeof editingBlock.role === 'string'
+								? editingBlock.role
+								: editingBlock.role?.sv}
+						oninput={(e) => {
+							const val = e.currentTarget.value;
+							if (Array.isArray(editingBlock.role)) {
+								// Simplify array to single object for editing
+								const currentEn =
+									typeof editingBlock.role[0] === 'string'
+										? editingBlock.role[0]
+										: editingBlock.role[0]?.en || '';
+								editingBlock.role = { sv: val, en: currentEn };
+							} else if (typeof editingBlock.role === 'string') {
+								editingBlock.role = { sv: val, en: editingBlock.role };
+							} else {
+								editingBlock.role.sv = val;
+							}
+						}}
+						class="border-slate-300 bg-white text-slate-900"
+					/>
+				</FormControl>
+				<FormControl label="Role (EN)">
+					<Input
+						value={Array.isArray(editingBlock.role)
+							? typeof editingBlock.role[0] === 'string'
+								? editingBlock.role[0]
+								: editingBlock.role[0]?.en
+							: typeof editingBlock.role === 'string'
+								? editingBlock.role
+								: editingBlock.role?.en}
+						oninput={(e) => {
+							const val = e.currentTarget.value;
+							if (Array.isArray(editingBlock.role)) {
+								// Simplify array to single object for editing
+								const currentSv =
+									typeof editingBlock.role[0] === 'string'
+										? editingBlock.role[0]
+										: editingBlock.role[0]?.sv || '';
+								editingBlock.role = { en: val, sv: currentSv };
+							} else if (typeof editingBlock.role === 'string') {
+								editingBlock.role = { en: val, sv: editingBlock.role };
+							} else {
+								editingBlock.role.en = val;
+							}
+						}}
 						class="border-slate-300 bg-white text-slate-900"
 					/>
 				</FormControl>
 			</div>
 
-			<FormControl label="Role">
-				<Input bind:value={editingBlock.role} class="border-slate-300 bg-white text-slate-900" />
-			</FormControl>
-
 			<div>
-				<label class="mb-1 block text-sm font-medium text-slate-700">Description</label>
+				<label class="mb-1 block text-sm font-medium text-slate-700">Description (SV)</label>
 				<div class="rounded-md border border-slate-300 bg-white">
-					<QuillEditor bind:content={editingBlock.description} />
+					<QuillEditor
+						content={typeof editingBlock.description === 'string'
+							? editingBlock.description
+							: editingBlock.description.sv}
+						onchange={(html) => {
+							if (typeof editingBlock.description === 'string') {
+								editingBlock.description = { sv: html, en: editingBlock.description };
+							} else {
+								editingBlock.description.sv = html;
+							}
+						}}
+					/>
+				</div>
+			</div>
+			<div>
+				<label class="mb-1 block text-sm font-medium text-slate-700">Description (EN)</label>
+				<div class="rounded-md border border-slate-300 bg-white">
+					<QuillEditor
+						content={typeof editingBlock.description === 'string'
+							? editingBlock.description
+							: editingBlock.description.en}
+						onchange={(html) => {
+							if (typeof editingBlock.description === 'string') {
+								editingBlock.description = { en: html, sv: editingBlock.description };
+							} else {
+								editingBlock.description.en = html;
+							}
+						}}
+					/>
 				</div>
 			</div>
 
@@ -125,7 +257,7 @@
 	</div>
 {:else}
 	<section class="resume-print-section mb-6">
-		<div class="grid gap-6 md:grid-cols-[15%_15%_1fr] grid-print-experience">
+		<div class="grid-print-experience grid gap-6 md:grid-cols-[15%_15%_1fr]">
 			<!-- Column 1: Empty -->
 			<div></div>
 
@@ -140,18 +272,32 @@
 				</p>
 				<p class="text-sm font-semibold text-slate-900">{editingBlock.company}</p>
 				{#if editingBlock.location}
-					<p class="text-sm text-slate-700">{editingBlock.location}</p>
+					<p class="text-sm text-slate-700">
+						{locationText.text}
+						{#if locationText.missing}
+							<span class="ml-1 text-[10px] text-amber-600">(missing translation)</span>
+						{/if}
+					</p>
 				{/if}
 			</div>
 
 			<!-- Column 3: Role, Description, Technologies -->
 			<div class="space-y-3">
 				<h3 class="text-base font-bold break-words hyphens-auto text-slate-900" lang="en">
-					{Array.isArray(editingBlock.role) ? editingBlock.role.join(' / ') : editingBlock.role}
+					{roleText}
 				</h3>
 				<div class="text-sm leading-relaxed break-words hyphens-auto text-slate-700" lang="en">
+					{#if descriptionText.missing}
+						<div class="mb-2">
+							<span
+								class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800"
+							>
+								Missing translation
+							</span>
+						</div>
+					{/if}
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html editingBlock.description}
+					{@html descriptionText.text}
 				</div>
 				{#if editingBlock.technologies.length}
 					<div class="flex flex-wrap gap-2">

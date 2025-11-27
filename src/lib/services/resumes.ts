@@ -4,67 +4,69 @@ export type ResumeRole = 'admin' | 'cms_admin' | 'employee' | 'employer';
 
 type BaseBlock = { id?: string; hidden?: boolean };
 
+export type LocalizedText = string | { sv: string; en: string };
+
 export type ResumeBlock =
 	| (BaseBlock & {
 			type: 'header';
 			name: string;
-			title: string;
+			title: LocalizedText;
 			contact_people: Array<{
-				label: string;
+				label: LocalizedText;
 				people: Array<{ name: string; phone?: string | null; email?: string | null }>;
 			}>;
-			summary: string;
+			summary: LocalizedText;
 	  })
 	| (BaseBlock & {
 			type: 'skills_grid';
-			title: string;
+			title: LocalizedText;
 			skills: string[];
 			columns?: number;
 	  })
 	| (BaseBlock & {
 			type: 'highlighted_experience';
 			company: string;
-			role: string;
-			description: string;
-			testimonial?: string | null;
+			role: LocalizedText;
+			description: LocalizedText;
+			testimonial?: LocalizedText | null;
 			technologies: string[];
 	  })
 	| (BaseBlock & {
 			type: 'experience_section';
-			title: string;
+			title: LocalizedText;
 	  })
 	| (BaseBlock & {
 			type: 'experience_item';
 			startDate: string;
 			endDate?: string | null;
 			company: string;
-			location?: string | null;
-			role: string | string[];
-			description: string;
+			location?: LocalizedText | null;
+			role: LocalizedText | LocalizedText[];
+			description: LocalizedText;
 			technologies: string[];
 	  })
 	| (BaseBlock & {
 			type: 'section_header';
-			title: string;
+			title: LocalizedText;
 			divider?: boolean;
 	  })
 	| (BaseBlock & {
 			type: 'skills_categorized';
-			category: string;
-			items: Array<string | { label: string; value?: string | null }>;
+			category: LocalizedText;
+			items: Array<string | { label: LocalizedText; value?: LocalizedText | null }>;
 	  })
 	| (BaseBlock & {
 			type: 'multi_column_info';
-			items: Array<{ label: string; description: string; technologies?: string[] }>;
+			items: Array<{ label: LocalizedText; description: LocalizedText; technologies?: string[] }>;
 	  })
 	| (BaseBlock & {
 			type: 'testimonial';
-			quote: string;
+			quote: LocalizedText;
 			source: string;
 	  })
 	| (BaseBlock & {
 			type: 'footer';
-			note: string;
+			note: LocalizedText;
 			updated_at?: string | null;
 	  });
 
@@ -94,8 +96,28 @@ const demoBlocks: ResumeBlock[] = [
 	{
 		type: 'header',
 		name: 'Pierre Elmén',
-		title: 'Frontend developer and leader',
-		summary: `Pierre is a curious and driven full-stack developer with solid experience
+		title: {
+			sv: 'Frontendutvecklare och ledare',
+			en: 'Frontend developer and leader'
+		},
+		summary: {
+			sv: `Pierre är en nyfiken och driven fullstackutvecklare med gedigen erfarenhet
+                av att utveckla och integrera produkter från koncept till lansering och
+                vidareutveckling. Han trivs i agila team där han kan arbeta i högt
+                tempo och i nära kontakt med både kunder och slutanvändare. Pierre
+                värdesätter kunskapsdelning inom teamet, vilket han ser som
+                grundläggande för att skapa en framgångsrik slutprodukt.  \n
+                I tidigare roller har Pierre inte bara fokuserat på programmering utan har
+                också tagit ansvar genom hela utvecklingsprocessen –
+                från kravställning till design, skapande och implementering av nya
+                funktioner. Denna erfarenhet har gett honom möjligheten att ta ett övergripande
+                ansvar i projekt från start till mål. \n
+                Med en unik bakgrund som HR-generalist utmärker sig Pierre som
+                utvecklare genom sin djupa förståelse för olika personlighetstyper
+                och roller, samt sin kommunikationsförmåga. Pierre är den naturliga
+                motparten och bollplanket i utvecklingsteamet för
+                verksamheten.`,
+			en: `Pierre is a curious and driven full-stack developer with solid experience
                 in developing and integrating products from concept to launch and
                 further development. He thrives in agile teams where he can work at a
                 high pace and in close contact with both clients and end-users. Pierre
@@ -110,10 +132,11 @@ const demoBlocks: ResumeBlock[] = [
                 developer through his deep understanding of different personality
                 types and roles, as well as his communication skills. Pierre is the natural
                 counterpart and sounding board in the development team for the
-                business.`,
+                business.`
+		},
 		contact_people: [
 			{
-				label: 'Contact',
+				label: { sv: 'Kontakt', en: 'Contact' },
 				people: [
 					{ name: 'Pierre Elmén', phone: '+46 (0)73 640 06 22', email: 'pierre@pixelcode.se' },
 					{ name: 'Robin Östberg', email: 'robin@pixelcode.se' }
@@ -123,7 +146,7 @@ const demoBlocks: ResumeBlock[] = [
 	},
 	{
 		type: 'skills_grid',
-		title: 'Examples of skills',
+		title: { sv: 'Exempel på färdigheter', en: 'Examples of skills' },
 		columns: 2,
 		skills: [
 			'ReactJS',
@@ -151,11 +174,15 @@ const demoBlocks: ResumeBlock[] = [
 	{
 		type: 'highlighted_experience',
 		company: 'Bokadirekt',
-		role: 'Frontend Lead and UX/UI',
-		description:
-			'Responsible for evolving the client experience for Bokadirekt customers and internal operators. Pierre supported teams delivering booking flows, component libraries and admin tooling across web and mobile.',
-		testimonial:
-			'We feel supported within your team, the developers have excellent skills. They require little explanation of the tasks and directly solve critical issues, even those we thought impossible.',
+		role: { sv: 'Frontend Lead och UX/UI', en: 'Frontend Lead and UX/UI' },
+		description: {
+			sv: 'Ansvarig för att utveckla kundupplevelsen för Bokadirekts kunder och interna operatörer. Pierre stöttade team som levererade bokningsflöden, komponentbibliotek och adminverktyg över webb och mobil.',
+			en: 'Responsible for evolving the client experience for Bokadirekt customers and internal operators. Pierre supported teams delivering booking flows, component libraries and admin tooling across web and mobile.'
+		},
+		testimonial: {
+			sv: 'Vi känner oss stöttade i ert team, utvecklarna har utmärkta färdigheter. De kräver lite förklaring av uppgifterna och löser direkt kritiska problem, även de vi trodde var omöjliga.',
+			en: 'We feel supported within your team, the developers have excellent skills. They require little explanation of the tasks and directly solve critical issues, even those we thought impossible.'
+		},
 		technologies: [
 			'ReactJS',
 			'Angular',
@@ -172,9 +199,11 @@ const demoBlocks: ResumeBlock[] = [
 	{
 		type: 'highlighted_experience',
 		company: 'Svenska Spel',
-		role: 'Frontend Lead',
-		description:
-			'Led the frontend development for the new sports betting platform. Focused on performance, accessibility, and real-time data updates.',
+		role: { sv: 'Frontend Lead', en: 'Frontend Lead' },
+		description: {
+			sv: 'Ledde frontendutvecklingen för den nya sportspelsplattformen. Fokuserade på prestanda, tillgänglighet och realtidsdatauppdateringar.',
+			en: 'Led the frontend development for the new sports betting platform. Focused on performance, accessibility, and real-time data updates.'
+		},
 		technologies: ['React', 'Redux', 'WebSocket', 'TypeScript', 'Styled Components'],
 		hidden: false
 	},
@@ -182,29 +211,39 @@ const demoBlocks: ResumeBlock[] = [
 		type: 'highlighted_experience',
 		company: 'Hidden Startup',
 		role: 'CTO',
-		description:
-			'Co-founded a fintech startup. Built the MVP from scratch and hired the initial engineering team.',
+		description: {
+			sv: 'Medgrundare av en fintech-startup. Byggde MVP från grunden och anställde det initiala ingenjörsteamet.',
+			en: 'Co-founded a fintech startup. Built the MVP from scratch and hired the initial engineering team.'
+		},
 		technologies: ['Node.js', 'PostgreSQL', 'AWS', 'React Native'],
 		hidden: true
 	},
 	{
 		type: 'highlighted_experience',
 		company: 'Another Hidden Project',
-		role: 'Senior Developer',
-		description: 'Consulted for a major bank to modernize their legacy systems.',
+		role: { sv: 'Senior Utvecklare', en: 'Senior Developer' },
+		description: {
+			sv: 'Konsultade för en stor bank för att modernisera deras äldre system.',
+			en: 'Consulted for a major bank to modernize their legacy systems.'
+		},
 		technologies: ['Java', 'Spring Boot', 'Angular', 'Oracle'],
 		hidden: true
 	},
-	{ type: 'experience_section', title: 'Previous Experience' },
+	{ type: 'experience_section', title: { sv: 'Tidigare Erfarenhet', en: 'Previous Experience' } },
 	{
 		type: 'experience_item',
 		startDate: '2022-01-01',
 		endDate: null,
 		company: 'Svenska Spel',
-		location: 'Stockholm',
-		role: 'Frontend Lead, UI/UX and Scrum Coach',
-		description:
-			'Pierre led the design and development of Svenska Spel’s website from scratch as a full-stack developer with a frontend focus. He modernized core components, improved the design library and delivered a consistent experience across web and mobile.',
+		location: { sv: 'Stockholm', en: 'Stockholm' },
+		role: {
+			sv: 'Frontend Lead, UI/UX och Scrum Coach',
+			en: 'Frontend Lead, UI/UX and Scrum Coach'
+		},
+		description: {
+			sv: 'Pierre ledde design och utveckling av Svenska Spels webbplats från grunden som fullstackutvecklare med frontendfokus. Han moderniserade kärnkomponenter, förbättrade designbiblioteket och levererade en konsekvent upplevelse över webb och mobil.',
+			en: 'Pierre led the design and development of Svenska Spel’s website from scratch as a full-stack developer with a frontend focus. He modernized core components, improved the design library and delivered a consistent experience across web and mobile.'
+		},
 		technologies: [
 			'ReactJS',
 			'Angular',
@@ -223,10 +262,12 @@ const demoBlocks: ResumeBlock[] = [
 		startDate: '2021-01-01',
 		endDate: '2023-12-31',
 		company: 'Bokadirekt',
-		location: 'Stockholm',
-		role: 'Fullstack-developer',
-		description:
-			'Pierre rebuilt Bokadirekt’s mobile web app to an app-like experience, using React and Vue. He delivered new backend services with NodeJS and AWS, improved UI consistency and supported the design team with reusable components.',
+		location: { sv: 'Stockholm', en: 'Stockholm' },
+		role: { sv: 'Fullstackutvecklare', en: 'Fullstack-developer' },
+		description: {
+			sv: 'Pierre byggde om Bokadirekts mobila webbapp till en app-liknande upplevelse med React och Vue. Han levererade nya backendtjänster med NodeJS och AWS, förbättrade UI-konsistens och stöttade designteamet med återanvändbara komponenter.',
+			en: 'Pierre rebuilt Bokadirekt’s mobile web app to an app-like experience, using React and Vue. He delivered new backend services with NodeJS and AWS, improved UI consistency and supported the design team with reusable components.'
+		},
 		technologies: [
 			'NodeJS',
 			'Angular',
@@ -246,10 +287,15 @@ const demoBlocks: ResumeBlock[] = [
 		startDate: '2023-08-01',
 		endDate: '2023-11-30',
 		company: 'elmdev',
-		location: 'Stockholm',
-		role: 'Fullstack developer, UI/UX and design',
-		description:
-			'Solo-developed a web-based phone operating system with TypeScript and React, using Neo4j for graph data and GitHub Actions for release automation. Built a component kit and ensured first-class mobile and desktop experiences.',
+		location: { sv: 'Stockholm', en: 'Stockholm' },
+		role: {
+			sv: 'Fullstackutvecklare, UI/UX och design',
+			en: 'Fullstack developer, UI/UX and design'
+		},
+		description: {
+			sv: 'Ensamutvecklade ett webbaserat telefonoperativsystem med TypeScript och React, med Neo4j för grafdata och GitHub Actions för releaseautomatisering. Byggde ett komponentkit och säkerställde förstklassiga mobil- och skrivbordsupplevelser.',
+			en: 'Solo-developed a web-based phone operating system with TypeScript and React, using Neo4j for graph data and GitHub Actions for release automation. Built a component kit and ensured first-class mobile and desktop experiences.'
+		},
 		technologies: [
 			'ReactJS',
 			'Angular',
@@ -266,10 +312,12 @@ const demoBlocks: ResumeBlock[] = [
 		startDate: '2019-01-01',
 		endDate: '2019-12-31',
 		company: 'Svenska Spel & Coegi AB',
-		location: 'Stockholm',
-		role: 'Fullstack-developer',
-		description:
-			'Developed internal tools to manage user behavior and site metrics at Svenska Spel. Delivered server-side APIs and admin dashboards while collaborating with the design team on visual refinements.',
+		location: { sv: 'Stockholm', en: 'Stockholm' },
+		role: { sv: 'Fullstackutvecklare', en: 'Fullstack-developer' },
+		description: {
+			sv: 'Utvecklade interna verktyg för att hantera användarbeteende och webbplatsmätvärden på Svenska Spel. Levererade server-side API:er och adminpaneler samtidigt som han samarbetade med designteamet kring visuella förbättringar.',
+			en: 'Developed internal tools to manage user behavior and site metrics at Svenska Spel. Delivered server-side APIs and admin dashboards while collaborating with the design team on visual refinements.'
+		},
 		technologies: [
 			'ReactJS',
 			'Angular',
@@ -286,10 +334,12 @@ const demoBlocks: ResumeBlock[] = [
 		startDate: '2019-01-01',
 		endDate: '2019-12-31',
 		company: 'Örebro University',
-		location: 'Örebro',
-		role: 'Full stack developer',
-		description:
-			'Built a system to manage international traveler registrations and course assignments, handling email and data workflows. Delivered backend services and student-facing UI.',
+		location: { sv: 'Örebro', en: 'Örebro' },
+		role: { sv: 'Fullstackutvecklare', en: 'Full stack developer' },
+		description: {
+			sv: 'Byggde ett system för att hantera internationella resenärsregistreringar och kurstilldelningar, hanterade e-post och dataflöden. Levererade backendtjänster och studentinriktat UI.',
+			en: 'Built a system to manage international traveler registrations and course assignments, handling email and data workflows. Delivered backend services and student-facing UI.'
+		},
 		technologies: ['Java', 'SQL']
 	},
 	{
@@ -297,19 +347,21 @@ const demoBlocks: ResumeBlock[] = [
 		startDate: '2019-01-01',
 		endDate: '2019-12-31',
 		company: 'Uppsala University',
-		location: 'Uppsala',
-		role: 'Frontend developer',
-		description:
-			'Created a history-themed website with an interactive timeline. Responsible for frontend design, accessibility and visual storytelling inspired by the era showcased in the project.',
+		location: { sv: 'Uppsala', en: 'Uppsala' },
+		role: { sv: 'Frontendutvecklare', en: 'Frontend developer' },
+		description: {
+			sv: 'Skapade en historietema-webbplats med en interaktiv tidslinje. Ansvarig för frontenddesign, tillgänglighet och visuellt berättande inspirerat av eran som visades i projektet.',
+			en: 'Created a history-themed website with an interactive timeline. Responsible for frontend design, accessibility and visual storytelling inspired by the era showcased in the project.'
+		},
 		technologies: ['ReactJS', 'HTML', 'JavaScript', 'CSS', 'API', 'Figma', 'Illustrator']
 	},
 	{
 		type: 'section_header',
-		title: 'Skills'
+		title: { sv: 'Färdigheter', en: 'Skills' }
 	},
 	{
 		type: 'skills_categorized',
-		category: 'Techniques',
+		category: { sv: 'Tekniker', en: 'Techniques' },
 		items: [
 			'ReactJS',
 			'Angular',
@@ -329,29 +381,35 @@ const demoBlocks: ResumeBlock[] = [
 	},
 	{
 		type: 'skills_categorized',
-		category: 'Methods',
+		category: { sv: 'Metoder', en: 'Methods' },
 		items: ['Scrum', 'Agile', 'Kanban', 'Responsive design']
 	},
 	{
 		type: 'section_header',
-		title: 'Other'
+		title: { sv: 'Övrigt', en: 'Other' }
 	},
 	{
 		type: 'skills_categorized',
-		category: 'Languages',
+		category: { sv: 'Språk', en: 'Languages' },
 		items: [
-			{ label: 'English', value: 'Professional working proficiency' },
-			{ label: 'Swedish', value: 'Native speaker' }
+			{
+				label: { sv: 'Engelska', en: 'English' },
+				value: { sv: 'Professionell arbetsnivå', en: 'Professional working proficiency' }
+			},
+			{ label: { sv: 'Svenska', en: 'Swedish' }, value: { sv: 'Modersmål', en: 'Native speaker' } }
 		]
 	},
 	{
 		type: 'skills_categorized',
-		category: 'Portfolio',
+		category: { sv: 'Portfölj', en: 'Portfolio' },
 		items: ['https://elmen.dev']
 	},
 	{
 		type: 'footer',
-		note: 'Worldclass tech by worldclass people',
+		note: {
+			sv: 'Världsklass teknik av världsklass människor',
+			en: 'Worldclass tech by worldclass people'
+		},
 		updated_at: 'Updated Jan 2024'
 	}
 ];

@@ -4,9 +4,14 @@
 	import TechStackSelector from '../TechStackSelector.svelte';
 	import ResumeSectionRow from './ResumeSectionRow.svelte';
 
-	let { block, isEditing = false } = $props<{
+	let {
+		block,
+		isEditing = false,
+		language = 'sv'
+	} = $props<{
 		block: Extract<ResumeBlock, { type: 'skills_categorized' }>;
 		isEditing?: boolean;
+		language?: 'sv' | 'en';
 	}>();
 
 	let editingBlock = $state({ ...block });
@@ -15,12 +20,33 @@
 		editingBlock = { ...block };
 	});
 
+	const resolveText = (content: any) => {
+		if (!content) return { text: '', missing: false };
+		if (typeof content === 'string') return { text: content, missing: false };
+		if (content[language]) return { text: content[language], missing: false };
+		const other = language === 'sv' ? 'en' : 'sv';
+		return { text: content[other] || '', missing: true };
+	};
+
+	const normalizeCategory = (value: any) => {
+		if (!value) return '';
+		if (typeof value === 'string') return value.toLowerCase();
+		return `${value.sv ?? ''} ${value.en ?? ''}`.toLowerCase();
+	};
+
+	const editingCategory = $derived(normalizeCategory(editingBlock.category));
+	const blockCategory = $derived(normalizeCategory(block.category));
+
 	const isTechniqueOrMethod = $derived(
-		editingBlock.category.toLowerCase().includes('technique') ||
-			editingBlock.category.toLowerCase().includes('method')
+		editingCategory.includes('technique') ||
+			editingCategory.includes('method') ||
+			editingCategory.includes('teknik') ||
+			editingCategory.includes('metod')
 	);
-	const isLanguage = $derived(editingBlock.category.toLowerCase().includes('language'));
-	const isPortfolio = $derived(editingBlock.category.toLowerCase().includes('portfolio'));
+	const isLanguage = $derived(editingCategory.includes('language') || editingCategory.includes('språk'));
+	const isPortfolio = $derived(
+		editingCategory.includes('portfolio') || editingCategory.includes('portfölj')
+	);
 
 	const addItem = () => {
 		if (isLanguage) {
@@ -35,13 +61,44 @@
 	const removeItem = (index: number) => {
 		editingBlock.items = editingBlock.items.filter((_: unknown, i: number) => i !== index);
 	};
+
+	const category = $derived(resolveText(block.category));
 </script>
 
 {#if isEditing}
 	<section class="resume-print-section mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-		<p class="mb-3 text-xs font-semibold tracking-wide text-slate-700 uppercase">
-			{editingBlock.category}
-		</p>
+		<div class="mb-3 grid grid-cols-2 gap-4">
+			<FormControl label="Category (SV)">
+				<Input
+					value={typeof editingBlock.category === 'string'
+						? editingBlock.category
+						: editingBlock.category.sv}
+					oninput={(e) => {
+						if (typeof editingBlock.category === 'string') {
+							editingBlock.category = { sv: e.currentTarget.value, en: editingBlock.category };
+						} else {
+							editingBlock.category.sv = e.currentTarget.value;
+						}
+					}}
+					class="border-slate-300 bg-white text-slate-900"
+				/>
+			</FormControl>
+			<FormControl label="Category (EN)">
+				<Input
+					value={typeof editingBlock.category === 'string'
+						? editingBlock.category
+						: editingBlock.category.en}
+					oninput={(e) => {
+						if (typeof editingBlock.category === 'string') {
+							editingBlock.category = { en: e.currentTarget.value, sv: editingBlock.category };
+						} else {
+							editingBlock.category.en = e.currentTarget.value;
+						}
+					}}
+					class="border-slate-300 bg-white text-slate-900"
+				/>
+			</FormControl>
+		</div>
 
 		<div class="mt-3">
 			{#if isTechniqueOrMethod}
@@ -52,21 +109,74 @@
 				/>
 			{:else if isLanguage}
 				<label class="mb-1 block text-sm font-medium text-slate-700">Languages</label>
-				<div class="space-y-2">
+				<div class="space-y-4">
 					{#each editingBlock.items as item, index}
 						{#if typeof item !== 'string'}
-							<div class="flex gap-2">
-								<Input
-									bind:value={item.label}
-									placeholder="Language"
-									class="flex-1 border-slate-300 bg-white"
-								/>
-								<Input
-									bind:value={item.value}
-									placeholder="Proficiency"
-									class="flex-1 border-slate-300 bg-white"
-								/>
-								<Button variant="ghost" size="sm" onclick={() => removeItem(index)}>Remove</Button>
+							<div class="rounded border border-slate-200 bg-white p-3">
+								<div class="mb-2 flex justify-end">
+									<Button variant="ghost" size="sm" onclick={() => removeItem(index)}>Remove</Button
+									>
+								</div>
+								<div class="grid grid-cols-2 gap-4">
+									<div class="space-y-2">
+										<Input
+											value={typeof item.label === 'string' ? item.label : item.label?.sv}
+											oninput={(e) => {
+												if (typeof item.label === 'string') {
+													item.label = { sv: e.currentTarget.value, en: item.label };
+												} else {
+													item.label.sv = e.currentTarget.value;
+												}
+											}}
+											placeholder="Language (SV)"
+											class="border-slate-300 bg-white"
+										/>
+										<Input
+											value={typeof item.label === 'string' ? item.label : item.label?.en}
+											oninput={(e) => {
+												if (typeof item.label === 'string') {
+													item.label = { en: e.currentTarget.value, sv: item.label };
+												} else {
+													item.label.en = e.currentTarget.value;
+												}
+											}}
+											placeholder="Language (EN)"
+											class="border-slate-300 bg-white"
+										/>
+									</div>
+									<div class="space-y-2">
+										<Input
+											value={typeof item.value === 'string' ? item.value : item.value?.sv}
+											oninput={(e) => {
+												if (typeof item.value === 'string' || !item.value) {
+													item.value = {
+														sv: e.currentTarget.value,
+														en: typeof item.value === 'string' ? item.value : ''
+													};
+												} else {
+													item.value.sv = e.currentTarget.value;
+												}
+											}}
+											placeholder="Proficiency (SV)"
+											class="border-slate-300 bg-white"
+										/>
+										<Input
+											value={typeof item.value === 'string' ? item.value : item.value?.en}
+											oninput={(e) => {
+												if (typeof item.value === 'string' || !item.value) {
+													item.value = {
+														en: e.currentTarget.value,
+														sv: typeof item.value === 'string' ? item.value : ''
+													};
+												} else {
+													item.value.en = e.currentTarget.value;
+												}
+											}}
+											placeholder="Proficiency (EN)"
+											class="border-slate-300 bg-white"
+										/>
+									</div>
+								</div>
 							</div>
 						{/if}
 					{/each}
@@ -111,18 +221,28 @@
 	</section>
 {:else}
 	<section class="resume-print-section mb-6">
-		<ResumeSectionRow label={block.category} skipFirstColumn={isTechniqueOrMethod || isPortfolio}>
-			{#if block.category.toLowerCase().includes('language')}
+		<ResumeSectionRow label={category.text} skipFirstColumn={isTechniqueOrMethod || isPortfolio}>
+			{#if blockCategory.includes('language') || blockCategory.includes('språk')}
 				<div class="flex flex-col gap-1 text-sm text-slate-800">
 					{#each block.items as item}
 						{#if typeof item === 'string'}
 							<p><span class="font-bold">{item}</span></p>
 						{:else}
-							<p><span class="font-bold">{item.label}</span>: {item.value || ''}</p>
+							{@const label = resolveText(item.label)}
+							{@const value = resolveText(item.value)}
+							<p>
+								<span class="font-bold">
+									{label.text}
+									{#if label.missing}<span class="text-[10px] font-normal text-amber-600"
+											>(missing)</span
+										>{/if}
+								</span>: {value.text || ''}
+								{#if value.missing}<span class="text-[10px] text-amber-600">(missing)</span>{/if}
+							</p>
 						{/if}
 					{/each}
 				</div>
-			{:else if block.category.toLowerCase().includes('portfolio')}
+			{:else if blockCategory.includes('portfolio') || blockCategory.includes('portfölj')}
 				<div class="flex flex-wrap gap-2 text-sm text-slate-800">
 					{#each block.items as item}
 						{#if typeof item === 'string'}
@@ -134,12 +254,13 @@
 								>{item}</a
 							>
 						{:else if item.value}
+							{@const val = resolveText(item.value)}
 							<a
-								href={item.value}
+								href={val.text}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700"
-								>{item.value}</a
+								>{val.text}</a
 							>
 						{/if}
 					{/each}
@@ -150,10 +271,12 @@
 						{#if typeof item === 'string'}
 							<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">{item}</span>
 						{:else}
+							{@const label = resolveText(item.label)}
+							{@const value = resolveText(item.value)}
 							<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">
-								<span class="font-semibold">{item.label}</span>
+								<span class="font-semibold">{label.text}</span>
 								{#if item.value}
-									<span>: {item.value}</span>
+									<span>: {value.text}</span>
 								{/if}
 							</span>
 						{/if}

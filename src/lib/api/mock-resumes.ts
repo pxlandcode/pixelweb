@@ -1,10 +1,5 @@
 import type { Person, InternalResume } from '$lib/types/internal-resumes';
-import type { ResumeBlock } from '$lib/services/resumes';
-import { people } from '$lib/data/internal-resumes'; // Re-using people list for now, or should I move it here? 
-// I'll move the people list here to keep it self-contained in the service, or import it.
-// The plan said "Deprecate or remove [internal-resumes.ts], moving logic to mock-resumes.ts".
-// So I will redefine people here or move them.
-// For now, I'll copy the people structure and expand the resumes.
+import type { LocalizedText } from '$lib/services/resumes';
 
 export const MOCK_PEOPLE: Person[] = [
 	{
@@ -58,7 +53,28 @@ export const MOCK_PEOPLE: Person[] = [
 	}
 ];
 
-const generateHtmlSummary = (name: string) => `
+const ROLE_TRANSLATIONS: Record<string, string> = {
+	'Senior Developer': 'Seniorutvecklare',
+	'UX Designer': 'UX-designer',
+	'Frontend Developer': 'Frontendutvecklare',
+	'Backend Developer': 'Backendutvecklare',
+	'Project Manager': 'Projektledare',
+	'Full Stack Developer': 'Fullstackutvecklare',
+	'Full Stack Dev': 'Fullstackutvecklare',
+	'Tech Lead': 'Teknisk ledare',
+	'Lead Engineer': 'Teknisk ledare'
+};
+
+const toLocalizedStrings = (value: LocalizedText): { sv: string; en: string } =>
+	typeof value === 'string' ? { sv: value, en: value } : value;
+
+const localizeRole = (roleEn: string) => ({
+	en: roleEn,
+	sv: ROLE_TRANSLATIONS[roleEn] ?? roleEn
+});
+
+const generateHtmlSummary = (name: string) => ({
+	en: `
 <p><strong>${name}</strong> is a highly skilled professional with over 10 years of experience in the tech industry. They have a proven track record of delivering successful projects for major clients.</p>
 <p>Key strengths include:</p>
 <ul>
@@ -67,10 +83,25 @@ const generateHtmlSummary = (name: string) => `
     <li>Technical architecture and design</li>
 </ul>
 <p>They are passionate about staying up-to-date with the latest technologies and best practices.</p>
-`;
+`,
+	sv: `
+<p><strong>${name}</strong> är en erfaren konsult med över 10 års erfarenhet från techbranschen. Hen har en dokumenterad förmåga att leverera lyckade projekt för stora kunder.</p>
+<p>Styrkor:</p>
+<ul>
+    <li>Strategisk planering och genomförande</li>
+    <li>Teamledning och mentorskap</li>
+    <li>Teknisk arkitektur och design</li>
+</ul>
+<p>${name} håller sig gärna uppdaterad kring nya tekniker och bästa praxis.</p>
+`
+});
 
-const generateHtmlDescription = (role: string, company: string) => `
-<p>As a <strong>${role}</strong> at <strong>${company}</strong>, I was responsible for:</p>
+const generateHtmlDescription = (role: LocalizedText, company: string) => {
+	const roleText = toLocalizedStrings(role);
+
+	return {
+		en: `
+<p>As a <strong>${roleText.en}</strong> at <strong>${company}</strong>, I was responsible for:</p>
 <ul>
     <li>Leading a team of 5 developers to build a new customer-facing portal.</li>
     <li>Architecting a scalable microservices backend using Node.js and Kubernetes.</li>
@@ -78,7 +109,19 @@ const generateHtmlDescription = (role: string, company: string) => `
     <li>Collaborating with product owners to define requirements and roadmap.</li>
 </ul>
 <p><em>Key achievement:</em> Successfully launched the platform ahead of schedule and under budget.</p>
-`;
+`,
+		sv: `
+<p>Som <strong>${roleText.sv}</strong> på <strong>${company}</strong> ansvarade jag för:</p>
+<ul>
+    <li>Att leda ett team om fem utvecklare som byggde en ny kundportal.</li>
+    <li>Att designa en skalbar mikrotjänstarkitektur med Node.js och Kubernetes.</li>
+    <li>Att förbättra prestandan med 40% genom kodoptimering och caching.</li>
+    <li>Att samarbeta med produktägare kring krav och roadmap.</li>
+</ul>
+<p><em>Största resultat:</em> Lanserade plattformen före tidplan och under budget.</p>
+`
+	};
+};
 
 const createMockResume = (
 	id: string,
@@ -89,7 +132,10 @@ const createMockResume = (
 ): InternalResume => {
 	const person = MOCK_PEOPLE.find((p) => p.id === personId);
 	const name = person?.name || 'Unknown';
-    const roleTitle = person?.title || 'Developer';
+	const roleTitle = person?.title || 'Developer';
+	const localizedRoleTitle = localizeRole(roleTitle);
+	const highlightedRole = localizeRole('Senior Developer');
+	const highlightedRoleSecondary = localizeRole('Lead Engineer');
 
 	return {
 		id,
@@ -103,42 +149,45 @@ const createMockResume = (
 				type: 'header',
 				id: crypto.randomUUID(),
 				name: name,
-				title: roleTitle,
+				title: localizedRoleTitle,
 				summary: generateHtmlSummary(name),
 				contact_people: [
 					{
-						label: 'Contact',
+						label: { sv: 'Kontakt', en: 'Contact' },
 						people: [
 							{ name: name, email: `${personId}@pixelcode.se`, phone: '+46 70 123 45 67' },
 							{ name: 'Manager Name', email: 'manager@pixelcode.se' }
 						]
 					}
 				],
-                hidden: false
+				hidden: false
 			},
 			{
 				type: 'highlighted_experience',
 				id: crypto.randomUUID(),
 				company: 'Tech Giant Corp',
-				role: 'Senior Developer',
-				description: generateHtmlDescription('Senior Developer', 'Tech Giant Corp'),
+				role: highlightedRole,
+				description: generateHtmlDescription(highlightedRole, 'Tech Giant Corp'),
 				technologies: ['React', 'Node.js', 'AWS'],
-				testimonial: 'An absolute pleasure to work with. Delivered exceptional results.',
-                hidden: false
+				testimonial: {
+					sv: 'En ren fröjd att samarbeta med. Levererar resultat i toppklass.',
+					en: 'An absolute pleasure to work with. Delivered exceptional results.'
+				},
+				hidden: false
 			},
-            {
+			{
 				type: 'highlighted_experience',
 				id: crypto.randomUUID(),
 				company: 'Innovative Startup',
-				role: 'Lead Engineer',
-				description: generateHtmlDescription('Lead Engineer', 'Innovative Startup'),
+				role: highlightedRoleSecondary,
+				description: generateHtmlDescription(highlightedRoleSecondary, 'Innovative Startup'),
 				technologies: ['Svelte', 'Supabase', 'Vercel'],
-                hidden: false
+				hidden: false
 			},
-            {
+			{
 				type: 'skills_grid',
 				id: crypto.randomUUID(),
-				title: 'Examples of skills',
+				title: { sv: 'Exempel på färdigheter', en: 'Examples of skills' },
 				columns: 2,
 				skills: [
 					'ReactJS',
@@ -162,25 +211,25 @@ const createMockResume = (
 					'GIT',
 					'AWS'
 				],
-                hidden: false
+				hidden: false
 			},
 			{
 				type: 'experience_section',
 				id: crypto.randomUUID(),
-				title: 'Previous Experience',
-                hidden: false
+				title: { sv: 'Tidigare erfarenhet', en: 'Previous Experience' },
+				hidden: false
 			},
 			{
 				type: 'experience_item',
 				id: crypto.randomUUID(),
 				startDate: '2020-01',
-				endDate: 'Present',
+				endDate: null,
 				company: 'Pixel&Code',
-				location: 'Stockholm',
-				role: roleTitle,
-				description: generateHtmlDescription(roleTitle, 'Pixel&Code'),
+				location: { sv: 'Stockholm', en: 'Stockholm' },
+				role: localizedRoleTitle,
+				description: generateHtmlDescription(localizedRoleTitle, 'Pixel&Code'),
 				technologies: ['SvelteKit', 'Tailwind', 'Supabase'],
-                hidden: false
+				hidden: false
 			},
 			{
 				type: 'experience_item',
@@ -188,70 +237,101 @@ const createMockResume = (
 				startDate: '2018-01',
 				endDate: '2019-12',
 				company: 'Previous Agency',
-				location: 'Gothenburg',
-				role: 'Full Stack Developer',
-				description: generateHtmlDescription('Full Stack Developer', 'Previous Agency'),
+				location: { sv: 'Göteborg', en: 'Gothenburg' },
+				role: localizeRole('Full Stack Developer'),
+				description: generateHtmlDescription(localizeRole('Full Stack Developer'), 'Previous Agency'),
 				technologies: ['Vue.js', 'Laravel', 'MySQL'],
-                hidden: false
+				hidden: false
 			},
-            {
+			{
 				type: 'section_header',
 				id: crypto.randomUUID(),
-				title: 'Skills',
-                hidden: false
+				title: { sv: 'Färdigheter', en: 'Skills' },
+				hidden: false
 			},
 			{
 				type: 'skills_categorized',
 				id: crypto.randomUUID(),
-				category: 'Techniques',
-				items: ['TypeScript', 'Svelte', 'React', 'Node.js', 'PostgreSQL', 'AWS', 'Docker', 'Kubernetes', 'Tailwind', 'Supabase', 'GraphQL', 'Next.js'],
-                hidden: false
+				category: { sv: 'Tekniker', en: 'Techniques' },
+				items: [
+					'TypeScript',
+					'Svelte',
+					'React',
+					'Node.js',
+					'PostgreSQL',
+					'AWS',
+					'Docker',
+					'Kubernetes',
+					'Tailwind',
+					'Supabase',
+					'GraphQL',
+					'Next.js'
+				],
+				hidden: false
 			},
-            {
+			{
 				type: 'skills_categorized',
 				id: crypto.randomUUID(),
-				category: 'Methods',
+				category: { sv: 'Metoder', en: 'Methods' },
 				items: ['Scrum', 'Agile', 'Kanban', 'Responsive design', 'TDD', 'CI/CD'],
-                hidden: false
+				hidden: false
 			},
-            {
+			{
 				type: 'section_header',
 				id: crypto.randomUUID(),
-				title: 'Other',
-                hidden: false
+				title: { sv: 'Övrigt', en: 'Other' },
+				hidden: false
 			},
-            {
+			{
 				type: 'skills_categorized',
 				id: crypto.randomUUID(),
-				category: 'Languages',
+				category: { sv: 'Språk', en: 'Languages' },
 				items: [
-                    { label: 'English', value: 'Professional working proficiency' },
-                    { label: 'Swedish', value: 'Native speaker' }
-                ],
-                hidden: false
+					{
+						label: { sv: 'Engelska', en: 'English' },
+						value: { sv: 'Professionell arbetsnivå', en: 'Professional working proficiency' }
+					},
+					{ label: { sv: 'Svenska', en: 'Swedish' }, value: { sv: 'Modersmål', en: 'Native speaker' } }
+				],
+				hidden: false
 			},
-            {
+			{
 				type: 'multi_column_info',
 				id: crypto.randomUUID(),
 				items: [
-                    { label: '2015 - 2018', description: '<strong>BSc in Computer Science</strong><br>Royal Institute of Technology (KTH)' },
-                    { label: '2014', description: '<strong>Certified Scrum Master</strong><br>Scrum Alliance' }
-                ],
-                hidden: false
+					{
+						label: { sv: '2015 - 2018', en: '2015 - 2018' },
+						description: {
+							sv: '<strong>Kandidatexamen i datavetenskap</strong><br>Kungliga Tekniska högskolan (KTH)',
+							en: '<strong>BSc in Computer Science</strong><br>Royal Institute of Technology (KTH)'
+						}
+					},
+					{
+						label: { sv: '2014', en: '2014' },
+						description: {
+							sv: '<strong>Certifierad Scrum Master</strong><br>Scrum Alliance',
+							en: '<strong>Certified Scrum Master</strong><br>Scrum Alliance'
+						}
+					}
+				],
+				hidden: false
 			},
-            {
+			{
 				type: 'skills_categorized',
 				id: crypto.randomUUID(),
-				category: 'Portfolio',
+				category: { sv: 'Portfölj', en: 'Portfolio' },
 				items: ['https://pixelcode.se', 'https://github.com/pixelcode'],
-                hidden: false
+				hidden: false
 			},
-            {
+			{
 				type: 'footer',
 				id: crypto.randomUUID(),
-				note: 'References available upon request.',
+				note: {
+					sv: 'Referenser lämnas på begäran.',
+					en: 'References available upon request.'
+				},
 				updated_at: new Date().toISOString().split('T')[0],
-                hidden: false
+				hidden: false
 			}
 		]
 	};

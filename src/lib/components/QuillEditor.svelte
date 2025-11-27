@@ -9,11 +9,13 @@
 			['bold', 'italic', 'underline', 'blockquote'],
 			[{ list: 'ordered' }, { list: 'bullet' }],
 			['clean']
-		]
+		],
+		onchange
 	} = $props<{
 		content?: string;
 		placeholder?: string;
 		toolbarOptions?: unknown[];
+		onchange?: (html: string) => void;
 	}>();
 
 	let quillContainer: HTMLDivElement | null = null;
@@ -50,7 +52,9 @@
 
 		// Listen for changes
 		quillEditor.on('text-change', () => {
-			content = quillEditor?.root.innerHTML ?? '';
+			const newContent = quillEditor?.root.innerHTML ?? '';
+			content = newContent;
+			onchange?.(newContent);
 		});
 	};
 
