@@ -70,7 +70,7 @@ export type ResumeData = {
 	footerNote?: LocalizedText;
 };
 
-export type SimpleResume = {
+export type Resume = {
 	id: string;
 	personId: string;
 	title: string;
