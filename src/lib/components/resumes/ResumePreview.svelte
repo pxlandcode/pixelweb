@@ -23,7 +23,7 @@
 	} = $props<{ blocks: ResumeBlock[]; isEditing?: boolean; personId?: string }>();
 
 	const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
-	const image = $derived(person ? soloImages[person.portraitId] : undefined);
+	const image = $derived(person?.portraitId ? soloImages[person.portraitId] : undefined);
 
 	const visibleBlocks = $derived(blocks.filter((b) => !b.hidden));
 

@@ -14,6 +14,7 @@
 		X
 	} from 'lucide-svelte';
 	import TechStackEditor from '$lib/components/resumes/TechStackEditor.svelte';
+	import { goto } from '$app/navigation';
 
 	$: personId = $page.params.personId ?? '';
 	$: person = MockResumeService.getPerson(personId);
@@ -51,7 +52,7 @@
 		<div class="mb-6 flex items-center justify-between">
 			<Button
 				variant="ghost"
-				href="/internal/resumes"
+				href="/internal/employees"
 				class="pl-0 hover:bg-transparent hover:text-indigo-600"
 			>
 				<ArrowLeft size={16} class="mr-2" />
@@ -68,7 +69,7 @@
 							<Save size={16} class="mr-2" /> Save Profile
 						</Button>
 					{:else}
-						<Button variant="outline" onclick={toggleEdit}>
+						<Button onclick={toggleEdit}>
 							<Pencil size={16} class="mr-2" /> Edit Profile
 						</Button>
 					{/if}
@@ -109,7 +110,7 @@
 								<label class="mb-1 block text-sm font-medium text-slate-700">Title</label>
 								<Input
 									bind:value={editingPerson.title}
-									class="border-slate-300 bg-white font-medium text-indigo-600"
+									class="border-slate-300 bg-white font-medium text-primary"
 								/>
 							</div>
 							<div>
@@ -124,7 +125,7 @@
 					{:else}
 						<div>
 							<h1 class="text-3xl font-bold text-slate-900 sm:text-4xl">{person.name}</h1>
-							<p class="mt-2 text-xl font-medium text-indigo-600">{person.title}</p>
+							<p class="mt-2 text-xl font-medium text-primary">{person.title}</p>
 							<p class="mt-4 max-w-2xl text-lg text-slate-600">{person.bio}</p>
 						</div>
 					{/if}
@@ -144,12 +145,15 @@
 		<div class="mt-12 border-t border-slate-200 pt-12">
 			<div class="mb-6 flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-slate-900">Resumes</h2>
-				<Button variant="outline" size="sm">+ Create New Resume</Button>
+				<Button size="sm">+ Create New Resume</Button>
 			</div>
 
 			<div class="space-y-4">
 				{#each personResumes as resume}
-					<Card class="flex items-center justify-between p-6 transition-colors hover:bg-slate-50">
+					<Card
+						onclick={() => goto(`/internal/employees/${person.id}/resume/${resume.id}`)}
+						class="flex cursor-pointer items-center justify-between rounded-none p-6 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
+					>
 						<div class="flex items-start gap-4">
 							<div
 								class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"
@@ -178,12 +182,6 @@
 									</span>
 								</div>
 							</div>
-						</div>
-
-						<div class="flex items-center gap-3">
-							<Button variant="outline" size="sm" href="/internal/resumes/consultant/{resume.id}">
-								Open Editor
-							</Button>
 						</div>
 					</Card>
 				{/each}

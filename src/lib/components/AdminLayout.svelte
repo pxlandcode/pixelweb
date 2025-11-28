@@ -31,6 +31,11 @@
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
 		},
 		{
+			label: 'Employees',
+			href: '/internal/employees',
+			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+		},
+		{
 			label: 'Cases',
 			href: '/internal/cases',
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
@@ -92,7 +97,7 @@
 					{/if}
 				</div>
 				<Mode.Switch
-					class="h-10 w-10 rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+					class="h-10 w-10 rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm transition hover:bg-gray-100 focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
 				/>
 				<form method="POST" action="/internal/logout" class="hidden md:block">
 					<Button

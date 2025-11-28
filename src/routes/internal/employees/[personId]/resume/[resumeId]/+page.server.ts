@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ params, cookies, url }) => {
 		throw error(401, 'Unauthorized');
 	}
 
-	const resume = MockResumeService.getResume(params.id);
+	const resume = MockResumeService.getResume(params.resumeId);
 
 	if (!resume) {
 		throw error(404, 'Resume not found');
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ params, cookies, url }) => {
 			title: `${siteMeta.name} — Resume ${resume.version_name}`,
 			description: 'Edit resume content and manage versions.',
 			noindex: true,
-			path: `/internal/resumes/${params.id}`
-                }
-        };
+			path: `/internal/employees/${params.personId}/resume/${params.resumeId}`
+		}
+	};
 };

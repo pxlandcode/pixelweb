@@ -161,7 +161,7 @@
 				<div class="flex flex-wrap gap-2">
 					{#each category.skills as skill, index}
 						<div
-							class="group relative inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-700"
+							class="group relative inline-flex items-center border border-primary bg-transparent px-2.5 py-1 text-sm font-medium text-primary"
 							class:cursor-move={isEditing}
 							class:opacity-50={draggingItem?.categoryId === category.id &&
 								draggingItem?.index === index}

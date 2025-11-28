@@ -11,7 +11,7 @@ export type Person = {
 	id: string;
 	name: string;
 	title: string;
-	portraitId: PeopleImageId;
+	portraitId?: PeopleImageId;
 	bio: string;
 	techStack?: TechCategory[];
 };

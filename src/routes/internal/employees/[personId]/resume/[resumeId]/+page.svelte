@@ -19,6 +19,7 @@
 	let showEditor = $state(false);
 	let isEditing = $state(false);
 	let showDownloadOptions = $state(false);
+	let downloadLanguage: 'sv' | 'en' = $state('sv');
 	const isPdfMode = $derived(data.isPdf === true);
 
 	const resumeState = resumeStore.state;
@@ -159,6 +160,30 @@
 			<div class="relative flex items-center gap-2">
 				{#if showDownloadOptions}
 					<div class="absolute right-0 bottom-14 flex flex-col items-end gap-2">
+						<div transition:fly={{ y: 12, duration: 120 }}>
+							<div
+								class="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs font-medium shadow-sm"
+							>
+								<button
+									type="button"
+									class={downloadLanguage === 'sv'
+										? 'rounded-full bg-indigo-600 px-2 py-0.5 text-white'
+										: 'px-2 py-0.5 text-slate-500 hover:text-slate-700'}
+									onclick={() => (downloadLanguage = 'sv')}
+								>
+									SV
+								</button>
+								<button
+									type="button"
+									class={downloadLanguage === 'en'
+										? 'rounded-full bg-indigo-600 px-2 py-0.5 text-white'
+										: 'px-2 py-0.5 text-slate-500 hover:text-slate-700'}
+									onclick={() => (downloadLanguage = 'en')}
+								>
+									EN
+								</button>
+							</div>
+						</div>
 						<div transition:fly={{ y: 16, duration: 160 }}>
 							<Button size="sm" variant="secondary" disabled>Word (coming soon)</Button>
 						</div>
@@ -166,10 +191,10 @@
 							<Button
 								size="sm"
 								variant="primary"
-								href={`/api/resumes/${data.resume.id}/pdf`}
+								href={`/api/resumes/${data.resume.id}/pdf?lang=${downloadLanguage}`}
 								target="_blank"
 								rel="external"
-								download={`resume-${data.resume.id}.pdf`}
+								download={`resume-${data.resume.id}-${downloadLanguage}.pdf`}
 								onclick={() => (showDownloadOptions = false)}
 							>
 								<Icon icon={Download} size="sm" />

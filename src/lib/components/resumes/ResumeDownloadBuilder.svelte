@@ -17,16 +17,16 @@
 	import andLogo from '$lib/assets/and.svg?url';
 
 	import { soloImages } from '$lib/images/manifest';
-import { MockResumeService } from '$lib/api/mock-resumes';
+	import { MockResumeService } from '$lib/api/mock-resumes';
 
-let {
-	blocks,
-	personId,
-	language = 'sv'
-} = $props<{ blocks: ResumeBlock[]; personId?: string; language?: 'sv' | 'en' }>();
+	let {
+		blocks,
+		personId,
+		language = 'sv'
+	} = $props<{ blocks: ResumeBlock[]; personId?: string; language?: 'sv' | 'en' }>();
 
-const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
-const image = $derived(person ? soloImages[person.portraitId] : undefined);
+	const person = $derived(personId ? MockResumeService.getPerson(personId) : undefined);
+	const image = $derived(person?.portraitId ? soloImages[person.portraitId] : undefined);
 
 	const visibleBlocks = $derived(blocks.filter((b: ResumeBlock) => !b.hidden));
 
