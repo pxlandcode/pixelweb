@@ -1,4 +1,3 @@
-// Component barrel exports
 export * from './about-section';
 export * from './admin';
 export * from './admin-layout';
@@ -23,3 +22,4 @@ export * from './scroll-gallery';
 export * from './site-footer';
 export * from './site-header';
 export * from './tech-stack-selector';
+export * from './tech-stack-editor';

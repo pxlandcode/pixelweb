@@ -13,7 +13,7 @@
 		Save,
 		X
 	} from 'lucide-svelte';
-	import TechStackEditor from '$lib/components/resumes/TechStackEditor.svelte';
+	import { TechStackEditor } from '$lib/components';
 	import { goto } from '$app/navigation';
 
 	$: personId = $page.params.personId ?? '';
