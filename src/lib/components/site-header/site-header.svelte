@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { RollingText } from '$components/rolling-text';
+	import { RollingText } from '$lib/components';
 	import type { NavLink } from '$types';
 	import { contactModal } from '$lib/stores/contactModal';
 	import { page } from '$app/stores';

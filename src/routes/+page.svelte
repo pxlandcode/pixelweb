@@ -1,13 +1,14 @@
 <script lang="ts">
-	import Cardstack from '$lib/components/Cardstack.svelte';
-	import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
-	import NewsPreview from '$lib/components/NewsPreview.component.svelte';
+	import {
+		Cardstack,
+		HeroFirstFold,
+		NewsPreview,
+		ImageHeadline,
+		ImageFeaturePair
+	} from '$lib/components';
 	import type { ActionData, PageData } from './$types';
 
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
-
-	import ImageHeadline from '$components/ImageHeadline.svelte';
-	import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
 
 	import { soloImages } from '$lib/images/manifest';
 

@@ -5,11 +5,14 @@
 	import { fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import favicon from '$lib/assets/and.svg';
-	import CurtainMenu from '$components/CurtainMenu.svelte';
-	import SiteHeader from '$components/SiteHeader.svelte';
-	import SiteFooter from '$components/SiteFooter.svelte';
-	import { ContactPostcard } from '$lib/components';
-	import LaunchCountdownOverlay from '$lib/components/LaunchCountdownOverlay.svelte';
+	import {
+		CurtainMenu,
+		SiteHeader,
+		SiteFooter,
+		ContactPostcard,
+		LaunchCountdownOverlay,
+		RollingText
+	} from '$lib/components';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
@@ -22,7 +25,6 @@
 		setFloatingNavState
 	} from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
-	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import Lenis from 'lenis';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
@@ -32,14 +34,14 @@
 
 	let { children } = $props();
 
-let headerHeight = 0;
-let currentParallaxOffset = 0;
-let isHomeRoute = get(page).url.pathname === '/';
-let isPrintRoute = get(page).url.pathname.startsWith('/print');
-let headerWrapper: HTMLDivElement | null = null;
-let headerResizeObserver: ResizeObserver | null = null;
-let headerResizeHandler: (() => void) | null = null;
-let scrollHandler: (() => void) | null = null;
+	let headerHeight = 0;
+	let currentParallaxOffset = 0;
+	let isHomeRoute = get(page).url.pathname === '/';
+	let isPrintRoute = get(page).url.pathname.startsWith('/print');
+	let headerWrapper: HTMLDivElement | null = null;
+	let headerResizeObserver: ResizeObserver | null = null;
+	let headerResizeHandler: (() => void) | null = null;
+	let scrollHandler: (() => void) | null = null;
 
 	const updateFloatingNavFromLayout = () => {
 		if (isHomeRoute || typeof window === 'undefined') {
@@ -67,13 +69,13 @@ let scrollHandler: (() => void) | null = null;
 			queueMicrotask(updateFloatingNavFromLayout);
 		}
 	});
-const unsubscribePage = page.subscribe(($page) => {
-	isHomeRoute = $page.url.pathname === '/';
-	isPrintRoute = $page.url.pathname.startsWith('/print');
-	if (isHomeRoute) {
-		// Allow the home page to take over the floating nav behaviour.
-		return;
-	}
+	const unsubscribePage = page.subscribe(($page) => {
+		isHomeRoute = $page.url.pathname === '/';
+		isPrintRoute = $page.url.pathname.startsWith('/print');
+		if (isHomeRoute) {
+			// Allow the home page to take over the floating nav behaviour.
+			return;
+		}
 		// Reset CTA visibility when entering non-home routes.
 		resetFloatingNavState();
 		updateSiteHeaderState({ parallaxOffset: 0 });
@@ -103,71 +105,71 @@ const unsubscribePage = page.subscribe(($page) => {
 		updateSiteHeaderState({ height: headerWrapper.offsetHeight });
 	};
 
-onMount(() => {
-	if (isPrintRoute) {
-		return;
-	}
+	onMount(() => {
+		if (isPrintRoute) {
+			return;
+		}
 
-	if ('scrollRestoration' in history) {
-		history.scrollRestoration = 'manual';
-	}
+		if ('scrollRestoration' in history) {
+			history.scrollRestoration = 'manual';
+		}
 
-	lenis = new Lenis({
-		duration: 1.2,
-		easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-		smoothWheel: true
+		lenis = new Lenis({
+			duration: 1.2,
+			easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+			smoothWheel: true
+		});
+
+		const raf = (time: number) => {
+			lenis?.raf(time);
+			rafId = requestAnimationFrame(raf);
+		};
+
+		rafId = requestAnimationFrame(raf);
+
+		syncHeaderMetrics();
+
+		if (typeof ResizeObserver !== 'undefined' && headerWrapper) {
+			headerResizeObserver = new ResizeObserver(() => syncHeaderMetrics());
+			headerResizeObserver.observe(headerWrapper);
+		}
+
+		headerResizeHandler = () => syncHeaderMetrics();
+		window.addEventListener('resize', headerResizeHandler);
+
+		scrollHandler = () => updateFloatingNavFromLayout();
+		window.addEventListener('scroll', scrollHandler, { passive: true });
 	});
 
-	const raf = (time: number) => {
-		lenis?.raf(time);
-		rafId = requestAnimationFrame(raf);
-	};
+	onDestroy(() => {
+		if (lenis) {
+			lenis.destroy();
+			lenis = undefined;
+		}
 
-	rafId = requestAnimationFrame(raf);
+		if (rafId !== null) {
+			cancelAnimationFrame(rafId);
+			rafId = null;
+		}
 
-	syncHeaderMetrics();
+		if (headerResizeObserver) {
+			headerResizeObserver.disconnect();
+			headerResizeObserver = null;
+		}
 
-	if (typeof ResizeObserver !== 'undefined' && headerWrapper) {
-		headerResizeObserver = new ResizeObserver(() => syncHeaderMetrics());
-		headerResizeObserver.observe(headerWrapper);
-	}
+		if (headerResizeHandler) {
+			window.removeEventListener('resize', headerResizeHandler);
+			headerResizeHandler = null;
+		}
 
-	headerResizeHandler = () => syncHeaderMetrics();
-	window.addEventListener('resize', headerResizeHandler);
+		if (scrollHandler) {
+			window.removeEventListener('scroll', scrollHandler);
+			scrollHandler = null;
+		}
 
-	scrollHandler = () => updateFloatingNavFromLayout();
-	window.addEventListener('scroll', scrollHandler, { passive: true });
-});
-
-onDestroy(() => {
-	if (lenis) {
-		lenis.destroy();
-		lenis = undefined;
-	}
-
-	if (rafId !== null) {
-		cancelAnimationFrame(rafId);
-		rafId = null;
-	}
-
-	if (headerResizeObserver) {
-		headerResizeObserver.disconnect();
-		headerResizeObserver = null;
-	}
-
-	if (headerResizeHandler) {
-		window.removeEventListener('resize', headerResizeHandler);
-		headerResizeHandler = null;
-	}
-
-	if (scrollHandler) {
-		window.removeEventListener('scroll', scrollHandler);
-		scrollHandler = null;
-	}
-
-	unsubscribeHeader();
-	unsubscribePage();
-});
+		unsubscribeHeader();
+		unsubscribePage();
+	});
 </script>
 
 <svelte:head>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import { Input, FormControl, Button } from '@pixelcode_/blocks/components';
-	import TechStackSelector from '../TechStackSelector.svelte';
+	import { TechStackSelector } from '$lib/components';
 	import ResumeSectionRow from './ResumeSectionRow.svelte';
 
 	let {
@@ -37,37 +37,41 @@
 	const editingCategory = $derived(normalizeCategory(editingBlock.category));
 	const blockCategory = $derived(normalizeCategory(block.category));
 
-const isTechniqueOrMethod = $derived(
-	editingCategory.includes('technique') ||
-		editingCategory.includes('method') ||
-		editingCategory.includes('teknik') ||
-		editingCategory.includes('metod')
-);
-const isLanguage = $derived(editingCategory.includes('language') || editingCategory.includes('språk'));
-const isPortfolio = $derived(
-	editingCategory.includes('portfolio') || editingCategory.includes('portfölj')
-);
-const isEducation = $derived(editingCategory.includes('education') || editingCategory.includes('utbild'));
-const isLockedCategory = $derived(
-	isTechniqueOrMethod || isLanguage || isPortfolio || isEducation
-);
+	const isTechniqueOrMethod = $derived(
+		editingCategory.includes('technique') ||
+			editingCategory.includes('method') ||
+			editingCategory.includes('teknik') ||
+			editingCategory.includes('metod')
+	);
+	const isLanguage = $derived(
+		editingCategory.includes('language') || editingCategory.includes('språk')
+	);
+	const isPortfolio = $derived(
+		editingCategory.includes('portfolio') || editingCategory.includes('portfölj')
+	);
+	const isEducation = $derived(
+		editingCategory.includes('education') || editingCategory.includes('utbild')
+	);
+	const isLockedCategory = $derived(
+		isTechniqueOrMethod || isLanguage || isPortfolio || isEducation
+	);
 
-const filteredItems = $derived(
-	block.items.filter((item) => {
-		if (typeof item === 'string') return item.trim().length > 0;
-		const label = resolveText(item.label).text.trim();
-		const value = item.value ? resolveText(item.value).text.trim() : '';
-		return label.length > 0 || value.length > 0;
-	})
-);
-const shouldHide = $derived(
-	!isEditing &&
-		(blockCategory.includes('portfolio') ||
-			blockCategory.includes('portfölj') ||
-			blockCategory.includes('education') ||
-			blockCategory.includes('utbild')) &&
-		filteredItems.length === 0
-);
+	const filteredItems = $derived(
+		block.items.filter((item) => {
+			if (typeof item === 'string') return item.trim().length > 0;
+			const label = resolveText(item.label).text.trim();
+			const value = item.value ? resolveText(item.value).text.trim() : '';
+			return label.length > 0 || value.length > 0;
+		})
+	);
+	const shouldHide = $derived(
+		!isEditing &&
+			(blockCategory.includes('portfolio') ||
+				blockCategory.includes('portfölj') ||
+				blockCategory.includes('education') ||
+				blockCategory.includes('utbild')) &&
+			filteredItems.length === 0
+	);
 
 	const addItem = () => {
 		if (isLanguage) {
@@ -124,7 +128,9 @@ const shouldHide = $derived(
 				</FormControl>
 			</div>
 		{:else}
-			<p class="mb-3 text-sm font-semibold text-slate-700">{resolveText(editingBlock.category).text}</p>
+			<p class="mb-3 text-sm font-semibold text-slate-700">
+				{resolveText(editingBlock.category).text}
+			</p>
 		{/if}
 
 		<div class="mt-3">
@@ -317,90 +323,88 @@ const shouldHide = $derived(
 			{/if}
 		</div>
 	</section>
-{:else}
-	{#if !shouldHide}
-		<section class="resume-print-section mb-6">
-			<ResumeSectionRow
-				label={category.text}
-				skipFirstColumn={isTechniqueOrMethod || isPortfolio || isLanguage || isEducation}
-			>
-				{#if blockCategory.includes('language') || blockCategory.includes('språk')}
-					<div class="flex flex-col gap-1 text-sm text-slate-800">
-						{#each block.items as item}
-							{#if typeof item === 'string'}
-								<p><span class="font-bold">{item}</span></p>
-							{:else}
-								{@const label = resolveText(item.label)}
-								{@const value = resolveText(item.value)}
-								<p>
-									<span class="font-bold">
-										{label.text}
-										{#if label.missing}<span class="text-[10px] font-normal text-amber-600"
-												>(missing)</span
-											>{/if}
-									</span>: {value.text || ''}
-									{#if value.missing}<span class="text-[10px] text-amber-600">(missing)</span>{/if}
-								</p>
-							{/if}
-						{/each}
-					</div>
-				{:else if blockCategory.includes('portfolio') || blockCategory.includes('portfölj')}
-					<div class="flex flex-wrap gap-2 text-sm text-slate-800">
-						{#each block.items as item}
-							{#if typeof item === 'string'}
-								<a
-									href={item}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700"
-									>{item}</a
-								>
-							{:else if item.value}
-								{@const val = resolveText(item.value)}
-								<a
-									href={val.text}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700"
-									>{val.text}</a
-								>
-							{/if}
-						{/each}
-					</div>
-				{:else if blockCategory.includes('education') || blockCategory.includes('utbild')}
-					<div class="flex flex-col gap-1 text-sm text-slate-800">
-						{#each block.items as item}
-							{#if typeof item === 'string'}
-								<p>{item}</p>
-							{:else}
-								{@const label = resolveText(item.label)}
-								{@const value = resolveText(item.value)}
-								<p>
-									<span class="font-semibold">{label.text}</span>
-									{#if value.text}<span>: {value.text}</span>{/if}
-								</p>
-							{/if}
-						{/each}
-					</div>
-				{:else}
-					<div class="flex flex-wrap gap-2">
-						{#each block.items as item}
-							{#if typeof item === 'string'}
-								<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">{item}</span>
-							{:else}
-								{@const label = resolveText(item.label)}
-								{@const value = resolveText(item.value)}
-								<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">
-									<span class="font-semibold">{label.text}</span>
-									{#if item.value}
-										<span>: {value.text}</span>
-									{/if}
-								</span>
-							{/if}
-						{/each}
-					</div>
-				{/if}
-			</ResumeSectionRow>
-		</section>
-	{/if}
+{:else if !shouldHide}
+	<section class="resume-print-section mb-6">
+		<ResumeSectionRow
+			label={category.text}
+			skipFirstColumn={isTechniqueOrMethod || isPortfolio || isLanguage || isEducation}
+		>
+			{#if blockCategory.includes('language') || blockCategory.includes('språk')}
+				<div class="flex flex-col gap-1 text-sm text-slate-800">
+					{#each block.items as item}
+						{#if typeof item === 'string'}
+							<p><span class="font-bold">{item}</span></p>
+						{:else}
+							{@const label = resolveText(item.label)}
+							{@const value = resolveText(item.value)}
+							<p>
+								<span class="font-bold">
+									{label.text}
+									{#if label.missing}<span class="text-[10px] font-normal text-amber-600"
+											>(missing)</span
+										>{/if}
+								</span>: {value.text || ''}
+								{#if value.missing}<span class="text-[10px] text-amber-600">(missing)</span>{/if}
+							</p>
+						{/if}
+					{/each}
+				</div>
+			{:else if blockCategory.includes('portfolio') || blockCategory.includes('portfölj')}
+				<div class="flex flex-wrap gap-2 text-sm text-slate-800">
+					{#each block.items as item}
+						{#if typeof item === 'string'}
+							<a
+								href={item}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700"
+								>{item}</a
+							>
+						{:else if item.value}
+							{@const val = resolveText(item.value)}
+							<a
+								href={val.text}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="underline decoration-slate-400 underline-offset-2 hover:decoration-slate-700"
+								>{val.text}</a
+							>
+						{/if}
+					{/each}
+				</div>
+			{:else if blockCategory.includes('education') || blockCategory.includes('utbild')}
+				<div class="flex flex-col gap-1 text-sm text-slate-800">
+					{#each block.items as item}
+						{#if typeof item === 'string'}
+							<p>{item}</p>
+						{:else}
+							{@const label = resolveText(item.label)}
+							{@const value = resolveText(item.value)}
+							<p>
+								<span class="font-semibold">{label.text}</span>
+								{#if value.text}<span>: {value.text}</span>{/if}
+							</p>
+						{/if}
+					{/each}
+				</div>
+			{:else}
+				<div class="flex flex-wrap gap-2">
+					{#each block.items as item}
+						{#if typeof item === 'string'}
+							<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">{item}</span>
+						{:else}
+							{@const label = resolveText(item.label)}
+							{@const value = resolveText(item.value)}
+							<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800">
+								<span class="font-semibold">{label.text}</span>
+								{#if item.value}
+									<span>: {value.text}</span>
+								{/if}
+							</span>
+						{/if}
+					{/each}
+				</div>
+			{/if}
+		</ResumeSectionRow>
+	</section>
 {/if}

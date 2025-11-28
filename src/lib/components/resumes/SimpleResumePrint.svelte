@@ -181,13 +181,6 @@
 											</div>
 										</div>
 									{/if}
-									{#if exp.testimonial}
-										<blockquote
-											class="border-l-2 border-orange-400 pl-3 text-sm text-slate-600 italic"
-										>
-											{t(exp.testimonial)}
-										</blockquote>
-									{/if}
 								</div>
 							{/each}
 						</div>

@@ -2,9 +2,8 @@
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import ConsultantProfile from './ConsultantProfile.svelte';
 	import HighlightedExperience from './HighlightedExperience.svelte';
-	import QuillEditor from '../QuillEditor.svelte';
+	import { QuillEditor, TechStackSelector } from '$lib/components';
 	import { Button, Input, FormControl } from '@pixelcode_/blocks/components';
-	import TechStackSelector from '../TechStackSelector.svelte';
 	import { soloImages, type ImageResource } from '$lib/images/manifest';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
 

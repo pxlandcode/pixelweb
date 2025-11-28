@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { Button } from '@pixelcode_/blocks/components';
-	import { ScrollGallery } from '$lib/components';
-	import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
+	import {
+		ScrollGallery,
+		HeroFirstFold,
+		AnimatedHeadline,
+		DiscordCulture,
+		NeonSign,
+		AboutSection,
+		RollingText
+	} from '$lib/components';
 	import { galleryImages } from '$lib/images/manifest';
-	import AnimatedHeadline from '$components/animated-headline/AnimatedHeadline.svelte';
-	import DiscordCulture from '$components/discord-culture/DiscordCulture.svelte';
 	import * as cultureLogos from '$lib/assets/culture';
 	import peopleAndCultureLogoUrl from '$lib/assets/peopleandculturelogo.svg?url';
 	import { contactModal } from '$lib/stores/contactModal';
-	import NeonSign from '$lib/components/NeonSign.svelte';
-	import AboutSection from '$components/AboutSection.svelte';
-	import RollingText from '$components/rolling-text/RollingText.svelte';
 
 	const galleryTitle = 'We work hard but there is more to this workplace than just hard work.';
 

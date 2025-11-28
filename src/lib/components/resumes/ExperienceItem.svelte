@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
-	import QuillEditor from '../QuillEditor.svelte';
+	import { QuillEditor, TechStackSelector } from '$lib/components';
 	import { Button, Input, FormControl } from '@pixelcode_/blocks/components';
-	import TechStackSelector from '../TechStackSelector.svelte';
 
 	let {
 		block,

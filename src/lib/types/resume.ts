@@ -24,7 +24,6 @@ export type HighlightedExperience = {
 	role: LocalizedText;
 	description: LocalizedText;
 	technologies: string[];
-	testimonial?: LocalizedText | null;
 };
 
 export type ExperienceItem = {

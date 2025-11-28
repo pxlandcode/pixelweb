@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { Button } from '@pixelcode_/blocks/components';
-	import HeroSection from '$lib/components/HeroSection.svelte';
-	import LogoMarquee from '$components/LogoMarquee.svelte';
-	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import { HeroSection, LogoMarquee, RollingText } from '$lib/components';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import { contactModal } from '$lib/stores/contactModal';

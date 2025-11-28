@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import { Input, FormControl, Button, TextArea } from '@pixelcode_/blocks/components';
-	import TechStackSelector from '../TechStackSelector.svelte';
+	import { TechStackSelector } from '$lib/components';
 	import ResumeSectionRow from './ResumeSectionRow.svelte';
 
 	let {

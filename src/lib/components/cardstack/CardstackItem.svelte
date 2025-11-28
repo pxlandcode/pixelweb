@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Icon } from '@pixelcode_/blocks/components';
-	import RollingText from './rolling-text/RollingText.svelte';
+	import { RollingText } from '$lib/components';
 	import { IconPixelCode } from '$lib/icons';
 
 	type Props = {

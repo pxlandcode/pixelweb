@@ -9,7 +9,7 @@
 		FormControl,
 		TextArea
 	} from '@pixelcode_/blocks/components';
-	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import { RollingText } from '$lib/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import { soloImages } from '$lib/images/manifest';
 	import worldclassUrl from '$lib/assets/worldclass.svg?url';

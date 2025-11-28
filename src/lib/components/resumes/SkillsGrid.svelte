@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { ResumeBlock } from '$lib/services/resumes';
 	import { Input, FormControl } from '@pixelcode_/blocks/components';
-	import TechStackSelector from '../TechStackSelector.svelte';
+	import { TechStackSelector } from '$lib/components';
 
-	let { block, isEditing = false, language = 'sv' } = $props<{
+	let {
+		block,
+		isEditing = false,
+		language = 'sv'
+	} = $props<{
 		block: Extract<ResumeBlock, { type: 'skills_grid' }>;
 		isEditing?: boolean;
 		language?: 'sv' | 'en';

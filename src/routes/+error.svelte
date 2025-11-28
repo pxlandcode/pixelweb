@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
-	import InteractiveBackground from '$lib/components/backgrounds/InteractiveBackground.svelte';
-	import { PixelButton } from '$lib/components/pixel-button';
+	import { InteractiveBackground, PixelButton } from '$lib/components';
 	import { Drawer, Input, FormControl } from '@pixelcode_/blocks/components';
 	import { ampersandPath } from '$lib/graphics/ampersand';
 	import { onDestroy, onMount, tick } from 'svelte';

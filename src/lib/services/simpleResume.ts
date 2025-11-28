@@ -59,8 +59,7 @@ const RESUMES: SimpleResume[] = [
 				en: 'Pierre is a curious and driven full-stack developer with solid experience in developing and integrating products from concept to launch and further development. He thrives in agile teams where he can work at a high pace and in close contact with both clients and end-users.'
 			},
 			contacts: [
-				{ name: 'Pierre Elmén', phone: '+46 (0)73 640 06 22', email: 'pierre@pixelcode.se' },
-				{ name: 'Robin Östberg', email: 'robin@pixelcode.se' }
+				{ name: 'Pierre Elmén', phone: '+46 (0)73 640 06 22', email: 'pierre@pixelcode.se' }
 			],
 			exampleSkills: [
 				'ReactJS',
@@ -102,11 +101,7 @@ const RESUMES: SimpleResume[] = [
 						'UI/UX',
 						'REST API',
 						'GraphQL'
-					],
-					testimonial: {
-						sv: 'Vi känner oss stöttade i ert team, utvecklarna har utmärkta färdigheter.',
-						en: 'We feel supported within your team, the developers have excellent skills.'
-					}
+					]
 				},
 				{
 					company: 'Svenska Spel',

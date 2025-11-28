@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button } from '@pixelcode_/blocks/components';
-	import TechStackSelector from '../TechStackSelector.svelte';
+	import { TechStackSelector } from '$lib/components';
 	import X from 'lucide-svelte/icons/x';
 	import Plus from 'lucide-svelte/icons/plus';
 	import GripVertical from 'lucide-svelte/icons/grip-vertical';
