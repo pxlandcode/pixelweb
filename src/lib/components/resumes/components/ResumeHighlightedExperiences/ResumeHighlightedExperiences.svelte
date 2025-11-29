@@ -29,10 +29,10 @@
 	{/if}
 
 	{#if isEditing}
-		<div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+		<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 			<h3 class="mb-4 text-sm font-semibold text-slate-700">Highlighted Experiences</h3>
 			{#each experiences as exp, index}
-				<div class="mb-4 rounded-lg border border-slate-200 bg-white p-4">
+				<div class="mb-4 rounded-xs border border-slate-200 bg-white p-4">
 					<div class="mb-4 flex items-center justify-between">
 						<h4 class="font-semibold text-slate-700">Experience {index + 1}</h4>
 						<div class="flex gap-2">
@@ -80,7 +80,7 @@
 						</div>
 						<div>
 							<label class="mb-1 block text-sm font-medium text-slate-700">Description (SV)</label>
-							<div class="rounded-md border border-slate-300 bg-white">
+							<div class="rounded-xs border border-slate-300 bg-white">
 								<QuillEditor
 									content={getLocalizedValue(exp.description, 'sv')}
 									onchange={(html) =>
@@ -90,7 +90,7 @@
 						</div>
 						<div>
 							<label class="mb-1 block text-sm font-medium text-slate-700">Description (EN)</label>
-							<div class="rounded-md border border-slate-300 bg-white">
+							<div class="rounded-xs border border-slate-300 bg-white">
 								<QuillEditor
 									content={getLocalizedValue(exp.description, 'en')}
 									onchange={(html) =>
@@ -114,7 +114,7 @@
 		</div>
 	{:else}
 		{#each experiences as exp}
-			<div class="space-y-3">
+			<div class="space-y-3 border-l border-primary pl-4">
 				<div>
 					<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
 					<p class="text-sm text-slate-700 italic">{t(exp.role, language)}</p>
@@ -128,7 +128,7 @@
 						<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Technologies</p>
 						<div class="flex flex-wrap gap-2">
 							{#each exp.technologies as tech}
-								<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span>
+								<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span>
 							{/each}
 						</div>
 					</div>

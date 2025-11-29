@@ -16,14 +16,14 @@
 
 {#if isEditing}
 	<div class="space-y-3">
-		<div class="rounded-md border border-slate-200 bg-white p-2">
+		<div class="rounded-xs border border-slate-200 bg-white p-2">
 			<p class="mb-1 text-sm font-medium text-slate-700">Summary (SV)</p>
 			<QuillEditor
 				content={getLocalizedValue(summary, 'sv')}
 				onchange={(html) => (summary = setLocalizedValue(summary, 'sv', html))}
 			/>
 		</div>
-		<div class="rounded-md border border-slate-200 bg-white p-2">
+		<div class="rounded-xs border border-slate-200 bg-white p-2">
 			<p class="mb-1 text-sm font-medium text-slate-700">Summary (EN)</p>
 			<QuillEditor
 				content={getLocalizedValue(summary, 'en')}

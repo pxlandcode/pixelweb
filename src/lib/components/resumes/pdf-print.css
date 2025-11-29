@@ -73,7 +73,7 @@ html, body {
 
 .pdf-mode .header-grid {
     display: grid !important;
-    grid-template-columns: 180px 1fr !important;
+    grid-template-columns: 45mm 1fr !important;
     gap: 2rem !important;
     width: 100% !important;
     flex: 1 !important; /* Fill remaining space */

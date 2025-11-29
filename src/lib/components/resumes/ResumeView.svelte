@@ -163,35 +163,35 @@
 		<!-- Brand -->
 		<ResumeBrand />
 
-		<!-- Two Column Layout -->
-		<div class="header-grid grid flex-1 grid-cols-1 gap-8 md:grid-cols-[180px_1fr]">
-			<!-- Left Column: Image + Skills + Contact -->
-			<div class="consultant-profile">
-				<!-- Profile Image -->
-				<ResumeProfileImage {image} name={editingData.name} />
-
-				<!-- Example Skills -->
-				<ResumeExampleSkills bind:skills={editingData.exampleSkills} {isEditing} {language} />
-
-				<!-- Contacts -->
-				<ResumeContacts
-					bind:contacts={editingData.contacts}
-					{isEditing}
-					{language}
-					onAdd={addContact}
-					onRemove={removeContact}
-				/>
-			</div>
-
-			<!-- Right Column: Name + Summary + Highlighted Experience -->
+		{#if isEditing}
+			<!-- Edit Mode: Single column layout for easier editing -->
 			<div class="space-y-6">
-				<!-- Name and Title -->
-				<ResumeNameTitle
-					bind:name={editingData.name}
-					bind:title={editingData.title}
-					{isEditing}
-					{language}
-				/>
+				<!-- Profile Image + Name/Title row -->
+				<div class="flex items-start gap-6">
+					<div class="h-[216px] w-[216px] flex-shrink-0">
+						<ResumeProfileImage {image} name={editingData.name} />
+					</div>
+					<div class="flex-1">
+						<ResumeNameTitle
+							bind:name={editingData.name}
+							bind:title={editingData.title}
+							{isEditing}
+							{language}
+						/>
+					</div>
+				</div>
+
+				<!-- Example Skills + Contacts stacked -->
+				<div class="space-y-4">
+					<ResumeExampleSkills bind:skills={editingData.exampleSkills} {isEditing} {language} />
+					<ResumeContacts
+						bind:contacts={editingData.contacts}
+						{isEditing}
+						{language}
+						onAdd={addContact}
+						onRemove={removeContact}
+					/>
+				</div>
 
 				<!-- Summary -->
 				<ResumeSummary bind:summary={editingData.summary} {isEditing} {language} />
@@ -206,7 +206,52 @@
 					onMove={moveHighlightedExperience}
 				/>
 			</div>
-		</div>
+		{:else}
+			<!-- View Mode: Two Column Layout -->
+			<div class="header-grid grid flex-1 grid-cols-1 gap-8 md:grid-cols-[45mm_1fr]">
+				<!-- Left Column: Image + Skills + Contact -->
+				<div class="consultant-profile">
+					<!-- Profile Image -->
+					<ResumeProfileImage {image} name={editingData.name} />
+
+					<!-- Example Skills -->
+					<ResumeExampleSkills bind:skills={editingData.exampleSkills} {isEditing} {language} />
+
+					<!-- Contacts -->
+					<ResumeContacts
+						bind:contacts={editingData.contacts}
+						{isEditing}
+						{language}
+						onAdd={addContact}
+						onRemove={removeContact}
+					/>
+				</div>
+
+				<!-- Right Column: Name + Summary + Highlighted Experience -->
+				<div class="space-y-6">
+					<!-- Name and Title -->
+					<ResumeNameTitle
+						bind:name={editingData.name}
+						bind:title={editingData.title}
+						{isEditing}
+						{language}
+					/>
+
+					<!-- Summary -->
+					<ResumeSummary bind:summary={editingData.summary} {isEditing} {language} />
+
+					<!-- Highlighted Experience -->
+					<ResumeHighlightedExperiences
+						bind:experiences={editingData.highlightedExperiences}
+						{isEditing}
+						{language}
+						onAdd={addHighlightedExperience}
+						onRemove={removeHighlightedExperience}
+						onMove={moveHighlightedExperience}
+					/>
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Previous Experience Section -->

@@ -300,7 +300,7 @@
 		<div class="flex flex-wrap gap-2">
 			{#each value as tech, index (tech.toLowerCase())}
 				<span
-					class={`inline-flex cursor-move items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-800 ${
+					class={`inline-flex cursor-move items-center gap-2 rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800 ${
 						dragOverIndex === index
 							? 'bg-primary/10 ring-2 ring-primary/60 ring-offset-1 ring-offset-white'
 							: ''
@@ -320,7 +320,7 @@
 					<button
 						type="button"
 						aria-label={`Remove ${tech}`}
-						class="rounded-full p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+						class="rounded-xs p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
 						onclick={() => removeTechnology(tech)}
 					>
 						<X class="h-3 w-3" />

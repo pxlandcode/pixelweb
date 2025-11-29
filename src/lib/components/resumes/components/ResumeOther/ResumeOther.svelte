@@ -48,13 +48,13 @@
 		<div class="mt-4 space-y-4">
 			{#if isEditing}
 				<!-- Languages Editor -->
-				<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+				<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 					<p class="mb-2 text-sm font-semibold text-slate-700">
 						{language === 'sv' ? 'Språk' : 'Languages'}
 					</p>
 					<div class="space-y-3">
 						{#each languages as lang, index}
-							<div class="rounded border border-slate-200 bg-white p-3">
+							<div class="rounded-xs border border-slate-200 bg-white p-3">
 								<div class="mb-2 flex justify-end">
 									<Button variant="ghost" size="sm" onclick={() => onRemoveLanguage?.(index)}
 										>Remove</Button
@@ -101,13 +101,13 @@
 				</div>
 
 				<!-- Education Editor -->
-				<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+				<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 					<p class="mb-2 text-sm font-semibold text-slate-700">
 						{language === 'sv' ? 'Utbildning' : 'Education'}
 					</p>
 					<div class="space-y-3">
 						{#each education as edu, index}
-							<div class="rounded border border-slate-200 bg-white p-3">
+							<div class="rounded-xs border border-slate-200 bg-white p-3">
 								<div class="mb-2 flex justify-end">
 									<Button variant="ghost" size="sm" onclick={() => onRemoveEducation?.(index)}
 										>Remove</Button
@@ -144,7 +144,7 @@
 				</div>
 
 				<!-- Portfolio Editor -->
-				<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+				<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 					<p class="mb-2 text-sm font-semibold text-slate-700">Portfolio</p>
 					<div class="space-y-2">
 						{#each portfolio ?? [] as url, index}

@@ -15,7 +15,7 @@
 </script>
 
 {#if isEditing}
-	<div class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-4">
+	<div class="mt-8 rounded-xs border border-slate-200 bg-slate-50 p-4">
 		<p class="mb-2 text-sm font-semibold text-slate-700">Footer Note</p>
 		<div class="grid grid-cols-2 gap-4">
 			<Input

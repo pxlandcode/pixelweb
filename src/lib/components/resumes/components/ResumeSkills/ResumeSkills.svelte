@@ -33,7 +33,7 @@
 		<div class="mt-4 space-y-4">
 			{#if isEditing}
 				<!-- Techniques Editor -->
-				<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+				<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 					<p class="mb-2 text-sm font-semibold text-slate-700">
 						{language === 'sv' ? 'Tekniker' : 'Techniques'}
 					</p>
@@ -43,7 +43,7 @@
 					/>
 				</div>
 				<!-- Methods Editor -->
-				<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+				<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 					<p class="mb-2 text-sm font-semibold text-slate-700">
 						{language === 'sv' ? 'Metoder' : 'Methods'}
 					</p>
@@ -59,7 +59,7 @@
 						</p>
 						<div class="flex flex-wrap gap-2">
 							{#each techniques as tech}
-								<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span>
+								<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span>
 							{/each}
 						</div>
 					</div>
@@ -74,7 +74,9 @@
 						</p>
 						<div class="flex flex-wrap gap-2">
 							{#each methods as method}
-								<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800">{method}</span>
+								<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
+									>{method}</span
+								>
 							{/each}
 						</div>
 					</div>

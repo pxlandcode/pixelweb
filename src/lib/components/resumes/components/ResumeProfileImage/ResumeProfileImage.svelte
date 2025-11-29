@@ -13,7 +13,7 @@
 </script>
 
 <div
-	class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-white"
+	class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-xs border border-slate-200 bg-white"
 >
 	{#if image}
 		<img

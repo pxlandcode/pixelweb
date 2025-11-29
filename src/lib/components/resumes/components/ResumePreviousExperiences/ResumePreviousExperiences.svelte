@@ -39,7 +39,7 @@
 		<div class="mt-4 space-y-6">
 			{#if isEditing}
 				{#each experiences as exp, index}
-					<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+					<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 						<div class="mb-4 flex items-center justify-between">
 							<h4 class="font-semibold text-slate-700">
 								{exp.company || `Experience ${index + 1}`}
@@ -135,7 +135,7 @@
 							</div>
 							<div>
 								<p class="mb-1 text-sm font-medium text-slate-700">Description (SV)</p>
-								<div class="rounded-md border border-slate-300 bg-white">
+								<div class="rounded-xs border border-slate-300 bg-white">
 									<QuillEditor
 										content={getLocalizedValue(exp.description, 'sv')}
 										onchange={(html) =>
@@ -145,7 +145,7 @@
 							</div>
 							<div>
 								<p class="mb-1 text-sm font-medium text-slate-700">Description (EN)</p>
-								<div class="rounded-md border border-slate-300 bg-white">
+								<div class="rounded-xs border border-slate-300 bg-white">
 									<QuillEditor
 										content={getLocalizedValue(exp.description, 'en')}
 										onchange={(html) =>
@@ -206,7 +206,8 @@
 							{#if exp.technologies.length > 0}
 								<div class="flex flex-wrap gap-2">
 									{#each exp.technologies as tech}
-										<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span
+										<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
+											>{tech}</span
 										>
 									{/each}
 								</div>

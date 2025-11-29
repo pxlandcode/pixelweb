@@ -59,12 +59,12 @@
 			</div>
 
 			<!-- Two Column Layout (matching ConsultantProfile) -->
-			<div class="header-grid grid flex-1 grid-cols-1 gap-8 md:grid-cols-[180px_1fr]">
+			<div class="header-grid grid flex-1 grid-cols-[45mm_1fr] gap-8">
 				<!-- Left Column: Image + Skills + Contact -->
 				<div class="consultant-profile">
 					<!-- Profile Image (matching ConsultantProfile.svelte) -->
 					<div
-						class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-white"
+						class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-xs border border-slate-200 bg-white"
 					>
 						{#if image}
 							<img
@@ -99,13 +99,13 @@
 
 					<!-- Example Skills (pills that wrap) -->
 					{#if data.exampleSkills.length > 0}
-						<div class="flex-shrink-0 rounded-md bg-slate-50 p-4">
+						<div class="flex-shrink-0 rounded-xs p-4">
 							<p class="mb-3 text-xs font-semibold tracking-wide text-slate-700 uppercase">
 								{language === 'sv' ? 'Exempel på färdigheter' : 'Examples of skills'}
 							</p>
 							<div class="flex flex-wrap gap-1">
 								{#each data.exampleSkills as skill}
-									<span class="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-700"
+									<span class="rounded-xs bg-slate-200 px-2 py-0.5 text-xs text-slate-700"
 										>{skill}</span
 									>
 								{/each}
@@ -115,7 +115,7 @@
 
 					<!-- Contact (matching ConsultantProfile.svelte) -->
 					{#if data.contacts.length > 0}
-						<div class="flex-shrink-0 space-y-3 rounded-md bg-slate-50 p-4">
+						<div class="flex-shrink-0 space-y-3 rounded-xs bg-slate-50 p-4">
 							{#each data.contacts as contact}
 								<div class="space-y-1">
 									<p class="text-xs font-semibold tracking-wide text-slate-600 uppercase">
@@ -158,7 +158,7 @@
 							</h3>
 
 							{#each data.highlightedExperiences as exp}
-								<div class="space-y-3">
+								<div class="space-y-3 border-l border-primary pl-4">
 									<div>
 										<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
 										<p class="text-sm text-slate-700 italic">{t(exp.role)}</p>
@@ -174,7 +174,7 @@
 											</p>
 											<div class="flex flex-wrap gap-2">
 												{#each exp.technologies as tech}
-													<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800"
+													<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
 														>{tech}</span
 													>
 												{/each}
@@ -253,7 +253,7 @@
 								{#if exp.technologies.length > 0}
 									<div class="flex flex-wrap gap-2">
 										{#each exp.technologies as tech}
-											<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800"
+											<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
 												>{tech}</span
 											>
 										{/each}
@@ -292,7 +292,9 @@
 							</p>
 							<div class="flex flex-wrap gap-2">
 								{#each data.techniques as tech}
-									<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span>
+									<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
+										>{tech}</span
+									>
 								{/each}
 							</div>
 						</div>
@@ -307,7 +309,8 @@
 							</p>
 							<div class="flex flex-wrap gap-2">
 								{#each data.methods as method}
-									<span class="rounded bg-slate-100 px-3 py-1 text-xs text-slate-800">{method}</span
+									<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
+										>{method}</span
 									>
 								{/each}
 							</div>
