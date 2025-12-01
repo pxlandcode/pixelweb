@@ -198,11 +198,7 @@ const RESUMES: Resume[] = [
 					value: { sv: 'Kandidatexamen i datavetenskap – KTH', en: 'BSc in Computer Science – KTH' }
 				}
 			],
-			portfolio: ['https://elmen.dev'],
-			footerNote: {
-				sv: 'Världsklass teknik av världsklass människor',
-				en: 'Worldclass tech by worldclass people'
-			}
+			portfolio: ['https://elmen.dev']
 		}
 	},
 	{

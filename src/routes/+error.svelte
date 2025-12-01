@@ -26,6 +26,7 @@
 	const MIN_STEP = 95;
 	const SPEED_RAMP = 3;
 	const TAIL_THICKNESS_RATIO = 0.24;
+	const MAX_NAME_LENGTH = 120;
 
 	let canvas: HTMLCanvasElement | null = null;
 	let ctx: CanvasRenderingContext2D | null = null;
@@ -312,7 +313,8 @@
 		}
 
 		const trimmed = playerName.trim();
-		if (!trimmed) {
+		const normalizedName = trimmed.slice(0, MAX_NAME_LENGTH);
+		if (!normalizedName) {
 			submissionState = 'error';
 			submissionMessage = 'Every legend needs a name!';
 			return;
@@ -325,7 +327,7 @@
 			const response = await fetch('/api/highscore', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: trimmed.slice(0, 64), score: pendingSubmissionScore })
+				body: JSON.stringify({ name: normalizedName, score: pendingSubmissionScore })
 			});
 			const payload = (await response.json().catch(() => ({}))) as {
 				error?: string;
@@ -337,7 +339,7 @@
 
 			submissionState = 'success';
 			submissionMessage = "You're on the board! 🎉";
-			playerName = trimmed;
+			playerName = normalizedName;
 			showSubmissionForm = false;
 			pendingSubmissionScore = null;
 			await loadLeaderboard();
@@ -799,18 +801,23 @@
 
 <Drawer bind:open={showSubmissionForm} variant="bottom" title="Save your score" dismissable>
 	<form class="score-drawer-form" on:submit|preventDefault={submitScore}>
-		<FormControl label="Your name" required class="gap-2">
-			<Input
-				id="player-name"
-				bind:node={nameInput}
-				bind:value={playerName}
-				name="player-name"
-				maxlength={64}
-				autocomplete="name"
-				placeholder="Enter your name"
-				required
-			/>
-		</FormControl>
+		<div class="name-field-group">
+			<FormControl label="Your name" required class="gap-2">
+				<Input
+					id="player-name"
+					bind:node={nameInput}
+					bind:value={playerName}
+					name="player-name"
+					maxlength={MAX_NAME_LENGTH}
+					autocomplete="name"
+					placeholder="Enter your name"
+					required
+				/>
+			</FormControl>
+			<p class="name-length-hint" aria-live="polite">
+				{playerName.length}/{MAX_NAME_LENGTH} characters used
+			</p>
+		</div>
 
 		<div class="score-display">
 			<span class="score-label">Your score:</span>
@@ -1115,6 +1122,19 @@
 		flex-direction: column;
 		gap: 1.5rem;
 		padding: 1rem 0;
+	}
+
+	.name-field-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.name-length-hint {
+		font-size: 0.75rem;
+		color: rgba(148, 163, 184, 0.78);
+		text-align: right;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.score-display {

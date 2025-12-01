@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { getSupabaseAdminClient } from '$lib/server/supabase';
 
 const TABLE_NAME = 'snake_highscores';
+const MAX_NAME_LENGTH = 120;
 
 export const GET: RequestHandler = async () => {
         const supabase = getSupabaseAdminClient();
@@ -47,7 +48,7 @@ export const POST: RequestHandler = async ({ request }) => {
         }
 
         const { name, score } = payload as { name?: unknown; score?: unknown };
-        const trimmedName = typeof name === 'string' ? name.trim().slice(0, 64) : '';
+        const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : '';
         const numericScore = typeof score === 'number' ? Math.floor(score) : Number(score);
 
         if (!trimmedName) {

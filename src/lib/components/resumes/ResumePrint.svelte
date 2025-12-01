@@ -4,6 +4,7 @@
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
+	import worldclassUrl from '$lib/assets/worldclass.svg';
 
 	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
 	type Language = 'sv' | 'en';
@@ -401,6 +402,14 @@
 			</div>
 		{/if}
 
+		<!-- Worldclass image at bottom -->
+		<div class="mt-8 flex justify-center border-t border-slate-200 pt-6">
+			<img
+				src={worldclassUrl}
+				alt="Worldclass Tech, Worldclass People"
+				class="max-h-[200px] w-auto object-contain"
+			/>
+		</div>
 		<!-- Ampersand at bottom left -->
 		<div class="ampersand-container">
 			<img src={andLogo} class="ampersand-logo h-20 w-auto opacity-80" alt="&" />

@@ -6,6 +6,7 @@
 		LabeledItem
 	} from '$lib/types/resume';
 	import { soloImages } from '$lib/images/manifest';
+	import worldclassUrl from '$lib/assets/worldclass.svg?url';
 
 	// Import all resume components
 	import {
@@ -289,6 +290,16 @@
 
 	<!-- Footer -->
 	<ResumeFooter bind:footerNote={editingData.footerNote} {isEditing} {language} />
+
+	<!-- Worldclass Image -->
+	<div class="mt-8 flex justify-center border-t border-slate-200 pt-6">
+		<img
+			src={worldclassUrl}
+			alt="Worldclass Tech, Worldclass People"
+			class="max-h-[200px] w-auto object-contain"
+			loading="lazy"
+		/>
+	</div>
 </div>
 
 <style>
