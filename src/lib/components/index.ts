@@ -21,5 +21,6 @@ export * from './rolling-text';
 export * from './scroll-gallery';
 export * from './site-footer';
 export * from './site-header';
+export * from './tech-stack';
 export * from './tech-stack-selector';
 export * from './tech-stack-editor';

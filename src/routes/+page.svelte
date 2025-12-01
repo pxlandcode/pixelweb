@@ -4,7 +4,9 @@
 		HeroFirstFold,
 		NewsPreview,
 		ImageHeadline,
-		ImageFeaturePair
+		ImageFeaturePair,
+		TechStack,
+		AnimatedHeadline
 	} from '$lib/components';
 	import type { ActionData, PageData } from './$types';
 
@@ -64,5 +66,12 @@
 	/>
 
 	<Cardstack id="cases" />
+	<!-- <AnimatedHeadline
+		text="With 16 years of average experience."
+		minHeight="clamp(80vh, 100vh + 4vw, 120vh)"
+		stickyMinHeight="clamp(10vh, 20vh, 30vh)"
+		stickAt="50vh"
+	/>
+	<TechStack /> -->
 	<NewsPreview posts={newsPosts} error={newsError} />
 </main>
