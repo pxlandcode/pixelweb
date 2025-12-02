@@ -1,6 +1,5 @@
 <script lang="ts">
-	import UserTable from '$lib/components/admin/UserTable.svelte';
-	import UserFormModal from '$lib/components/admin/UserFormModal.svelte';
+	import { UserTable, UserFormModal } from '$lib/components';
 	import { Alert, Button } from '@pixelcode_/blocks/components';
 
 	let { data, form } = $props();

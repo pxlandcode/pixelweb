@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { RollingText } from '$components/rolling-text';
+	import { RollingText, InteractiveBackground } from '$lib/components';
 	import type { NavLink } from '$types';
 	import worldclassUrl from '$lib/assets/worldclass.svg?url';
-	import InteractiveBackground from './backgrounds/InteractiveBackground.svelte';
 	import { page } from '$app/stores';
 	import { contactModal } from '$lib/stores/contactModal';
 

@@ -1,13 +1,16 @@
 <script lang="ts">
-	import Cardstack from '$lib/components/Cardstack.svelte';
-	import HeroFirstFold from '$lib/components/HeroFirstFold.svelte';
-	import NewsPreview from '$lib/components/NewsPreview.component.svelte';
+	import {
+		Cardstack,
+		HeroFirstFold,
+		NewsPreview,
+		ImageHeadline,
+		ImageFeaturePair,
+		TechStack,
+		AnimatedHeadline
+	} from '$lib/components';
 	import type { ActionData, PageData } from './$types';
 
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
-
-	import ImageHeadline from '$components/ImageHeadline.svelte';
-	import ImageFeaturePair from '$components/ImageFeaturePair.svelte';
 
 	import { soloImages } from '$lib/images/manifest';
 
@@ -63,5 +66,12 @@
 	/>
 
 	<Cardstack id="cases" />
+	<!-- <AnimatedHeadline
+		text="With 16 years of average experience."
+		minHeight="clamp(80vh, 100vh + 4vw, 120vh)"
+		stickyMinHeight="clamp(10vh, 20vh, 30vh)"
+		stickAt="50vh"
+	/>
+	<TechStack /> -->
 	<NewsPreview posts={newsPosts} error={newsError} />
 </main>

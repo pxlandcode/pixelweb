@@ -1,5 +1,5 @@
 <script lang="ts">
-	import RollingText from '$components/rolling-text/RollingText.svelte';
+	import { RollingText } from '$lib/components';
 
 	type ImageHeadlineProps = {
 		id?: string;

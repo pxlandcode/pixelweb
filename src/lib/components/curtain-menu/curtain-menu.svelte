@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { RollingText } from '$components/rolling-text';
+	import { RollingText } from '$lib/components';
 	import type { NavLink } from '$types';
 	import { curtainMenu } from '$lib/stores/curtainMenu';
 	import { contactModal } from '$lib/stores/contactModal';

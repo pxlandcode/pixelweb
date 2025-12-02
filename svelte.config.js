@@ -8,11 +8,11 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	vitePlugin: {
-		inspector: {
-			toggleKeyCombo: 'alt-x',
-			showToggleButton: 'always',
-			toggleButtonPos: 'bottom-right'
-		}
+		// inspector: {
+		// 	toggleKeyCombo: 'alt-x',
+		// 	showToggleButton: 'always',
+		// 	toggleButtonPos: 'bottom-right'
+		// }
 	},
 
 	kit: {

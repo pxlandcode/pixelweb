@@ -1,21 +1,20 @@
 <script lang="ts">
-	import NewsTable from '$lib/components/admin/NewsTable.svelte';
-	import NewsFormModal from '$lib/components/admin/NewsFormModal.svelte';
+	import { NewsTable, NewsFormModal } from '$lib/components';
 	import { Alert, Button } from '@pixelcode_/blocks/components';
 
 	let { data, form } = $props();
 
-let isModalOpen = $state(false);
-let activeArticle = $state<(typeof data.articles)[number] | null>(null);
-let modalAction = $state<'create' | 'update'>('create');
-let modalError = $state<string | null>(null);
+	let isModalOpen = $state(false);
+	let activeArticle = $state<(typeof data.articles)[number] | null>(null);
+	let modalAction = $state<'create' | 'update'>('create');
+	let modalError = $state<string | null>(null);
 	// Swap this feedback block with your toast system when available.
-let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
-let deleteForm = $state<HTMLFormElement | null>(null);
-let deleteInput = $state<HTMLInputElement | null>(null);
-let publishForm = $state<HTMLFormElement | null>(null);
-let publishInput = $state<HTMLInputElement | null>(null);
-let publishStatusInput = $state<HTMLInputElement | null>(null);
+	let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+	let deleteForm = $state<HTMLFormElement | null>(null);
+	let deleteInput = $state<HTMLInputElement | null>(null);
+	let publishForm = $state<HTMLFormElement | null>(null);
+	let publishInput = $state<HTMLInputElement | null>(null);
+	let publishStatusInput = $state<HTMLInputElement | null>(null);
 
 	const openCreateModal = () => {
 		modalAction = 'create';
@@ -43,15 +42,15 @@ let publishStatusInput = $state<HTMLInputElement | null>(null);
 		deleteForm?.requestSubmit();
 	};
 
-const handlePublish = (article: (typeof data.articles)[number]) => {
-	if (publishInput) {
-		publishInput.value = String(article.id);
-	}
-	if (publishStatusInput) {
-		publishStatusInput.value = article.status === 'draft' ? 'published' : article.status;
-	}
-	publishForm?.requestSubmit();
-};
+	const handlePublish = (article: (typeof data.articles)[number]) => {
+		if (publishInput) {
+			publishInput.value = String(article.id);
+		}
+		if (publishStatusInput) {
+			publishStatusInput.value = article.status === 'draft' ? 'published' : article.status;
+		}
+		publishForm?.requestSubmit();
+	};
 
 	$effect(() => {
 		if (!form?.type) return;
@@ -89,7 +88,12 @@ const handlePublish = (article: (typeof data.articles)[number]) => {
 {/if}
 
 <div class="mt-6">
-	<NewsTable articles={data.articles} onEdit={openEditModal} onDelete={handleDelete} onPublish={handlePublish} />
+	<NewsTable
+		articles={data.articles}
+		onEdit={openEditModal}
+		onDelete={handleDelete}
+		onPublish={handlePublish}
+	/>
 </div>
 
 <form method="POST" action="?/delete" class="hidden" bind:this={deleteForm}>

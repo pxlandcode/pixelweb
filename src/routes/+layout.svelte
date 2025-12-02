@@ -1,13 +1,18 @@
 <script lang="ts">
 	import '../app.css';
+	import '@uppy/core/dist/style.min.css';
+	import '@uppy/dashboard/dist/style.min.css';
 	import { fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import favicon from '$lib/assets/and.svg';
-	import CurtainMenu from '$components/CurtainMenu.svelte';
-	import SiteHeader from '$components/SiteHeader.svelte';
-	import SiteFooter from '$components/SiteFooter.svelte';
-	import { ContactPostcard } from '$lib/components';
-	import LaunchCountdownOverlay from '$lib/components/LaunchCountdownOverlay.svelte';
+	import {
+		CurtainMenu,
+		SiteHeader,
+		SiteFooter,
+		ContactPostcard,
+		LaunchCountdownOverlay,
+		RollingText
+	} from '$lib/components';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import pixelLogoUrl from '$lib/assets/pixelcodelogo.svg?url';
@@ -20,7 +25,6 @@
 		setFloatingNavState
 	} from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
-	import RollingText from '$components/rolling-text/RollingText.svelte';
 	import Lenis from 'lenis';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
@@ -33,6 +37,7 @@
 	let headerHeight = 0;
 	let currentParallaxOffset = 0;
 	let isHomeRoute = get(page).url.pathname === '/';
+	let isPrintRoute = get(page).url.pathname.startsWith('/print');
 	let headerWrapper: HTMLDivElement | null = null;
 	let headerResizeObserver: ResizeObserver | null = null;
 	let headerResizeHandler: (() => void) | null = null;
@@ -66,6 +71,7 @@
 	});
 	const unsubscribePage = page.subscribe(($page) => {
 		isHomeRoute = $page.url.pathname === '/';
+		isPrintRoute = $page.url.pathname.startsWith('/print');
 		if (isHomeRoute) {
 			// Allow the home page to take over the floating nav behaviour.
 			return;
@@ -100,6 +106,10 @@
 	};
 
 	onMount(() => {
+		if (isPrintRoute) {
+			return;
+		}
+
 		if ('scrollRestoration' in history) {
 			history.scrollRestoration = 'manual';
 		}
@@ -132,8 +142,10 @@
 	});
 
 	onDestroy(() => {
-		lenis?.destroy();
-		lenis = undefined;
+		if (lenis) {
+			lenis.destroy();
+			lenis = undefined;
+		}
 
 		if (rafId !== null) {
 			cancelAnimationFrame(rafId);
@@ -190,61 +202,48 @@
 	{/if}
 </svelte:head>
 
-<CurtainMenu links={navLinks} logoSrc={pixelLogoUrl} />
+{#if isPrintRoute}
+	<main class="min-h-screen bg-white text-slate-900">
+		{@render children?.({})}
+	</main>
+{:else}
+	<CurtainMenu links={navLinks} logoSrc={pixelLogoUrl} />
 
-{#if !$page.url.pathname.startsWith('/internal')}
-	<LaunchCountdownOverlay targetIso={LAUNCH_COUNTDOWN_TARGET} />
-{/if}
+	{#if !$page.url.pathname.startsWith('/internal')}
+		<LaunchCountdownOverlay targetIso={LAUNCH_COUNTDOWN_TARGET} />
+	{/if}
 
-{#if !$page.url.pathname.startsWith('/internal')}
-	<div
-		class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
-		bind:this={headerWrapper}
-		style:transform={`translate3d(0, ${-$siteHeaderState.parallaxOffset}px, 0)`}
-	>
-		<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
-	</div>
-
-	<div
-		class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
-	>
-		{#if $floatingNavState.active}
-			<div
-				class="pointer-events-auto flex items-center gap-3"
-				transition:fly={{ y: 50, duration: 220, delay: 50 }}
-			>
-				<Button
-					size="md"
-					variant="primary"
-					onclick={contactModal.open}
-					class="border border-white/20 transition-transform duration-200"
-				>
-					<RollingText>Get in touch</RollingText>
-				</Button>
-			</div>
-		{/if}
-
+	{#if !$page.url.pathname.startsWith('/internal')}
 		<div
-			class="pointer-events-auto flex items-center gap-3 md:hidden"
-			class:md:block={$floatingNavState.active}
+			class="first-fold__header sticky top-0 z-40 w-full backdrop-blur-lg transition-opacity duration-150 ease-out"
+			bind:this={headerWrapper}
+			style:transform={`translate3d(0, ${-$siteHeaderState.parallaxOffset}px, 0)`}
 		>
-			<Button
-				class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-				aria-label="Open main menu"
-				aria-expanded={$curtainMenu ? 'true' : 'false'}
-				aria-controls="curtain-menu"
-				onclick={curtainMenu.open}
-			>
-				<RollingText>
-					<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
-				</RollingText>
-			</Button>
+			<SiteHeader links={navLinks} logoSrc={pixelLogoUrl} />
 		</div>
 
-		{#if $floatingNavState.active}
+		<div
+			class="pointer-events-none fixed inset-x-0 top-0 z-50 flex flex-row justify-end gap-5 overflow-hidden px-4 pt-5 md:px-16"
+		>
+			{#if $floatingNavState.active}
+				<div
+					class="pointer-events-auto flex items-center gap-3"
+					transition:fly={{ y: 50, duration: 220, delay: 50 }}
+				>
+					<Button
+						size="md"
+						variant="primary"
+						onclick={contactModal.open}
+						class="border border-white/20 transition-transform duration-200"
+					>
+						<RollingText>Get in touch</RollingText>
+					</Button>
+				</div>
+			{/if}
+
 			<div
-				class="pointer-events-auto hidden items-center gap-3 md:flex"
-				transition:fly={{ y: 50, duration: 220 }}
+				class="pointer-events-auto flex items-center gap-3 md:hidden"
+				class:md:block={$floatingNavState.active}
 			>
 				<Button
 					class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -258,13 +257,32 @@
 					</RollingText>
 				</Button>
 			</div>
-		{/if}
-	</div>
-{/if}
 
-{@render children?.()}
-{#if !$page.url.pathname.startsWith('/internal')}
-	<SiteFooter links={navLinks} />
-{/if}
+			{#if $floatingNavState.active}
+				<div
+					class="pointer-events-auto hidden items-center gap-3 md:flex"
+					transition:fly={{ y: 50, duration: 220 }}
+				>
+					<Button
+						class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-background/20 bg-white text-primary  transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+						aria-label="Open main menu"
+						aria-expanded={$curtainMenu ? 'true' : 'false'}
+						aria-controls="curtain-menu"
+						onclick={curtainMenu.open}
+					>
+						<RollingText>
+							<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
+						</RollingText>
+					</Button>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
-<ContactPostcard />
+	{@render children?.()}
+	{#if !$page.url.pathname.startsWith('/internal')}
+		<SiteFooter links={navLinks} />
+	{/if}
+
+	<ContactPostcard />
+{/if}
