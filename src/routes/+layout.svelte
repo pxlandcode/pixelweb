@@ -173,6 +173,7 @@
 </script>
 
 <svelte:head>
+	<meta charset="utf-8" />
 	<title>{resolvedMeta.title}</title>
 	<meta name="description" content={resolvedMeta.description} />
 	<meta name="robots" content={resolvedMeta.noindex ? 'noindex,nofollow' : 'index,follow'} />
@@ -252,6 +253,7 @@
 					aria-controls="curtain-menu"
 					onclick={curtainMenu.open}
 				>
+					<span class="sr-only">Open main menu</span>
 					<RollingText>
 						<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
 					</RollingText>
@@ -270,6 +272,7 @@
 						aria-controls="curtain-menu"
 						onclick={curtainMenu.open}
 					>
+						<span class="sr-only">Open main menu</span>
 						<RollingText>
 							<Icon icon={PixelCodeLucideIcon} size="md" class="text-primary" />
 						</RollingText>
