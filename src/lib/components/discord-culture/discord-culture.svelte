@@ -83,7 +83,7 @@
 		{
 			user: 'Andreas',
 			text: 'Want to be part of our community? Join our Discord and talk to us!',
-			link: 'https://discord.gg/Cpy8bFsT',
+			link: 'https://discord.gg/WQAxJB4A',
 			linkText: 'Join now',
 			reactions: [
 				{ emoji: '🧡', count: 15 },
