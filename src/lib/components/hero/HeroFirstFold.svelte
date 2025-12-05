@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { Button } from '@pixelcode_/blocks/components';
-	import { HeroSection, LogoMarquee, RollingText } from '$lib/components';
+	import { HeroSection, LogoMarquee, RollingText, SnowBackground } from '$lib/components';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import { contactModal } from '$lib/stores/contactModal';
@@ -19,6 +19,8 @@
 	export let parallaxDistance = 280;
 	export let parallaxMultiplier = 0.45;
 	export let floatThreshold = 96;
+	let isChristmas = false;
+	let heroSectionProps: Partial<HeroSectionProps> = {};
 
 	function handleCtaClick(e: MouseEvent) {
 		if (ctaHref === '#contact') {
@@ -59,6 +61,11 @@
 			: heroSectionHeight
 				? `${heroSectionHeight}px`
 				: '100dvh';
+	$: {
+		const { isChristmas: christmasFlag, ...rest } = heroProps;
+		isChristmas = Boolean(christmasFlag);
+		heroSectionProps = rest;
+	}
 
 	function recalcMeasurements() {
 		if (firstFoldSection) {
@@ -121,8 +128,11 @@
 		class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10"
 		style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}
 	>
+		{#if isChristmas}
+			<SnowBackground />
+		{/if}
 		<div class="first-fold__hero flex w-full flex-col items-center gap-6" bind:this={heroSectionEl}>
-			<HeroSection {...heroProps} />
+			<HeroSection {...heroSectionProps} />
 			{#if showCta}
 				<div
 					class="flex transform-gpu justify-center pt-2 transition-all duration-200 ease-in-out"
