@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ResumeData, LocalizedText } from '$lib/types/resume';
+import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types/resume';
 	import { soloImages } from '$lib/images/manifest';
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
@@ -12,12 +12,69 @@
 	let {
 		data,
 		image,
-		language = 'sv'
+		language = 'sv',
+		person,
+		profileTechStack: initialProfileTechStack
 	}: {
 		data: ResumeData;
 		image?: ImageResource;
 		language?: Language;
+		person?: Person;
+		profileTechStack?: TechCategory[];
 	} = $props();
+
+	let profileTechStack: TechCategory[] =
+		initialProfileTechStack ?? (person?.techStack ?? []);
+	const profileHasSkills = $derived(profileTechStack.some((cat) => cat.skills.length > 0));
+	const normalize = (value: string) => value.trim().toLowerCase();
+	const profileSkillSet = $derived(
+		new Set(
+			profileTechStack
+				.flatMap((cat) => cat.skills ?? [])
+				.map((skill) => normalize(skill))
+		)
+	);
+	const extraTechniques = $derived(
+		(data.techniques ?? []).filter((tech) => !profileSkillSet.has(normalize(tech)))
+	);
+	const translations: Record<string, { sv: string; en: string }> = {
+		frontend: { sv: 'Frontend', en: 'Frontend' },
+		backend: { sv: 'Backend', en: 'Backend' },
+		tools: { sv: 'Verktyg', en: 'Tools' },
+		design: { sv: 'Design', en: 'Design' },
+		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
+		'devops': { sv: 'DevOps', en: 'DevOps' },
+		database: { sv: 'Databas', en: 'Database' },
+		methodologies: { sv: 'Metoder', en: 'Methodologies' },
+		architecture: { sv: 'Arkitektur', en: 'Architecture' },
+		'soft skills': { sv: 'Mjuka färdigheter', en: 'Soft skills' },
+		methods: { sv: 'Metoder', en: 'Methods' },
+		other: { sv: 'Övrigt', en: 'Other' }
+	};
+	const labelFor = (name: string) => {
+		const key = name.trim().toLowerCase();
+		const entry = translations[key];
+		return entry ? entry[language] : name;
+	};
+	const displayCategories = $derived(() => {
+		const categories: TechCategory[] = profileTechStack.filter((cat) => (cat.skills ?? []).length > 0);
+		if (extraTechniques.length > 0) {
+			categories.push({ id: 'other', name: labelFor('other'), skills: extraTechniques });
+		}
+		if (data.methods.length > 0) {
+			categories.push({ id: 'methods', name: labelFor('methods'), skills: data.methods });
+		}
+		return categories;
+	});
+
+	$effect(() => {
+		profileTechStack = initialProfileTechStack ?? (person?.techStack ?? []);
+		console.log('ResumePrint -> profileTechStack', profileTechStack);
+		console.log('ResumePrint -> displayCategories', displayCategories());
+	});
+
+	const visibleHighlighted = $derived(data.highlightedExperiences.filter((exp) => !exp.hidden));
+	const visibleExperiences = $derived(data.experiences.filter((exp) => !exp.hidden));
 
 	// Helper to resolve localized text
 	const t = (text: LocalizedText | undefined): string => {
@@ -152,13 +209,13 @@
 					</div>
 
 					<!-- Highlighted Experience (matching HighlightedExperience.svelte) -->
-					{#if data.highlightedExperiences.length > 0}
+					{#if visibleHighlighted.length > 0}
 						<div class="space-y-4">
 							<h3 class="pt-4 text-base font-bold tracking-wide text-slate-900 uppercase">
 								{language === 'sv' ? 'Utvald Erfarenhet' : 'Highlighted Experience'}
 							</h3>
 
-							{#each data.highlightedExperiences as exp}
+							{#each visibleHighlighted as exp}
 								<div class="space-y-3 border-l border-primary pl-4">
 									<div>
 										<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
@@ -202,7 +259,7 @@
 
 	<div class="resume-print-page page-2-plus bg-white text-slate-900">
 		<!-- Previous Experience Section (matching ExperienceSection + ExperienceItem) -->
-		{#if data.experiences.length > 0}
+		{#if visibleExperiences.length > 0}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers (matching ExperienceSection.svelte) -->
 				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
@@ -218,7 +275,7 @@
 				</div>
 
 				<div class="mt-4 space-y-6">
-					{#each data.experiences as exp}
+					{#each visibleExperiences as exp}
 						<!-- Experience Item (matching ExperienceItem.svelte) -->
 						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
 							<!-- Column 1: Empty -->
@@ -268,7 +325,7 @@
 		{/if}
 
 		<!-- Skills Section (matching SkillsCategorized with pills for techniques/methods) -->
-		{#if data.techniques.length > 0 || data.methods.length > 0}
+		{#if displayCategories().length > 0}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers -->
 				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
@@ -284,39 +341,21 @@
 				</div>
 
 				<div class="mt-4 space-y-4">
-					{#if data.techniques.length > 0}
-						<!-- Techniques Row (matching SkillsCategorized with skipFirstColumn) -->
+					{#each displayCategories() as category (category.id)}
 						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
 							<div></div>
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
-								{language === 'sv' ? 'Tekniker' : 'Techniques'}
+								{labelFor(category.name)}
 							</p>
 							<div class="flex flex-wrap gap-2">
-								{#each data.techniques as tech}
+								{#each category.skills as skill}
 									<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
-										>{tech}</span
+										>{skill}</span
 									>
 								{/each}
 							</div>
 						</div>
-					{/if}
-
-					{#if data.methods.length > 0}
-						<!-- Methods Row -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
-							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
-								{language === 'sv' ? 'Metoder' : 'Methods'}
-							</p>
-							<div class="flex flex-wrap gap-2">
-								{#each data.methods as method}
-									<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
-										>{method}</span
-									>
-								{/each}
-							</div>
-						</div>
-					{/if}
+					{/each}
 				</div>
 			</section>
 		{/if}

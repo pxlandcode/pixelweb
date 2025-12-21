@@ -34,8 +34,22 @@
 			{#each experiences as exp, index}
 				<div class="mb-4 rounded-xs border border-slate-200 bg-white p-4">
 					<div class="mb-4 flex items-center justify-between">
-						<h4 class="font-semibold text-slate-700">Experience {index + 1}</h4>
+						<h4 class="font-semibold text-slate-700">
+							Experience {index + 1}
+							{#if exp.hidden}
+								<span class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+									Hidden
+								</span>
+							{/if}
+						</h4>
 						<div class="flex gap-2">
+							<Button
+								variant={exp.hidden ? 'outline' : 'ghost'}
+								size="sm"
+								onclick={() => (exp.hidden = !exp.hidden)}
+							>
+								{exp.hidden ? 'Show' : 'Hide'}
+							</Button>
 							<Button
 								variant="ghost"
 								size="sm"
@@ -113,7 +127,7 @@
 			>
 		</div>
 	{:else}
-		{#each experiences as exp}
+		{#each experiences.filter((exp) => !exp.hidden) as exp}
 			<div class="space-y-3 border-l border-primary pl-4">
 				<div>
 					<p class="text-sm font-semibold text-slate-900">{exp.company}</p>

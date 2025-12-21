@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { Button } from '@pixelcode_/blocks/components';
-	import { HeroSection, LogoMarquee, RollingText, SnowBackground } from '$lib/components';
+	import { HeroSection, LogoMarquee, RollingText } from '$lib/components';
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import { contactModal } from '$lib/stores/contactModal';
+	import { resetMarqueeHeight, setMarqueeHeight } from '$lib/stores/marquee';
 	import type { ComponentProps } from 'svelte';
 
 	type HeroSectionProps = ComponentProps<typeof HeroSection>;
@@ -19,8 +20,8 @@
 	export let parallaxDistance = 280;
 	export let parallaxMultiplier = 0.45;
 	export let floatThreshold = 96;
-	let isChristmas = false;
 	let heroSectionProps: Partial<HeroSectionProps> = {};
+	let publishedMarqueeHeight = 0;
 
 	function handleCtaClick(e: MouseEvent) {
 		if (ctaHref === '#contact') {
@@ -62,9 +63,15 @@
 				? `${heroSectionHeight}px`
 				: '100dvh';
 	$: {
-		const { isChristmas: christmasFlag, ...rest } = heroProps;
-		isChristmas = Boolean(christmasFlag);
+		const { isChristmas: _isChristmas, ...rest } = heroProps;
 		heroSectionProps = rest;
+	}
+
+	function publishMarqueeHeight(height: number) {
+		const nextHeight = Math.max(0, height);
+		if (nextHeight === publishedMarqueeHeight) return;
+		publishedMarqueeHeight = nextHeight;
+		setMarqueeHeight(nextHeight);
 	}
 
 	function recalcMeasurements() {
@@ -87,6 +94,7 @@
 		} else {
 			marqueeHeight = 0;
 		}
+		publishMarqueeHeight(marqueeHeight);
 
 		if (heroButtonContainer) {
 			const rect = heroButtonContainer.getBoundingClientRect();
@@ -114,6 +122,7 @@
 	onDestroy(() => {
 		resetFloatingNavState();
 		updateSiteHeaderState({ parallaxOffset: 0 });
+		resetMarqueeHeight();
 	});
 </script>
 
@@ -128,9 +137,6 @@
 		class="first-fold__content relative z-10 flex h-full flex-1 flex-col justify-center gap-10"
 		style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}
 	>
-		{#if isChristmas}
-			<SnowBackground />
-		{/if}
 		<div class="first-fold__hero flex w-full flex-col items-center gap-6" bind:this={heroSectionEl}>
 			<HeroSection {...heroSectionProps} />
 			{#if showCta}

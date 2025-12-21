@@ -13,6 +13,22 @@
 
 export type LocalizedText = string | { sv: string; en: string };
 
+export type TechCategory = {
+	id: string;
+	name: string;
+	skills: string[];
+};
+
+export type Person = {
+	id: number;
+	slug: string;
+	name: string;
+	title: string;
+	portraitId?: string;
+	bio: string;
+	techStack?: TechCategory[];
+};
+
 export type ContactPerson = {
 	name: string;
 	phone?: string | null;
@@ -24,6 +40,7 @@ export type HighlightedExperience = {
 	role: LocalizedText;
 	description: LocalizedText;
 	technologies: string[];
+	hidden?: boolean;
 };
 
 export type ExperienceItem = {
@@ -34,6 +51,7 @@ export type ExperienceItem = {
 	role: LocalizedText;
 	description: LocalizedText;
 	technologies: string[];
+	hidden?: boolean;
 };
 
 export type LabeledItem = {
@@ -71,8 +89,8 @@ export type ResumeData = {
 };
 
 export type Resume = {
-	id: string;
-	personId: string;
+	id: number;
+	personId: number;
 	title: string;
 	version: string;
 	updatedAt: string;

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { MockResumeService } from '$lib/api/mock-resumes';
+	import { ResumeService } from '$lib/services/resume';
 	import { soloImages } from '$lib/images/manifest';
 	import { Button, Card } from '@pixelcode_/blocks/components';
 	import { FileText, User } from 'lucide-svelte';
 
-	const people = MockResumeService.getPeople();
+	const people = ResumeService.getPeople();
 
 	const peopleWithResumes = people.map((person) => {
-		const personResumes = MockResumeService.getResumesForPerson(person.id);
-		const mainResume = MockResumeService.getMainResume(person.id);
-		const portrait = soloImages[person.portraitId];
+		const personResumes = ResumeService.getResumesForPerson(person.id);
+		const mainResume = ResumeService.getMainResume(person.id);
+		const portrait = person.portraitId ? soloImages[person.portraitId] : undefined;
 
 		return {
 			...person,

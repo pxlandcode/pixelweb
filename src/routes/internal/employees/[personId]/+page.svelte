@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { MockResumeService } from '$lib/api/mock-resumes';
+	import { ResumeService } from '$lib/services/resume';
 	import { soloImages } from '$lib/images/manifest';
 	import { Button, Card, Input, TextArea } from '@pixelcode_/blocks/components';
 	import {
@@ -16,10 +16,10 @@
 	import { TechStackEditor } from '$lib/components';
 	import { goto } from '$app/navigation';
 
-	$: personId = $page.params.personId ?? '';
-	$: person = MockResumeService.getPerson(personId);
-	$: personResumes = MockResumeService.getResumesForPerson(personId);
-	$: portrait = person ? soloImages[person.portraitId] : undefined;
+	$: personId = Number($page.params.personId ?? '');
+	$: person = Number.isFinite(personId) ? ResumeService.getPerson(personId) : undefined;
+	$: personResumes = person ? ResumeService.getResumesForPerson(personId) : [];
+	$: portrait = person?.portraitId ? soloImages[person.portraitId] : undefined;
 
 	let isEditing = false;
 	let editingPerson = person ? { ...person, techStack: person.techStack ?? [] } : null;

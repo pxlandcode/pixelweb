@@ -6,18 +6,23 @@
 	import { soloImages } from '$lib/images/manifest';
 	import { fly } from 'svelte/transition';
 
-	let { data } = $props();
+let { data } = $props();
 
-	let showDownloadOptions = $state(false);
-	let downloadLanguage: 'sv' | 'en' = $state('sv');
-	let isEditing = $state(false);
+let showDownloadOptions = $state(false);
+let downloadLanguage: 'sv' | 'en' = $state('sv');
+let isEditing = $state(false);
 
-	const person = $derived(ResumeService.getPerson(data.resume.personId));
-	const image = $derived(
-		person?.portraitId && person.portraitId in soloImages
-			? soloImages[person.portraitId as keyof typeof soloImages]
-			: undefined
-	);
+const person = $derived(ResumeService.getPerson(data.resume.personId));
+const downloadBaseName = $derived(() => {
+	const name = (person?.name ?? 'Resume').trim();
+	const kind = downloadLanguage === 'sv' ? 'CV' : 'Resume';
+	return `${name} - Pixel&Code - ${kind}`;
+});
+const image = $derived(
+	person?.portraitId && person.portraitId in soloImages
+		? soloImages[person.portraitId as keyof typeof soloImages]
+		: undefined
+);
 
 	const handleCancel = () => {
 		if (confirm('Are you sure you want to cancel? Unsaved changes will be lost.')) {
@@ -82,7 +87,17 @@
 						</div>
 					</div>
 					<div transition:fly={{ y: 16, duration: 160 }}>
-						<Button size="sm" variant="outline" disabled>Word (coming soon)</Button>
+						<Button
+							size="sm"
+							variant="outline"
+							href={`/api/resumes/${data.resume.id}/word?lang=${downloadLanguage}`}
+							target="_blank"
+							rel="external"
+							download={`${downloadBaseName}.doc`}
+							onclick={() => (showDownloadOptions = false)}
+						>
+							Word (Pre-beta)
+						</Button>
 					</div>
 					<div transition:fly={{ y: 22, duration: 200 }}>
 						<Button
@@ -91,7 +106,7 @@
 							href={`/api/resumes/${data.resume.id}/pdf?lang=${downloadLanguage}`}
 							target="_blank"
 							rel="external"
-							download={`resume-${data.resume.id}-${downloadLanguage}.pdf`}
+							download={`${downloadBaseName}.pdf`}
 							onclick={() => (showDownloadOptions = false)}
 						>
 							<Icon icon={Download} size="sm" />
@@ -120,6 +135,8 @@
 				data={data.resume.data}
 				{image}
 				language={data.language as 'sv' | 'en'}
+				{person}
+				profileTechStack={person?.techStack}
 				{isEditing}
 			/>
 		</div>

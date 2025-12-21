@@ -32,7 +32,7 @@ const createResumeStore = () => {
                 state.update((current) => ({ ...current, blocks: withIds(updater(current.blocks)) }));
         };
 
-        const setActiveVersion = (versionId: string) => {
+        const setActiveVersion = (versionId: number) => {
                 state.update((current) => {
                         const next = current.resume?.versions?.find((v) => v.id === versionId) ?? null;
                         return { ...current, activeVersion: next, blocks: withIds(next?.content ?? current.blocks) };

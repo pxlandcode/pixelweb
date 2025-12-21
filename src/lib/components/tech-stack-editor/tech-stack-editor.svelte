@@ -4,7 +4,7 @@
 	import X from 'lucide-svelte/icons/x';
 	import Plus from 'lucide-svelte/icons/plus';
 	import GripVertical from 'lucide-svelte/icons/grip-vertical';
-	import type { TechCategory } from '$lib/types/internal-resumes';
+	import type { TechCategory } from '$lib/types/resume';
 
 	let { categories = $bindable([]), isEditing = false } = $props<{
 		categories: TechCategory[];

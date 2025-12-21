@@ -24,6 +24,7 @@
 		ResumeFooter,
 		type Language
 	} from './components';
+import type { Person, TechCategory } from '$lib/types/resume';
 
 	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
 
@@ -31,13 +32,25 @@
 		data,
 		image,
 		language = 'sv',
-		isEditing = false
+		isEditing = false,
+		person,
+		profileTechStack
 	}: {
 		data: ResumeData;
 		image?: ImageResource;
 		language?: Language;
 		isEditing?: boolean;
+		person?: Person;
+		profileTechStack?: TechCategory[];
 	} = $props();
+
+	let profileCategories = $state(
+		structuredClone(profileTechStack ?? person?.techStack ?? [])
+	);
+
+	$effect(() => {
+		profileCategories = structuredClone(profileTechStack ?? person?.techStack ?? []);
+	});
 
 	// Local editing state
 	let editingData = $state<ResumeData>(structuredClone(data));
@@ -47,6 +60,11 @@
 		if (!isEditing) {
 			editingData = structuredClone(data);
 		}
+	});
+
+	$effect(() => {
+		editingData.techniques = profileCategories.flatMap((cat) => cat.skills ?? []);
+		editingData.methods = [];
 	});
 
 	// Toggle language
@@ -269,6 +287,7 @@
 	<ResumeSkills
 		bind:techniques={editingData.techniques}
 		bind:methods={editingData.methods}
+		bind:profileTechStack={profileCategories}
 		{isEditing}
 		{language}
 	/>

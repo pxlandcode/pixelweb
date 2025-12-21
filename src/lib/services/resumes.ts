@@ -71,7 +71,7 @@ export type ResumeBlock =
 	  });
 
 export type ResumeVersion = {
-	id: string;
+	id: number;
 	version_name: string;
 	is_main: boolean;
 	is_active: boolean;
@@ -81,7 +81,7 @@ export type ResumeVersion = {
 };
 
 export type Resume = {
-	id: string;
+	id: number;
 	user_id: string;
 	version_name: string;
 	is_main: boolean;
@@ -431,7 +431,7 @@ export const loadInternalResumeList = async (accessToken: string) => {
 	return {
 		resumes: [
 			{
-				id: 'demo-resume-1',
+				id: 1,
 				user_id: 'demo-user',
 				version_name: 'Main',
 				is_main: true,
@@ -440,7 +440,7 @@ export const loadInternalResumeList = async (accessToken: string) => {
 				content: assignBlockIds(demoBlocks),
 				versions: [
 					{
-						id: 'demo-version-1',
+						id: 101,
 						version_name: 'Main',
 						is_main: true,
 						is_active: true,
@@ -454,7 +454,7 @@ export const loadInternalResumeList = async (accessToken: string) => {
 	};
 };
 
-export const loadInternalResumeDetail = async (accessToken: string, id: string) => {
+export const loadInternalResumeDetail = async (accessToken: string, id: number) => {
 	const supabase = createSupabaseServerClient(accessToken);
 	if (!supabase) return null;
 
@@ -469,7 +469,7 @@ export const loadInternalResumeDetail = async (accessToken: string, id: string) 
 		preview_html: null,
 		versions: [
 			{
-				id: 'demo-version-1',
+				id: 101,
 				version_name: 'Main',
 				is_main: true,
 				is_active: true,
@@ -481,7 +481,7 @@ export const loadInternalResumeDetail = async (accessToken: string, id: string) 
 	} satisfies Resume;
 };
 
-export const loadConsultantResume = async (id: string) => {
+export const loadConsultantResume = async (id: number) => {
 	return {
 		id,
 		user_id: 'consultant',
@@ -497,7 +497,7 @@ export const loadConsultantResume = async (id: string) => {
 export const listPublicResumes = async () => {
 	return [
 		{
-			id: 'public-resume-1',
+			id: 1,
 			user_id: 'consultant',
 			version_name: 'Main',
 			is_main: true,

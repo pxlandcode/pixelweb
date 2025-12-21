@@ -20,5 +20,11 @@
 </svelte:head>
 
 <div class="bg-white text-slate-900">
-	<ResumePrint data={data.resume.data} {image} {language} />
+	<ResumePrint
+		data={data.resume.data}
+		{image}
+		{language}
+		person={person}
+		profileTechStack={person?.techStack}
+	/>
 </div>
