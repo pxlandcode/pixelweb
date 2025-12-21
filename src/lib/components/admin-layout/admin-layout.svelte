@@ -14,6 +14,7 @@
 
 	export let profile: Profile | null = null;
 	export let role: AdminRole | null = null;
+	export let roles: AdminRole[] = [];
 	export let userEmail: string | null = null;
 	export let unauthorizedMessage: string | null = null;
 
@@ -33,7 +34,7 @@
 		{
 			label: 'Employees',
 			href: '/internal/employees',
-			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+			allowed: ['admin', 'cms_admin', 'employee'] satisfies AdminRole[]
 		},
 		{
 			label: 'Cases',
@@ -48,8 +49,8 @@
 		: userEmail || 'User';
 
 	const canView = (allowed: AdminRole[]) => {
-		if (!role) return false;
-		return allowed.includes(role);
+		const effectiveRoles = roles.length ? roles : role ? [role] : [];
+		return effectiveRoles.some((r) => allowed.includes(r));
 	};
 </script>
 
@@ -90,7 +91,15 @@
 			<div class="flex items-center gap-4">
 				<div class="space-y-1 text-right">
 					<p class="text-sm font-medium text-gray-900">{displayName}</p>
-					{#if role}
+					{#if (roles?.length ?? 0) > 0}
+						<div class="flex flex-wrap justify-end gap-1">
+							{#each roles as r}
+								<Badge variant="info" size="xs" class="tracking-wide uppercase">
+									{r.replace('_', ' ')}
+								</Badge>
+							{/each}
+						</div>
+					{:else if role}
 						<Badge variant="info" size="xs" class="tracking-wide uppercase">
 							{role.replace('_', ' ')}
 						</Badge>

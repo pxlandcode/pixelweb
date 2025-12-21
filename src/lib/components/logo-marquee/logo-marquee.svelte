@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 
 	export let logos: string[] = [];
-	export let background = '#f35b3f';
+	export let background = '#E76F51';
 	export let duration = 32;
 
 	const initialRepeatCount = logos.length ? 2 : 0;
@@ -17,9 +17,7 @@
 	$: totalUnique = logos.length || 1;
 	$: loopOffset = repeatCount > 0 ? `${-100 / repeatCount}%` : '-50%';
 	$: marqueeLogos =
-		logos.length && repeatCount > 0
-			? Array.from({ length: repeatCount }, () => logos).flat()
-			: [];
+		logos.length && repeatCount > 0 ? Array.from({ length: repeatCount }, () => logos).flat() : [];
 	$: logoLabels = logos.map((logo) => {
 		const fileName = logo.split('/').pop() ?? '';
 		const rawName = fileName.replace(/\.[^.]+$/, '');

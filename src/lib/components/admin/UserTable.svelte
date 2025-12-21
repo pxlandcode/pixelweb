@@ -4,7 +4,6 @@
                 Badge,
                 Button,
                 Card,
-                Select,
                 SuperTable,
                 TableHandler,
                 Row,
@@ -17,6 +16,7 @@
 
         export let users: UserRow[] = [];
         export let form: ActionData | null = null;
+        export let onEdit: (user: UserRow) => void;
 
         type TableRow = UserRow & {
                 source: UserRow;
@@ -26,9 +26,10 @@
         };
 
         const headings: SuperTableHead<TableRow>[] = [
-                { heading: 'Name', sortable: 'fullName', width: 42 },
-                { heading: 'Role', sortable: 'roleLabel', width: 18 },
-                { heading: 'Actions', width: 40 }
+                { heading: 'Name', sortable: 'fullName', width: 32 },
+                { heading: 'Roles', sortable: 'roleLabel', width: 28 },
+                { heading: 'Status', width: 12 },
+                { heading: 'Actions', width: 8 }
         ];
 
         const toRows = (items: UserRow[]): TableRow[] =>
@@ -39,12 +40,13 @@
                                 'Unknown';
 
                         const emailText = user.email ?? 'Email not provided';
+                        const roleLabel = user.roles?.length ? user.roles.join(', ') : 'employee';
 
                         return {
                                 ...user,
                                 source: user,
                                 fullName,
-                                roleLabel: user.role.replace('_', ' '),
+                                roleLabel,
                                 emailText
                         };
                 });
@@ -61,39 +63,54 @@
                 {#each tableInstance.data as row (row.id)}
                         <Row.Root>
                                 <Cell.Value class="align-top">
-                                        <div class="space-y-2">
-                                                <div>
-                                                        <p class="text-sm font-semibold text-gray-900">{row.fullName}</p>
-                                                        <p class="text-xs font-medium text-gray-700">{row.emailText}</p>
+                                        <div class="flex gap-3">
+                                                {#if row.avatar_url}
+                                                        <img
+                                                                src={row.avatar_url}
+                                                                alt={row.fullName}
+                                                                class="h-10 w-10 rounded-full object-cover"
+                                                        />
+                                                {:else}
+                                                        <div class="h-10 w-10 rounded-full bg-slate-100" />
+                                                {/if}
+                                                <div class="space-y-2">
+                                                        <div>
+                                                                <p class="text-sm font-semibold text-gray-900">{row.fullName}</p>
+                                                                <p class="text-xs font-medium text-gray-700">{row.emailText}</p>
+                                                        </div>
+                                                        <p class="text-xs text-gray-600">ID: {row.id}</p>
                                                 </div>
-                                                <p class="text-xs text-gray-600">ID: {row.id}</p>
                                         </div>
                                 </Cell.Value>
 
                                 <Cell.Value class="align-top">
-                                        <Badge variant="default" size="xs" class="uppercase tracking-wide">
-                                                {row.roleLabel}
-                                        </Badge>
+                                        <div class="flex flex-wrap gap-2">
+                                                {#each row.roles as role}
+                                                        <Badge variant="default" size="xs" class="uppercase tracking-wide">
+                                                                {role.replace('_', ' ')}
+                                                        </Badge>
+                                                {:else}
+                                                        <Badge variant="default" size="xs" class="uppercase tracking-wide">
+                                                                employee
+                                                        </Badge>
+                                                {/each}
+                                        </div>
                                 </Cell.Value>
 
                                 <Cell.Value class="align-top">
-                                        <form
-                                                method="POST"
-                                                action="?/updateRole"
-                                                class="flex flex-wrap items-center justify-end gap-2 text-sm"
-                                        >
-                                                <input type="hidden" name="user_id" value={row.id} />
-                                                <label class="sr-only" for={`role-${row.id}`}>Role</label>
-                                                <Select id={`role-${row.id}`} name="role" size="sm" value={row.role}>
-                                                        <option value="admin">Admin</option>
-                                                        <option value="cms_admin">CMS Admin</option>
-                                                        <option value="employee">Employee</option>
-                                                        <option value="employer">Employer</option>
-                                                </Select>
-                                                <Button variant="primary" size="sm" type="submit">
-                                                        Update
+                                        {#if row.active}
+                                                <Badge variant="success" size="xs">Active</Badge>
+                                        {:else}
+                                                <Badge variant="destructive" size="xs">Inactive</Badge>
+                                        {/if}
+                                </Cell.Value>
+
+                                <Cell.Value class="align-top">
+                                        <div class="flex justify-end">
+                                                <Button variant="primary" size="sm" type="button" onclick={() => onEdit?.(row.source)}>
+                                                        Edit
                                                 </Button>
-                                        </form>
+                                        </div>
                                 </Cell.Value>
                         </Row.Root>
                 {/each}

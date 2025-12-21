@@ -1,13 +1,13 @@
 <script lang="ts">
 import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types/resume';
-	import { soloImages } from '$lib/images/manifest';
+import { soloImages } from '$lib/images/manifest';
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
 	import worldclassUrl from '$lib/assets/worldclass.svg';
 
-	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
-	type Language = 'sv' | 'en';
+type ImageResource = (typeof soloImages)[keyof typeof soloImages];
+type Language = 'sv' | 'en';
 
 	let {
 		data,
@@ -17,11 +17,20 @@ import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types
 		profileTechStack: initialProfileTechStack
 	}: {
 		data: ResumeData;
-		image?: ImageResource;
+		image?: ImageResource | string | null;
 		language?: Language;
 		person?: Person;
 		profileTechStack?: TechCategory[];
 	} = $props();
+
+	const resolvedImage: ImageResource | { src: string; srcset?: string } | null = $derived.by(() => {
+		const source = image ?? person?.avatar_url ?? null;
+		if (!source) return null;
+		if (typeof source === 'string') {
+			return { src: source };
+		}
+		return source;
+	});
 
 	let profileTechStack: TechCategory[] =
 		initialProfileTechStack ?? (person?.techStack ?? []);
@@ -45,7 +54,7 @@ import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types
 		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
 		'devops': { sv: 'DevOps', en: 'DevOps' },
 		database: { sv: 'Databas', en: 'Database' },
-		methodologies: { sv: 'Metoder', en: 'Methodologies' },
+		methodologies: { sv: 'Metoder', en: 'Methods' },
 		architecture: { sv: 'Arkitektur', en: 'Architecture' },
 		'soft skills': { sv: 'Mjuka färdigheter', en: 'Soft skills' },
 		methods: { sv: 'Metoder', en: 'Methods' },
@@ -124,10 +133,10 @@ import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types
 					<div
 						class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-xs border border-slate-200 bg-white"
 					>
-						{#if image}
+						{#if resolvedImage}
 							<img
-								src={image.src}
-								srcset={image.srcset}
+								src={resolvedImage.src}
+								srcset={resolvedImage.srcset ?? resolvedImage.src}
 								alt={data.name || 'Profile'}
 								class="h-full w-full object-cover object-center"
 								loading="lazy"
