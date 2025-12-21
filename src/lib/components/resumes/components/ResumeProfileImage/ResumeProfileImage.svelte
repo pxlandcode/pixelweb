@@ -7,18 +7,26 @@
 		image,
 		name
 	}: {
-		image?: ImageResource;
+		image?: ImageResource | string | null;
 		name: string;
 	} = $props();
+
+	const resolved = $derived.by(() => {
+		if (!image) return null;
+		if (typeof image === 'string') {
+			return { src: image } as ImageResource;
+		}
+		return image;
+	});
 </script>
 
 <div
 	class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-xs border border-slate-200 bg-white"
 >
-	{#if image}
+	{#if resolved}
 		<img
-			src={image.src}
-			srcset={image.srcset}
+			src={resolved.src}
+			srcset={resolved.srcset}
 			alt={name || 'Profile'}
 			class="h-full w-full object-cover object-center"
 			loading="lazy"

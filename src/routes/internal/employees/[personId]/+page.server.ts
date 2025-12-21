@@ -1,0 +1,212 @@
+import type { Actions, PageServerLoad } from './$types';
+import {
+	AUTH_COOKIE_NAMES,
+	createSupabaseServerClient,
+	getSupabaseAdminClient
+} from '$lib/server/supabase';
+import { fail } from '@sveltejs/kit';
+
+export const load: PageServerLoad = async ({ params, cookies }) => {
+	const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
+	const supabase = createSupabaseServerClient(accessToken);
+
+	if (!supabase) {
+		return { profile: null, resumes: [], fromDb: false };
+	}
+
+	const adminClient = getSupabaseAdminClient();
+
+	const [{ data: profile, error: profileError }, resumesResult] = await Promise.all([
+		supabase
+			.from('profiles')
+			.select('id, first_name, last_name, avatar_url, title, bio, tech_stack')
+			.eq('id', params.personId)
+			.maybeSingle(),
+		(async () => {
+			if (!adminClient) return { data: null, error: new Error('Admin client unavailable') };
+			try {
+				const { data, error } = await adminClient
+					.from('resumes')
+					.select(
+						'id, user_id, version_name, is_main, is_active, allow_word_export, content, preview_html, created_at, updated_at'
+					)
+					.eq('user_id', params.personId)
+					.order('created_at', { ascending: false });
+
+				return { data, error };
+			} catch (err) {
+				return { data: null, error: err as Error };
+			}
+		})()
+	]);
+
+	if (profileError) {
+		console.warn('[employees detail] profile error', profileError);
+	}
+	if (resumesResult.error) {
+		console.warn('[employees detail] resumes error', resumesResult.error);
+	}
+
+	const resumes =
+		resumesResult.data?.map((r) => ({
+			id: String(r.id),
+			user_id: r.user_id,
+			version_name: r.version_name ?? 'Main',
+			is_main: Boolean(r.is_main),
+			is_active: Boolean(r.is_active ?? true),
+			allow_word_export: Boolean(r.allow_word_export ?? false),
+			content: r.content,
+			preview_html: r.preview_html ?? null,
+			created_at: r.created_at ?? null,
+			updated_at: r.updated_at ?? r.created_at ?? null
+		})) ?? [];
+
+	return {
+		profile: profile ?? null,
+		resumes,
+		fromDb: Boolean(profile)
+	};
+};
+
+export const actions: Actions = {
+	updateProfile: async ({ request, cookies, params }) => {
+		const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
+		const adminClient = getSupabaseAdminClient();
+
+		if (!supabase || !adminClient) {
+			return fail(401, { ok: false, message: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const personId = formData.get('person_id') ?? params.personId;
+		const bio = formData.get('bio');
+		const techStackRaw = formData.get('tech_stack');
+
+		if (typeof personId !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid user id' });
+		}
+		if (params.personId && params.personId !== personId) {
+			return fail(400, { ok: false, message: 'Mismatched user id' });
+		}
+		if (typeof bio !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid bio' });
+		}
+
+		let techStack: unknown = null;
+		if (typeof techStackRaw === 'string') {
+			try {
+				techStack = JSON.parse(techStackRaw);
+			} catch (err) {
+				return fail(400, { ok: false, message: 'Invalid tech stack JSON' });
+			}
+		}
+
+		const { error } = await adminClient.from('profiles').update({ bio, tech_stack: techStack }).eq('id', personId);
+
+		if (error) {
+			return fail(500, { ok: false, message: error.message });
+		}
+
+		return { ok: true };
+	},
+	createResume: async ({ request, cookies, params }) => {
+		const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
+		const adminClient = getSupabaseAdminClient();
+
+		if (!supabase || !adminClient) {
+			return fail(401, { ok: false, message: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const personId = formData.get('person_id') ?? params.personId;
+
+		if (typeof personId !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid user id' });
+		}
+
+		const { data: profileRow } = await adminClient
+			.from('profiles')
+			.select('first_name, last_name')
+			.eq('id', personId)
+			.maybeSingle();
+
+		const name = [profileRow?.first_name, profileRow?.last_name].filter(Boolean).join(' ') || 'New resume';
+
+		const { data, error } = await adminClient
+			.from('resumes')
+			.insert({
+				user_id: personId,
+				version_name: 'New Resume',
+				is_main: false,
+				is_active: true,
+				allow_word_export: false,
+				content: {
+					name,
+					title: '',
+					summary: '',
+					contacts: [],
+					exampleSkills: [],
+					highlightedExperiences: [],
+					experiences: [],
+					techniques: [],
+					methods: [],
+					languages: [],
+					education: [],
+					portfolio: [],
+					footerNote: ''
+				},
+				preview_html: null
+			})
+			.select('id')
+			.single();
+
+		if (error) {
+			return fail(500, { ok: false, message: error.message });
+		}
+
+		return { ok: true, id: data?.id };
+	},
+	updateResumeOrder: async ({ request, cookies, params }) => {
+		const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
+		const adminClient = getSupabaseAdminClient();
+
+		if (!supabase || !adminClient) {
+			return fail(401, { ok: false, message: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const personId = formData.get('person_id') ?? params.personId;
+		const orderRaw = formData.get('resume_order');
+
+		if (typeof personId !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid user id' });
+		}
+		if (typeof orderRaw !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid order payload' });
+		}
+
+		let orderedIds: string[] = [];
+		try {
+			const parsed = JSON.parse(orderRaw);
+			if (Array.isArray(parsed)) {
+				orderedIds = parsed.filter((id) => typeof id === 'string');
+			}
+		} catch (err) {
+			return fail(400, { ok: false, message: 'Invalid order JSON' });
+		}
+
+		if (orderedIds.length === 0) {
+			return fail(400, { ok: false, message: 'Empty order' });
+		}
+
+		// Set all to not main, then set the first as main
+		await adminClient.from('resumes').update({ is_main: false }).eq('user_id', personId);
+		await adminClient
+			.from('resumes')
+			.update({ is_main: true })
+			.eq('user_id', personId)
+			.eq('id', orderedIds[0]);
+
+		return { ok: true };
+	}
+};

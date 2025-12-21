@@ -6,9 +6,9 @@ import type { LocalizedText, ResumeData, TechCategory } from '$lib/types/resume'
 const toSafeFilename = (value: string) =>
 	value.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\s+/g, ' ') || 'resume';
 
-const buildFilename = (resumeId: number, lang: 'sv' | 'en') => {
-	const resume = ResumeService.getResume(resumeId);
-	const person = resume ? ResumeService.getPerson(resume.personId) : undefined;
+const buildFilename = async (resumeId: string, lang: 'sv' | 'en') => {
+	const resume = await ResumeService.getResume(resumeId);
+	const person = resume ? await ResumeService.getPerson(resume.personId) : undefined;
 	const name = toSafeFilename(person?.name ?? 'resume');
 	const kind = lang === 'sv' ? 'CV' : 'Resume';
 	return `${name} - Pixel&Code - ${kind}.doc`;
@@ -197,19 +197,19 @@ const DOC_STYLES = `
 `;
 
 export const GET: RequestHandler = async ({ params, url }) => {
-	const resumeId = Number(params.id);
-	if (!Number.isFinite(resumeId)) {
+	const resumeId = params.id;
+	if (!resumeId) {
 		throw error(400, 'Invalid resume id');
 	}
 
 	const langParam = url.searchParams.get('lang');
 	const lang: 'sv' | 'en' = langParam === 'en' ? 'en' : 'sv';
 
-	const resume = ResumeService.getResume(resumeId);
+	const resume = await ResumeService.getResume(resumeId);
 	if (!resume) {
 		throw error(404, 'Resume not found');
 	}
-	const person = ResumeService.getPerson(resume.personId);
+	const person = await ResumeService.getPerson(resume.personId);
 	const profileSkills = person?.techStack ?? [];
 	const translations: Record<string, { sv: string; en: string }> = {
 		frontend: { sv: 'Frontend', en: 'Frontend' },
@@ -243,7 +243,7 @@ ${renderHtmlSection(resume.data, lang, profileSkills, labelFor)}
 		status: 200,
 		headers: {
 			'Content-Type': 'application/msword',
-			'Content-Disposition': `attachment; filename="${buildFilename(resumeId, lang)}"`,
+			'Content-Disposition': `attachment; filename="${await buildFilename(resumeId, lang)}"`,
 			'Cache-Control': 'no-cache, no-store, must-revalidate'
 		}
 	});

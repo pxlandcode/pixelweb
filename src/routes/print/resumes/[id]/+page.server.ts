@@ -12,13 +12,14 @@ export const load: PageServerLoad = async ({ params, url, cookies }) => {
 	const langParam = url.searchParams.get('lang');
 	const language = langParam === 'en' ? 'en' : 'sv';
 
-	const resumeId = Number(params.id);
+	const resumeId = params.id;
 
-	if (!Number.isFinite(resumeId)) {
+	if (!resumeId) {
 		throw error(400, 'Invalid resume id');
 	}
 
-	const resume = ResumeService.getResume(resumeId);
+	const resume = await ResumeService.getResume(resumeId);
+	const resumePerson = await ResumeService.getPerson(resume?.personId ?? '');
 
 	if (!resume) {
 		throw error(404, 'Resume not found');
@@ -26,6 +27,7 @@ export const load: PageServerLoad = async ({ params, url, cookies }) => {
 
 	return {
 		resume,
+		resumePerson,
 		language,
 		meta: {
 			title: `Resume ${resume.title}`,

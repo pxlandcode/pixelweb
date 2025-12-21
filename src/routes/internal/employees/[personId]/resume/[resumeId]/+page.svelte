@@ -2,27 +2,24 @@
 	import { Button, Card, Icon, Toaster, toast } from '@pixelcode_/blocks/components';
 	import { Download, Edit, Save, X } from 'lucide-svelte';
 	import ResumeView from '$lib/components/resumes/ResumeView.svelte';
-	import { ResumeService } from '$lib/services/resume';
-	import { soloImages } from '$lib/images/manifest';
 	import { fly } from 'svelte/transition';
 
-let { data } = $props();
+	let { data } = $props();
 
-let showDownloadOptions = $state(false);
-let downloadLanguage: 'sv' | 'en' = $state('sv');
-let isEditing = $state(false);
+	let showDownloadOptions = $state(false);
+	let downloadLanguage: 'sv' | 'en' = $state('sv');
+	let isEditing = $state(false);
+	let saving = $state(false);
+	let errorMessage = $state<string | null>(null);
+	let resumeViewRef: InstanceType<typeof ResumeView> | null = null;
 
-const person = $derived(ResumeService.getPerson(data.resume.personId));
-const downloadBaseName = $derived(() => {
-	const name = (person?.name ?? 'Resume').trim();
-	const kind = downloadLanguage === 'sv' ? 'CV' : 'Resume';
-	return `${name} - Pixel&Code - ${kind}`;
-});
-const image = $derived(
-	person?.portraitId && person.portraitId in soloImages
-		? soloImages[person.portraitId as keyof typeof soloImages]
-		: undefined
-);
+	const personName = $derived(data.resumePerson?.name ?? 'Resume');
+	const avatarImage = $derived(data.avatarUrl ?? data.resumePerson?.avatar_url ?? null);
+	const downloadBaseName = $derived(() => {
+		const name = (personName ?? 'Resume').trim();
+		const kind = downloadLanguage === 'sv' ? 'CV' : 'Resume';
+		return `${name} - Pixel&Code - ${kind}`;
+	});
 
 	const handleCancel = () => {
 		if (confirm('Are you sure you want to cancel? Unsaved changes will be lost.')) {
@@ -30,18 +27,42 @@ const image = $derived(
 		}
 	};
 
-	const handleSave = () => {
-		isEditing = false;
-		toast.success?.('Resume saved!') ?? toast('Resume saved!');
+	const handleSave = async () => {
+		if (!resumeViewRef) return;
+		saving = true;
+		errorMessage = null;
+		try {
+			const content = resumeViewRef.getEditedData();
+			const formData = new FormData();
+			formData.set('content', JSON.stringify(content));
+			const response = await fetch('?/saveResume', {
+				method: 'POST',
+				body: formData
+			});
+			if (!response.ok) {
+				const detail = await response.json().catch(() => null);
+				throw new Error(detail?.message ?? 'Failed to save resume');
+			}
+			isEditing = false;
+			toast.success?.('Resume saved!') ?? toast('Resume saved!');
+		} catch (err) {
+			errorMessage = err instanceof Error ? err.message : 'Failed to save resume';
+			toast.error?.(errorMessage) ?? toast(errorMessage);
+		} finally {
+			saving = false;
+		}
 	};
 </script>
 
 <div class="flex items-center justify-between">
 	<div>
-		<h1 class="text-2xl font-semibold text-gray-50">Resume Preview</h1>
-		<p class="text-sm text-gray-300">
-			{data.resume.data.name || 'Anonymous'} — {data.resume.title}
+		<h1 class="text-2xl font-semibold text-text">Resume Preview</h1>
+		<p class="text-sm text-text">
+			{personName} — {data.resume.title}
 		</p>
+		{#if errorMessage}
+			<p class="text-red text-xs">{errorMessage}</p>
+		{/if}
 	</div>
 </div>
 
@@ -54,7 +75,7 @@ const image = $derived(
 			<Icon icon={X} size="sm" />
 			Cancel
 		</Button>
-		<Button variant="primary" onclick={handleSave}>
+		<Button variant="primary" onclick={handleSave} loading={saving} loading-text="Saving…">
 			<Icon icon={Save} size="sm" />
 			Save
 		</Button>
@@ -133,10 +154,11 @@ const image = $derived(
 		<div class="mt-4">
 			<ResumeView
 				data={data.resume.data}
-				{image}
+				bind:this={resumeViewRef}
 				language={data.language as 'sv' | 'en'}
-				{person}
-				profileTechStack={person?.techStack}
+				person={data.resumePerson ?? undefined}
+				image={avatarImage ?? undefined}
+				profileTechStack={data.resumePerson?.techStack}
 				{isEditing}
 			/>
 		</div>

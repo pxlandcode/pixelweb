@@ -56,11 +56,11 @@
 		{ name: 'GitHub Actions', category: 'DevOps' },
 		{ name: 'CI/CD', category: 'DevOps' },
 
-		// Software & Methodologies
-		{ name: 'Agile', category: 'Methodologies' },
-		{ name: 'Scrum', category: 'Methodologies' },
-		{ name: 'Kanban', category: 'Methodologies' },
-		{ name: 'TDD', category: 'Methodologies' },
+		// Software & Methods
+		{ name: 'Agile', category: 'Methods' },
+		{ name: 'Scrum', category: 'Methods' },
+		{ name: 'Kanban', category: 'Methods' },
+		{ name: 'TDD', category: 'Methods' },
 		{ name: 'REST API', category: 'Architecture' },
 		{ name: 'GraphQL', category: 'Architecture' },
 		{ name: 'Microservices', category: 'Architecture' },

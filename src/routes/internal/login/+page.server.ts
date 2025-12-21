@@ -37,8 +37,12 @@ export const actions: Actions = {
 			error: error?.message ?? null
 		});
 
-		if (error || !data.session) {
-			return fail(400, { message: error?.message ?? 'Unable to sign in.' });
+		if (error || !data.session || data.user?.app_metadata?.active === false) {
+			const message =
+				data.user?.app_metadata?.active === false
+					? 'Account is inactive. Contact an administrator.'
+					: error?.message ?? 'Unable to sign in.';
+			return fail(400, { message });
 		}
 
 		const { session } = data;

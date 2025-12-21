@@ -1,24 +1,10 @@
 <script lang="ts">
-	import { ResumeService } from '$lib/services/resume';
-	import { soloImages } from '$lib/images/manifest';
 	import { Button, Card } from '@pixelcode_/blocks/components';
 	import { FileText, User } from 'lucide-svelte';
 
-	const people = ResumeService.getPeople();
+	const { data } = $props();
 
-	const peopleWithResumes = people.map((person) => {
-		const personResumes = ResumeService.getResumesForPerson(person.id);
-		const mainResume = ResumeService.getMainResume(person.id);
-		const portrait = person.portraitId ? soloImages[person.portraitId] : undefined;
-
-		return {
-			...person,
-			resumes: personResumes,
-			mainResume,
-			portraitUrl: portrait?.src,
-			portraitSrcset: portrait?.srcset
-		};
-	});
+	const liveEmployees = data.employees ?? [];
 </script>
 
 <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -30,17 +16,16 @@
 	</div>
 
 	<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-		{#each peopleWithResumes as person}
-			<a href="/internal/employees/{person.id}" class="block h-full">
+		{#each liveEmployees as employee}
+			<a href="/internal/employees/{employee.id}" class="block h-full">
 				<Card
 					class="flex h-full flex-col overflow-hidden rounded-none transition-all hover:shadow-md"
 				>
 					<div class="aspect-square w-full overflow-hidden bg-slate-100">
-						{#if person.portraitUrl}
+						{#if employee.avatar_url}
 							<img
-								src={person.portraitUrl}
-								srcset={person.portraitSrcset}
-								alt={person.name}
+								src={employee.avatar_url}
+								alt={[employee.first_name, employee.last_name].filter(Boolean).join(' ')}
 								class="h-full w-full object-cover object-top transition-transform duration-500 hover:scale-105"
 							/>
 						{:else}
@@ -52,22 +37,20 @@
 
 					<div class="flex flex-1 flex-col p-6">
 						<div class="mb-4">
-							<h3 class="text-xl font-semibold text-slate-900">{person.name}</h3>
-							<p class="text-sm font-medium text-primary">{person.title}</p>
+							<h3 class="text-xl font-semibold text-slate-900">
+								{[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Unnamed'}
+							</h3>
+							<p class="text-sm font-medium text-primary">Employee profile</p>
 						</div>
 
 						<div class="mt-auto flex items-center justify-between text-xs text-slate-500">
 							<span class="flex items-center gap-1">
 								<FileText size={14} />
-								{person.resumes.length} Resume{person.resumes.length !== 1 ? 's' : ''}
+								View profile
 							</span>
-							{#if person.mainResume}
-								<span
-									class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset"
-								>
-									Main
-								</span>
-							{/if}
+							<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset">
+								DB
+							</span>
 						</div>
 					</div>
 				</Card>

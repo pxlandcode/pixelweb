@@ -34,7 +34,7 @@ const translations: Record<string, { sv: string; en: string }> = {
 		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
 		'devops': { sv: 'DevOps', en: 'DevOps' },
 		database: { sv: 'Databas', en: 'Database' },
-		methodologies: { sv: 'Metoder', en: 'Methodologies' },
+		methodologies: { sv: 'Metoder', en: 'Methods' },
 		architecture: { sv: 'Arkitektur', en: 'Architecture' },
 		'soft skills': { sv: 'Mjuka färdigheter', en: 'Soft skills' },
 		methods: { sv: 'Metoder', en: 'Methods' },

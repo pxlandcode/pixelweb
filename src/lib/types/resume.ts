@@ -20,11 +20,12 @@ export type TechCategory = {
 };
 
 export type Person = {
-	id: number;
-	slug: string;
+	id: string;
+	slug?: string;
 	name: string;
 	title: string;
 	portraitId?: string;
+	avatar_url?: string | null;
 	bio: string;
 	techStack?: TechCategory[];
 };
@@ -89,11 +90,12 @@ export type ResumeData = {
 };
 
 export type Resume = {
-	id: number;
-	personId: number;
+	id: string;
+	personId: string;
 	title: string;
 	version: string;
 	updatedAt: string;
 	isMain: boolean;
 	data: ResumeData;
+	avatar_url?: string | null;
 };

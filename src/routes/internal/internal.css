@@ -1,5 +1,37 @@
 /* Internal admin overrides */
 
+:global(body.internal-light) {
+	background: #f6f8fb;
+	color: #0f172a;
+}
+
+:global(.internal-root) {
+	--color-background: #f6f8fb;
+	--color-foreground: #0f172a;
+	--color-card-bg: #ffffff;
+	--color-card-border: #e2e8f0;
+	--color-input: #ffffff;
+	--color-primary: #e76f51;
+	color-scheme: light;
+}
+
+:global(.internal-root input),
+:global(.internal-root select),
+:global(.internal-root textarea),
+:global(.internal-root button),
+:global(.internal-root .blocks-select__trigger),
+:global(.internal-root .blocks-select__content),
+:global(.internal-root .blocks-select__item),
+:global(.internal-root .blocks-input),
+:global(.internal-root .blocks-textarea) {
+	background-color: #ffffff;
+	color: #0f172a;
+}
+
+:global(.internal-root .blocks-select__trigger) {
+	border-color: #cbd5e1;
+}
+
 .internal-root .news-table thead th,
 .internal-root .user-table thead th,
 .internal-root .news-table thead th :is(div, button),

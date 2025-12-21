@@ -21,7 +21,10 @@
                                 {[data.profile?.first_name, data.profile?.last_name].filter(Boolean).join(' ') || 'Missing'}
                         </p>
                         <p class="text-sm text-gray-700"><strong>Email:</strong> {data.user?.email}</p>
-                        <p class="text-sm text-gray-700"><strong>Role:</strong> {data.role}</p>
+                        <p class="text-sm text-gray-700">
+                                <strong>Role{(data.roles?.length ?? 0) > 1 ? 's' : ''}:</strong>
+                                {(data.roles ?? [data.role]).filter(Boolean).join(', ')}
+                        </p>
                 </Card>
 
                 <Card class="gap-3 p-6">
