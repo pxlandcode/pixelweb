@@ -2,7 +2,11 @@ import type { Actions, PageServerLoad } from './$types';
 import { ResumeService } from '$lib/services/resume';
 import { siteMeta } from '$lib/seo';
 import { error, json } from '@sveltejs/kit';
-import { getSupabaseAdminClient, createSupabaseServerClient, AUTH_COOKIE_NAMES } from '$lib/server/supabase';
+import {
+	getSupabaseAdminClient,
+	createSupabaseServerClient,
+	AUTH_COOKIE_NAMES
+} from '$lib/server/supabase';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, url }) => {
@@ -33,7 +37,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			title: `${siteMeta.name} — Resume ${resume.title}`,
 			description: 'View and manage resume.',
 			noindex: true,
-			path: `/internal/employees/${personId}/resume/${resumeId}`
+			path: `/internal/resumes/${personId}/resume/${resumeId}`
 		}
 	};
 };

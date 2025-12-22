@@ -32,8 +32,8 @@
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
 		},
 		{
-			label: 'Employees',
-			href: '/internal/employees',
+			label: 'Resumes',
+			href: '/internal/resumes',
 			allowed: ['admin', 'cms_admin', 'employee'] satisfies AdminRole[]
 		},
 		{

@@ -9,15 +9,15 @@
 
 <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 	<div class="mb-12">
-		<h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Employees</h1>
+		<h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Resumes</h1>
 		<p class="mt-4 text-lg text-slate-500">
-			Manage and view profiles and resumes for all Pixel&Code employees.
+			Manage and view profiles and resumes for all Pixel&Code consultants.
 		</p>
 	</div>
 
 	<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 		{#each liveEmployees as employee}
-			<a href="/internal/employees/{employee.id}" class="block h-full">
+			<a href="/internal/resumes/{employee.id}" class="block h-full">
 				<Card
 					class="flex h-full flex-col overflow-hidden rounded-none transition-all hover:shadow-md"
 				>
@@ -48,7 +48,9 @@
 								<FileText size={14} />
 								View profile
 							</span>
-							<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset">
+							<span
+								class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset"
+							>
 								DB
 							</span>
 						</div>

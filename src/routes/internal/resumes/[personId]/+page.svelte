@@ -135,7 +135,7 @@
 		<div class="mb-6 flex items-center justify-between">
 			<Button
 				variant="ghost"
-				href="/internal/employees"
+				href="/internal/resumes"
 				class="pl-0 hover:bg-transparent hover:text-indigo-600"
 			>
 				<ArrowLeft size={16} class="mr-2" />
@@ -269,7 +269,7 @@
 							draggedResume = null;
 							dragOverIndex = null;
 						}}
-						onclick={() => goto(`/internal/employees/${profile.id}/resume/${resume.id}`)}
+						onclick={() => goto(`/internal/resumes/${profile.id}/resume/${resume.id}`)}
 						class={`flex cursor-pointer items-center justify-between rounded-none border p-6 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
 							dragOverIndex === index ? 'border-primary' : 'border-slate-200'
 						} ${draggedResume?.id === resume.id ? 'opacity-50' : ''}`}
