@@ -1,39 +1,58 @@
 <script lang="ts">
-        import { Card } from '@pixelcode_/blocks/components';
+	import { Card, Button } from '@pixelcode_/blocks/components';
+	import { Pencil } from 'lucide-svelte';
 
-        const { data } = $props();
+	const { data } = $props();
 </script>
 
 <section class="space-y-6">
-        <header>
-                <h1 class="text-2xl font-semibold text-gray-900">Welcome back</h1>
-                <p class="mt-1 text-sm text-gray-700">
-                        Use the sidebar to manage team members and publish updates for PixelCMS.
-                </p>
-        </header>
+	<header>
+		<h1 class="text-2xl font-semibold text-gray-900">Welcome back</h1>
+		<p class="mt-1 text-sm text-gray-700">
+			This is Pixel&Code's internal workspace. Use the sidebar to navigate.
+		</p>
+	</header>
 
-        <!-- Replace the quick start cards with dashboard metrics once analytics are ready. -->
-        <div class="grid gap-4 md:grid-cols-2">
-                <Card class="gap-3 p-6">
-                        <h2 class="text-lg font-semibold text-gray-900">Your profile</h2>
-                        <p class="text-sm text-gray-700">
-                                <strong>Name:</strong>
-                                {[data.profile?.first_name, data.profile?.last_name].filter(Boolean).join(' ') || 'Missing'}
-                        </p>
-                        <p class="text-sm text-gray-700"><strong>Email:</strong> {data.user?.email}</p>
-                        <p class="text-sm text-gray-700">
-                                <strong>Role{(data.roles?.length ?? 0) > 1 ? 's' : ''}:</strong>
-                                {(data.roles ?? [data.role]).filter(Boolean).join(', ')}
-                        </p>
-                </Card>
+	<!-- Replace the quick start cards with dashboard metrics once analytics are ready. -->
+	<div class="grid gap-4 md:grid-cols-2">
+		<Card class="relative gap-3 p-6">
+			<div class="absolute top-4 right-4">
+				<Button
+					variant="ghost"
+					size="sm"
+					href={`/internal/employees/${data.user?.id}`}
+					class="text-gray-500 hover:text-gray-700"
+				>
+					<Pencil size={16} />
+				</Button>
+			</div>
+			<h2 class="text-lg font-semibold text-gray-900">Your profile</h2>
+			<p class="text-sm text-gray-700">
+				<strong>Name:</strong>
+				{[data.profile?.first_name, data.profile?.last_name].filter(Boolean).join(' ') || 'Missing'}
+			</p>
+			<p class="text-sm text-gray-700"><strong>Email:</strong> {data.user?.email}</p>
+			<p class="text-sm text-gray-700">
+				<strong>Role{(data.roles?.length ?? 0) > 1 ? 's' : ''}:</strong>
+				{(data.roles ?? [data.role]).filter(Boolean).join(', ')}
+			</p>
+		</Card>
 
-                <Card class="gap-3 p-6">
-                        <h2 class="text-lg font-semibold text-gray-900">Getting started</h2>
-                        <ul class="list-inside list-disc text-sm text-gray-700">
-                                <li>Admins can invite new teammates in the Users tab.</li>
-                                <li>CMS admins can publish articles and LinkedIn posts from the News tab.</li>
-                                <li>Reach out to the PixelCMS team if you need additional permissions.</li>
-                        </ul>
-                </Card>
-        </div>
+		<Card class="gap-3 p-6">
+			<h2 class="text-lg font-semibold text-gray-900">About this workspace</h2>
+			<p class="text-sm text-gray-700">
+				PixelCMS is our internal tool for managing employee information, company news, resumes, and
+				more. What you can see and do depends on your role.
+			</p>
+			<ul class="mt-2 list-inside list-disc text-sm text-gray-700">
+				<li><strong>Employees</strong> — View and update your own profile and preboarding info.</li>
+				<li><strong>Resumes</strong> — Manage your consultant CV for client presentations.</li>
+				<li><strong>News</strong> — Admins can publish articles and updates.</li>
+				<li><strong>Users</strong> — Admins can invite and manage team members.</li>
+			</ul>
+			<p class="mt-3 text-xs text-gray-500 italic">
+				This workspace is a work in progress. New features are being added continuously.
+			</p>
+		</Card>
+	</div>
 </section>

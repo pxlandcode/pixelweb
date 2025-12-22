@@ -10,6 +10,7 @@
 	import XHRUpload from '@uppy/xhr-upload';
 	import type { UppyFile } from '@uppy/utils/lib/UppyFile';
 	import type { Body, Meta } from '@uppy/utils/lib/UppyFile';
+	import { Lock, Unlock } from 'lucide-svelte';
 
 	type AnyUppyFile = UppyFile<Meta, Body>;
 
@@ -66,6 +67,10 @@
 	let isUploading = $state(false);
 	let isActive = $state(initial.active ?? true);
 	let tempObjectUrl: string | null = null;
+	let password = $state('');
+	let confirmPassword = $state('');
+	let passwordUnlocked = $state(false);
+	let passwordError = $state<string | null>(null);
 
 	const showUploader = $derived(!previewUrl);
 
@@ -222,6 +227,10 @@
 			isActive = initial.active ?? true;
 			avatarError = null;
 			isUploading = false;
+			password = '';
+			confirmPassword = '';
+			passwordUnlocked = false;
+			passwordError = null;
 			resetUploaderState();
 
 			lastInitialId = currentInitialId;
@@ -237,6 +246,10 @@
 			avatarUrl = initial.avatar_url ?? '';
 			previewUrl = avatarUrl;
 			isActive = initial.active ?? true;
+			password = '';
+			confirmPassword = '';
+			passwordUnlocked = false;
+			passwordError = null;
 		}
 	});
 
@@ -259,9 +272,29 @@
 		const form = event.currentTarget as HTMLFormElement;
 		const formData = new FormData(form);
 		error = null;
+		passwordError = null;
 
 		if (selectedRoles.length === 0) {
 			dispatch('error', { message: 'Select at least one role.' });
+			return;
+		}
+
+		// Password validation
+		const shouldValidatePassword = mode === 'create' || passwordUnlocked;
+		if (shouldValidatePassword && password) {
+			if (password !== confirmPassword) {
+				passwordError = 'Passwords do not match.';
+				return;
+			}
+			if (password.length < 6) {
+				passwordError = 'Password must be at least 6 characters.';
+				return;
+			}
+		}
+
+		// In create mode, password is required
+		if (mode === 'create' && !password) {
+			passwordError = 'Password is required.';
 			return;
 		}
 
@@ -363,15 +396,95 @@
 			/>
 		</FormControl>
 
-		<FormControl label="Password" class="gap-2 text-sm" bl="Leave blank to keep current password.">
-			<Input
-				id="password"
-				name="password"
-				type="password"
-				minlength={6}
-				class="bg-white text-gray-900"
-			/>
-		</FormControl>
+		{#if mode === 'create'}
+			<div class="grid gap-4 sm:grid-cols-2">
+				<FormControl label="Password" required class="gap-2 text-sm">
+					<Input
+						id="password"
+						name="password"
+						type="password"
+						minlength={6}
+						required
+						bind:value={password}
+						class="bg-white text-gray-900"
+					/>
+				</FormControl>
+				<FormControl label="Confirm password" required class="gap-2 text-sm">
+					<Input
+						id="confirm_password"
+						type="password"
+						minlength={6}
+						required
+						bind:value={confirmPassword}
+						class="bg-white text-gray-900"
+					/>
+				</FormControl>
+			</div>
+			{#if passwordError}
+				<p class="-mt-2 text-sm text-red-600">{passwordError}</p>
+			{/if}
+		{:else}
+			<div class="rounded-lg border border-slate-200 bg-white p-4">
+				<div class="flex items-center justify-between">
+					<div>
+						<p class="text-sm font-semibold text-gray-900">Password</p>
+						<p class="text-xs text-gray-600">
+							{passwordUnlocked
+								? 'Enter a new password to change it.'
+								: 'Unlock to change the password.'}
+						</p>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						class="gap-2"
+						onclick={() => {
+							passwordUnlocked = !passwordUnlocked;
+							if (!passwordUnlocked) {
+								password = '';
+								confirmPassword = '';
+								passwordError = null;
+							}
+						}}
+					>
+						{#if passwordUnlocked}
+							<Unlock class="h-4 w-4" />
+							Lock
+						{:else}
+							<Lock class="h-4 w-4" />
+							Unlock
+						{/if}
+					</Button>
+				</div>
+				{#if passwordUnlocked}
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<FormControl label="New password" class="gap-2 text-sm">
+							<Input
+								id="password"
+								name="password"
+								type="password"
+								minlength={6}
+								bind:value={password}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+						<FormControl label="Confirm password" class="gap-2 text-sm">
+							<Input
+								id="confirm_password"
+								type="password"
+								minlength={6}
+								bind:value={confirmPassword}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+					</div>
+					{#if passwordError}
+						<p class="mt-2 text-sm text-red-600">{passwordError}</p>
+					{/if}
+				{/if}
+			</div>
+		{/if}
 
 		<FormControl label="Active" class="gap-2 text-sm" tag="div">
 			<input type="hidden" name="active" value={isActive ? 'true' : 'false'} />

@@ -11,16 +11,16 @@ import { siteMeta, type PageMetaInput } from '$lib/seo';
 type Role = 'admin' | 'cms_admin' | 'employee' | 'employer';
 
 type Profile = {
-        first_name: string | null;
-        last_name: string | null;
+	first_name: string | null;
+	last_name: string | null;
 };
 
 type LoadResult = {
-        user: { id: string; email?: string } | null;
-        profile: Profile | null;
-        role: Role | null;
-        roles: Role[];
-        meta?: PageMetaInput;
+	user: { id: string; email?: string } | null;
+	profile: Profile | null;
+	role: Role | null;
+	roles: Role[];
+	meta?: PageMetaInput;
 };
 
 const normalizePath = (pathname: string) => pathname.replace(/\/$/, '') || '/';
@@ -29,31 +29,36 @@ const PUBLIC_PATHS = ['/internal/login', '/internal/reset-password'] as const;
 
 // Role guard configuration centralizes who can visit each internal path.
 const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
-        { pattern: /^\/internal$/, roles: ['admin', 'cms_admin'] },
-        { pattern: /^\/internal\/users/, roles: ['admin'] },
-        { pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
-        { pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
-        { pattern: /^\/internal\/resumes\/consultant\//, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
-        { pattern: /^\/internal\/resumes(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee'] }
+	{ pattern: /^\/internal$/, roles: ['admin', 'cms_admin'] },
+	{ pattern: /^\/internal\/users/, roles: ['admin', 'employer'] },
+	{ pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
+	{ pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
+	{ pattern: /^\/internal\/employees(\/.*)?$/, roles: ['admin', 'employer', 'employee'] },
+	{ pattern: /^\/internal\/feedback(\/.*)?$/, roles: ['admin', 'employer'] },
+	{
+		pattern: /^\/internal\/resumes\/consultant\//,
+		roles: ['admin', 'cms_admin', 'employee', 'employer']
+	},
+	{ pattern: /^\/internal\/resumes(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee'] }
 ];
 
 const guardRoute = (pathname: string, roles: Role[]): string | null => {
-        const match = roleGuards.find((guard) => guard.pattern.test(pathname));
-        if (!match) {
-                // Allow routes that are not listed explicitly.
-                return null;
-        }
+	const match = roleGuards.find((guard) => guard.pattern.test(pathname));
+	if (!match) {
+		// Allow routes that are not listed explicitly.
+		return null;
+	}
 
-        const allowed = roles.some((role) => match.roles.includes(role));
-        if (!allowed) {
-                if (roles.includes('employee') || roles.includes('employer')) {
-                        return '/internal/preboard?unauthorized=1';
-                }
+	const allowed = roles.some((role) => match.roles.includes(role));
+	if (!allowed) {
+		if (roles.includes('employee') || roles.includes('employer')) {
+			return '/internal/preboard?unauthorized=1';
+		}
 
-                return '/internal?unauthorized=1';
-        }
+		return '/internal?unauthorized=1';
+	}
 
-        return null;
+	return null;
 };
 
 const internalMeta = (pathname: string): PageMetaInput => ({
@@ -65,7 +70,7 @@ const internalMeta = (pathname: string): PageMetaInput => ({
 
 export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	const pathname = normalizePath(url.pathname);
-        const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
+	const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
 
 	if (!accessToken) {
 		if (PUBLIC_PATHS.includes(pathname as (typeof PUBLIC_PATHS)[number])) {
@@ -76,16 +81,16 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 		throw redirect(303, `/internal/login?redirect=${redirectParam}`);
 	}
 
-        if (pathname === '/internal/login') {
-                throw redirect(303, '/internal');
-        }
+	if (pathname === '/internal/login') {
+		throw redirect(303, '/internal');
+	}
 
-        const supabase = createSupabaseServerClient(accessToken);
+	const supabase = createSupabaseServerClient(accessToken);
 
-        if (!supabase) {
-                clearAuthCookies(cookies);
-                throw redirect(303, '/internal/login');
-        }
+	if (!supabase) {
+		clearAuthCookies(cookies);
+		throw redirect(303, '/internal/login');
+	}
 
 	try {
 		const { data: userData, error: userError } = await supabase.auth.getUser();

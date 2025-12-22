@@ -2,6 +2,7 @@
 	import { Badge, Button, Mode } from '@pixelcode_/blocks/components';
 	import { createEventDispatcher } from 'svelte';
 	import { page } from '$app/stores';
+	import pixelcodeLogo from '$lib/assets/pixelcodelogodark.svg';
 
 	const dispatch = createEventDispatcher<{ logout: void }>();
 
@@ -25,11 +26,20 @@
 			href: '/internal',
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
 		},
-		{ label: 'Users', href: '/internal/users', allowed: ['admin'] satisfies AdminRole[] },
+		{
+			label: 'Users',
+			href: '/internal/users',
+			allowed: ['admin', 'employer'] satisfies AdminRole[]
+		},
 		{
 			label: 'News',
 			href: '/internal/news',
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+		},
+		{
+			label: 'Employees',
+			href: '/internal/employees',
+			allowed: ['admin', 'employer', 'employee'] satisfies AdminRole[]
 		},
 		{
 			label: 'Resumes',
@@ -40,6 +50,11 @@
 			label: 'Cases',
 			href: '/internal/cases',
 			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+		},
+		{
+			label: 'Feedback',
+			href: '/internal/feedback',
+			allowed: ['admin', 'employer'] satisfies AdminRole[]
 		}
 	];
 
@@ -59,7 +74,7 @@
 		class="hidden w-64 flex-shrink-0 border-r border-gray-200 bg-white/80 backdrop-blur md:block"
 	>
 		<div class="flex items-center justify-between px-6 py-5">
-			<h1 class="text-lg font-semibold text-gray-900">PixelCMS Admin</h1>
+			<img src={pixelcodeLogo} alt="Pixel&Code" class="h-6" />
 		</div>
 		<nav class="space-y-1 px-3 pb-6">
 			{#each navItems as item}
@@ -84,8 +99,8 @@
 			class="flex flex-col gap-3 border-b border-gray-200 bg-white/80 px-4 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8"
 		>
 			<div>
-				<h2 class="text-lg font-semibold text-gray-900">Admin dashboard</h2>
-				<p class="text-sm text-gray-700">Manage the content and users of PixelCMS.</p>
+				<h2 class="text-lg font-semibold text-gray-900">PixelCMS</h2>
+				<p class="text-sm text-gray-700">Pixel&Code's internal CMS</p>
 			</div>
 
 			<div class="flex items-center gap-4">

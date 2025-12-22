@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Card, Icon, Toaster, toast } from '@pixelcode_/blocks/components';
-	import { Download, Edit, Save, X } from 'lucide-svelte';
+	import { ArrowLeft, Download, Edit, Save, X } from 'lucide-svelte';
 	import ResumeView from '$lib/components/resumes/ResumeView.svelte';
 	import { fly } from 'svelte/transition';
 	import { invalidateAll } from '$app/navigation';
@@ -65,10 +65,15 @@
 
 <div class="flex items-center justify-between">
 	<div>
-		<h1 class="text-2xl font-semibold text-text">Resume Preview</h1>
-		<p class="text-sm text-text">
-			{personName} — {data.resume.title}
-		</p>
+		<Button
+			variant="ghost"
+			href="/internal/resumes"
+			class=" pl-0 hover:bg-transparent hover:text-indigo-600"
+		>
+			<ArrowLeft size={16} class="mr-2" />
+			Back to resumes
+		</Button>
+
 		{#if errorMessage}
 			<p class="text-red text-xs">{errorMessage}</p>
 		{/if}
