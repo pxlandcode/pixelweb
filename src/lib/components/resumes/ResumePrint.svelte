@@ -4,7 +4,7 @@
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
-	import worldclassUrl from '$lib/assets/worldclass.svg';
+	import worldclassUrl from '$lib/assets/worldclass.webp?url';
 
 	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
 	type Language = 'sv' | 'en';

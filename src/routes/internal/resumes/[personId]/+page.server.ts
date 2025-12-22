@@ -5,19 +5,32 @@ import {
 	getSupabaseAdminClient
 } from '$lib/server/supabase';
 import { fail } from '@sveltejs/kit';
+import { getResumeEditPermissions } from '$lib/server/resumes/permissions';
 
 export const load: PageServerLoad = async ({ params, cookies }) => {
 	const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
 	const supabase = createSupabaseServerClient(accessToken);
-
-	if (!supabase) {
-		return { profile: null, resumes: [], fromDb: false };
-	}
-
 	const adminClient = getSupabaseAdminClient();
 
+	if (!supabase || !adminClient) {
+		return {
+			profile: null,
+			resumes: [],
+			fromDb: false,
+			canEdit: false,
+			canEditAll: false,
+			isOwnProfile: false
+		};
+	}
+
+	const { canEdit, canEditAll, isOwnProfile } = await getResumeEditPermissions(
+		supabase,
+		adminClient,
+		params.personId
+	);
+
 	const [{ data: profile, error: profileError }, resumesResult] = await Promise.all([
-		supabase
+		adminClient
 			.from('profiles')
 			.select('id, first_name, last_name, avatar_url, title, bio, tech_stack')
 			.eq('id', params.personId)
@@ -41,10 +54,10 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 	]);
 
 	if (profileError) {
-		console.warn('[employees detail] profile error', profileError);
+		console.warn('[resumes detail] profile error', profileError);
 	}
 	if (resumesResult.error) {
-		console.warn('[employees detail] resumes error', resumesResult.error);
+		console.warn('[resumes detail] resumes error', resumesResult.error);
 	}
 
 	// Helper to extract English title from content
@@ -73,7 +86,10 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 	return {
 		profile: profile ?? null,
 		resumes,
-		fromDb: Boolean(profile)
+		fromDb: Boolean(profile),
+		canEdit,
+		canEditAll,
+		isOwnProfile
 	};
 };
 
@@ -110,6 +126,12 @@ export const actions: Actions = {
 			}
 		}
 
+		const { canEdit } = await getResumeEditPermissions(supabase, adminClient, personId);
+
+		if (!canEdit) {
+			return fail(403, { ok: false, message: 'Not authorized to update this profile' });
+		}
+
 		const { error } = await adminClient
 			.from('profiles')
 			.update({ bio, tech_stack: techStack })
@@ -134,6 +156,12 @@ export const actions: Actions = {
 
 		if (typeof personId !== 'string') {
 			return fail(400, { ok: false, message: 'Invalid user id' });
+		}
+
+		const { canEdit } = await getResumeEditPermissions(supabase, adminClient, personId);
+
+		if (!canEdit) {
+			return fail(403, { ok: false, message: 'Not authorized to create resumes for this user' });
 		}
 
 		const { data: profileRow } = await adminClient
@@ -212,6 +240,12 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: 'Empty order' });
 		}
 
+		const { canEdit } = await getResumeEditPermissions(supabase, adminClient, personId);
+
+		if (!canEdit) {
+			return fail(403, { ok: false, message: 'Not authorized to reorder resumes for this user' });
+		}
+
 		// Set all to not main, then set the first as main
 		await adminClient.from('resumes').update({ is_main: false }).eq('user_id', personId);
 		await adminClient
@@ -237,6 +271,12 @@ export const actions: Actions = {
 
 		if (typeof resumeId !== 'string') {
 			return fail(400, { ok: false, message: 'Invalid resume id' });
+		}
+
+		const { canEdit } = await getResumeEditPermissions(supabase, adminClient, personId);
+
+		if (!canEdit) {
+			return fail(403, { ok: false, message: 'Not authorized to copy this resume' });
 		}
 
 		// Fetch the original resume
@@ -299,6 +339,12 @@ export const actions: Actions = {
 
 		if (typeof resumeId !== 'string') {
 			return fail(400, { ok: false, message: 'Invalid resume id' });
+		}
+
+		const { canEdit } = await getResumeEditPermissions(supabase, adminClient, personId);
+
+		if (!canEdit) {
+			return fail(403, { ok: false, message: 'Not authorized to delete this resume' });
 		}
 
 		// Check the resume belongs to this person

@@ -39,7 +39,7 @@ const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 		pattern: /^\/internal\/resumes\/consultant\//,
 		roles: ['admin', 'cms_admin', 'employee', 'employer']
 	},
-	{ pattern: /^\/internal\/resumes(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee'] }
+	{ pattern: /^\/internal\/resumes(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] }
 ];
 
 const guardRoute = (pathname: string, roles: Role[]): string | null => {

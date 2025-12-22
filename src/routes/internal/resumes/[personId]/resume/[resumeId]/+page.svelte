@@ -7,6 +7,7 @@
 
 	let { data } = $props();
 
+	const canEdit = data.canEdit ?? false;
 	let showDownloadOptions = $state(false);
 	let viewLanguage: 'sv' | 'en' = $state((data.language as 'sv' | 'en') ?? 'sv');
 	let downloadLanguage: 'sv' | 'en' = $state((data.language as 'sv' | 'en') ?? 'sv');
@@ -20,6 +21,12 @@
 		downloadLanguage = viewLanguage;
 	});
 
+	$effect(() => {
+		if (!canEdit) {
+			isEditing = false;
+		}
+	});
+
 	const personName = $derived(data.resumePerson?.name ?? 'Resume');
 	const avatarImage = $derived(data.avatarUrl ?? data.resumePerson?.avatar_url ?? null);
 	const downloadBaseName = $derived(() => {
@@ -29,12 +36,14 @@
 	});
 
 	const handleCancel = () => {
+		if (!canEdit) return;
 		if (confirm('Are you sure you want to cancel? Unsaved changes will be lost.')) {
 			window.location.reload();
 		}
 	};
 
 	const handleSave = async () => {
+		if (!canEdit) return;
 		if (!resumeViewRef) return;
 		saving = true;
 		errorMessage = null;
@@ -84,7 +93,7 @@
 
 <!-- Fixed Edit/Save/Download Buttons in Bottom Right -->
 <div class="fixed right-6 bottom-6 z-50 flex gap-2 print:hidden">
-	{#if isEditing}
+	{#if isEditing && canEdit}
 		<Button variant="inverted" onclick={handleCancel}>
 			<Icon icon={X} size="sm" />
 			Cancel
@@ -155,10 +164,12 @@
 				<Icon icon={Download} size="sm" />
 				Download
 			</Button>
-			<Button variant="primary" onclick={() => (isEditing = true)}>
-				<Icon icon={Edit} size="sm" />
-				Edit
-			</Button>
+			{#if canEdit}
+				<Button variant="primary" onclick={() => (isEditing = true)}>
+					<Icon icon={Edit} size="sm" />
+					Edit
+				</Button>
+			{/if}
 		</div>
 	{/if}
 </div>

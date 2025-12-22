@@ -15,8 +15,12 @@ export const load: PageServerLoad = async ({ cookies }) => {
 
 	const adminClient = getSupabaseAdminClient();
 
+	if (!adminClient) {
+		return { employees: [], meta: null };
+	}
+
 	const [{ data: profiles }, rolesResult, authUsersResult] = await Promise.all([
-		supabase
+		adminClient
 			.from('profiles')
 			.select('id, first_name, last_name, avatar_url')
 			.order('last_name', { ascending: true }),

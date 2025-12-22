@@ -9,6 +9,7 @@
 
 	const profile = data.profile;
 	const resumes = data.resumes ?? [];
+	const canEdit = data.canEdit ?? false;
 	const techStack = (profile?.tech_stack as any[]) ?? [];
 	const viewCategories = $derived(
 		(techStack ?? []).filter((cat) => Array.isArray(cat?.skills) && cat.skills.length > 0)
@@ -43,11 +44,19 @@
 		resumeList = [...(resumes ?? [])];
 	});
 
+	$effect(() => {
+		if (!canEdit) {
+			isEditing = false;
+		}
+	});
+
 	const handleDragStart = (resume) => {
+		if (!canEdit) return;
 		draggedResume = resume;
 	};
 
 	const handleDragOver = (event: DragEvent, index: number) => {
+		if (!canEdit) return;
 		event.preventDefault();
 		dragOverIndex = index;
 	};
@@ -57,6 +66,7 @@
 	};
 
 	const reorderResumes = (targetIndex: number) => {
+		if (!canEdit) return;
 		if (!draggedResume) return;
 		const currentIndex = resumeList.findIndex((r) => r.id === draggedResume.id);
 		if (currentIndex === -1 || currentIndex === targetIndex) return;
@@ -68,6 +78,7 @@
 	};
 
 	const saveOrder = async () => {
+		if (!canEdit) return;
 		const order = resumeList.map((r) => r.id);
 		const formData = new FormData();
 		formData.set('person_id', profile.id);
@@ -76,6 +87,7 @@
 	};
 
 	const handleDrop = async (event: DragEvent, index: number) => {
+		if (!canEdit) return;
 		event.preventDefault();
 		reorderResumes(index);
 		draggedResume = null;
@@ -84,6 +96,7 @@
 	};
 
 	const addResume = async () => {
+		if (!canEdit) return;
 		isLoading = true;
 		const formData = new FormData();
 		formData.set('person_id', profile.id);
@@ -97,6 +110,7 @@
 	};
 
 	const deleteResume = async (resumeId: string) => {
+		if (!canEdit) return;
 		isLoading = true;
 		const formData = new FormData();
 		formData.set('resume_id', resumeId);
@@ -109,6 +123,7 @@
 	};
 
 	const copyResume = async (resumeId: string) => {
+		if (!canEdit) return;
 		isLoading = true;
 		const formData = new FormData();
 		formData.set('resume_id', resumeId);
@@ -142,7 +157,7 @@
 				Back to all people
 			</Button>
 
-			{#if profile}
+			{#if profile && canEdit}
 				<div class="flex gap-2">
 					{#if isEditing}
 						<Button type="button" variant="ghost" onclick={() => (isEditing = false)}>
@@ -198,7 +213,7 @@
 
 						<div>
 							<h3 class="mb-2 text-lg font-semibold text-slate-900">Bio</h3>
-							{#if isEditing}
+							{#if isEditing && canEdit}
 								<textarea
 									name="bio"
 									bind:value={editingBio}
@@ -217,7 +232,7 @@
 
 						<div class="pt-2">
 							<h3 class="mb-2 text-lg font-semibold text-slate-900">Tech Stack</h3>
-							{#if isEditing}
+							{#if isEditing && canEdit}
 								<TechStackEditor bind:categories={editingTechStack} isEditing />
 							{:else if viewCategories.length === 0}
 								<p class="text-sm text-slate-600">No tech stack recorded yet.</p>
@@ -254,13 +269,15 @@
 		<div class="mt-12 border-t border-slate-200 pt-12">
 			<div class="mb-6 flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-slate-900">Resumes</h2>
-				<Button size="sm" variant="outline" onclick={addResume}>+ Add resume</Button>
+				{#if canEdit}
+					<Button size="sm" variant="outline" onclick={addResume}>+ Add resume</Button>
+				{/if}
 			</div>
 
 			<div class="space-y-4">
 				{#each sortedResumeList as resume, index (resume.id)}
 					<div
-						draggable="true"
+						draggable={canEdit}
 						ondragstart={() => handleDragStart(resume)}
 						ondragover={(e) => handleDragOver(e, index)}
 						ondragleave={handleDragLeave}
@@ -302,33 +319,35 @@
 								</div>
 							</div>
 						</div>
-						<div class="flex items-center gap-1">
-							<button
-								type="button"
-								class="cursor-pointer rounded-md p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
-								onclick={(e) => {
-									e.stopPropagation();
-									copyResume(resume.id);
-								}}
-								title="Copy resume"
-							>
-								<Copy size={18} />
-							</button>
-							<button
-								type="button"
-								class="cursor-pointer rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-								onclick={(e) => e.stopPropagation()}
-								title="Delete resume"
-								use:confirm={{
-									title: 'Delete resume?',
-									description: `Are you sure you want to delete "${resume.version_name}"? This cannot be undone.`,
-									actionLabel: 'Delete',
-									action: () => deleteResume(resume.id)
-								}}
-							>
-								<Trash2 size={18} />
-							</button>
-						</div>
+						{#if canEdit}
+							<div class="flex items-center gap-1">
+								<button
+									type="button"
+									class="cursor-pointer rounded-md p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+									onclick={(e) => {
+										e.stopPropagation();
+										copyResume(resume.id);
+									}}
+									title="Copy resume"
+								>
+									<Copy size={18} />
+								</button>
+								<button
+									type="button"
+									class="cursor-pointer rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+									onclick={(e) => e.stopPropagation()}
+									title="Delete resume"
+									use:confirm={{
+										title: 'Delete resume?',
+										description: `Are you sure you want to delete "${resume.version_name}"? This cannot be undone.`,
+										actionLabel: 'Delete',
+										action: () => deleteResume(resume.id)
+									}}
+								>
+									<Trash2 size={18} />
+								</button>
+							</div>
+						{/if}
 					</div>
 				{/each}
 				{#if sortedResumeList.length === 0}
