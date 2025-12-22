@@ -42,16 +42,13 @@
 			<h2 class="text-lg font-semibold text-gray-900">About this workspace</h2>
 			<p class="text-sm text-gray-700">
 				PixelCMS is our internal tool for managing employee information, company news, resumes, and
-				more. What you can see and do depends on your role.
+				more.
 			</p>
-			<ul class="mt-2 list-inside list-disc text-sm text-gray-700">
-				<li><strong>Employees</strong> — View and update your own profile and preboarding info.</li>
-				<li><strong>Resumes</strong> — Manage your consultant CV for client presentations.</li>
-				<li><strong>News</strong> — Admins can publish articles and updates.</li>
-				<li><strong>Users</strong> — Admins can invite and manage team members.</li>
-			</ul>
+
 			<p class="mt-3 text-xs text-gray-500 italic">
-				This workspace is a work in progress. New features are being added continuously.
+				This workspace is a work in progress. And the codebase is available for all of our
+				employees. If you want to contribute or suggest improvements, please reach out to your
+				manager to get access to our GitHub repository.
 			</p>
 		</Card>
 	</div>
