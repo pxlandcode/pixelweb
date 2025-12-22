@@ -8,6 +8,7 @@ import { fetchNewsPosts } from '$lib/server/news';
 import { mockNewsPosts } from '$lib/mockdata/newsPosts';
 import { dev } from '$app/environment';
 import { buildOrganizationSchema, buildWebsiteSchema } from '$lib/seo';
+import { env } from '$env/dynamic/private';
 
 const LeadSchema = z.object({
 	website_url: z
@@ -30,11 +31,13 @@ const homeMeta = {
 };
 
 export const load: PageServerLoad = async (_event) => {
+	const isChristmas = String(env.IS_CHRISTMAS ?? '').toLowerCase() === 'true';
+
 	// Always try to fetch from Supabase first so CMS content is the source of truth.
 	const news = await fetchNewsPosts();
 
 	if (news.posts.length > 0 || !news.error) {
-		return { news, meta: homeMeta };
+		return { news, meta: homeMeta, isChristmas };
 	}
 
 	// Fall back to mock posts only when explicitly in dev mode and nothing was returned.
@@ -44,11 +47,12 @@ export const load: PageServerLoad = async (_event) => {
 				posts: mockNewsPosts,
 				error: news.error
 			},
-			meta: homeMeta
+			meta: homeMeta,
+			isChristmas
 		};
 	}
 
-	return { news, meta: homeMeta };
+	return { news, meta: homeMeta, isChristmas };
 };
 export const actions: Actions = {
 	default: async (event) => {

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { ResumeData, LocalizedText } from '$lib/types/resume';
+	import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types/resume';
 	import { soloImages } from '$lib/images/manifest';
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
-	import worldclassUrl from '$lib/assets/worldclass.svg';
+	import worldclassUrl from '$lib/assets/worldclass.webp?url';
 
 	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
 	type Language = 'sv' | 'en';
@@ -12,12 +12,73 @@
 	let {
 		data,
 		image,
-		language = 'sv'
+		language = 'sv',
+		person,
+		profileTechStack: initialProfileTechStack
 	}: {
 		data: ResumeData;
-		image?: ImageResource;
+		image?: ImageResource | string | null;
 		language?: Language;
+		person?: Person;
+		profileTechStack?: TechCategory[];
 	} = $props();
+
+	const resolvedImage: ImageResource | { src: string; srcset?: string } | null = $derived.by(() => {
+		const source = image ?? person?.avatar_url ?? null;
+		if (!source) return null;
+		if (typeof source === 'string') {
+			return { src: source };
+		}
+		return source;
+	});
+
+	let profileTechStack: TechCategory[] = initialProfileTechStack ?? person?.techStack ?? [];
+	const profileHasSkills = $derived(profileTechStack.some((cat) => cat.skills.length > 0));
+	const normalize = (value: string) => value.trim().toLowerCase();
+	const profileSkillSet = $derived(
+		new Set(profileTechStack.flatMap((cat) => cat.skills ?? []).map((skill) => normalize(skill)))
+	);
+	const extraTechniques = $derived(
+		(data.techniques ?? []).filter((tech) => !profileSkillSet.has(normalize(tech)))
+	);
+	const translations: Record<string, { sv: string; en: string }> = {
+		frontend: { sv: 'Frontend', en: 'Frontend' },
+		backend: { sv: 'Backend', en: 'Backend' },
+		tools: { sv: 'Verktyg', en: 'Tools' },
+		design: { sv: 'Design', en: 'Design' },
+		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
+		devops: { sv: 'DevOps', en: 'DevOps' },
+		database: { sv: 'Databas', en: 'Database' },
+		methodologies: { sv: 'Metoder', en: 'Methods' },
+		architecture: { sv: 'Arkitektur', en: 'Architecture' },
+		'soft skills': { sv: 'Mjuka färdigheter', en: 'Soft skills' },
+		methods: { sv: 'Metoder', en: 'Methods' },
+		other: { sv: 'Övrigt', en: 'Other' }
+	};
+	const labelFor = (name: string) => {
+		const key = name.trim().toLowerCase();
+		const entry = translations[key];
+		return entry ? entry[language] : name;
+	};
+	const displayCategories = $derived(() => {
+		const categories: TechCategory[] = profileTechStack.filter(
+			(cat) => (cat.skills ?? []).length > 0
+		);
+		if (extraTechniques.length > 0) {
+			categories.push({ id: 'other', name: labelFor('other'), skills: extraTechniques });
+		}
+		if (data.methods.length > 0) {
+			categories.push({ id: 'methods', name: labelFor('methods'), skills: data.methods });
+		}
+		return categories;
+	});
+
+	$effect(() => {
+		profileTechStack = initialProfileTechStack ?? person?.techStack ?? [];
+	});
+
+	const visibleHighlighted = $derived(data.highlightedExperiences.filter((exp) => !exp.hidden));
+	const visibleExperiences = $derived(data.experiences.filter((exp) => !exp.hidden));
 
 	// Helper to resolve localized text
 	const t = (text: LocalizedText | undefined): string => {
@@ -67,10 +128,10 @@
 					<div
 						class="relative aspect-square w-full flex-shrink-0 overflow-hidden rounded-xs border border-slate-200 bg-white"
 					>
-						{#if image}
+						{#if resolvedImage}
 							<img
-								src={image.src}
-								srcset={image.srcset}
+								src={resolvedImage.src}
+								srcset={resolvedImage.srcset ?? resolvedImage.src}
 								alt={data.name || 'Profile'}
 								class="h-full w-full object-cover object-center"
 								loading="lazy"
@@ -152,13 +213,13 @@
 					</div>
 
 					<!-- Highlighted Experience (matching HighlightedExperience.svelte) -->
-					{#if data.highlightedExperiences.length > 0}
+					{#if visibleHighlighted.length > 0}
 						<div class="space-y-4">
 							<h3 class="pt-4 text-base font-bold tracking-wide text-slate-900 uppercase">
 								{language === 'sv' ? 'Utvald Erfarenhet' : 'Highlighted Experience'}
 							</h3>
 
-							{#each data.highlightedExperiences as exp}
+							{#each visibleHighlighted as exp}
 								<div class="space-y-3 border-l border-primary pl-4">
 									<div>
 										<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
@@ -171,7 +232,7 @@
 									{#if exp.technologies.length > 0}
 										<div class="space-y-1">
 											<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-												Technologies
+												{language === 'sv' ? 'Nyckeltekniker' : 'Key Technologies'}
 											</p>
 											<div class="flex flex-wrap gap-2">
 												{#each exp.technologies as tech}
@@ -202,36 +263,28 @@
 
 	<div class="resume-print-page page-2-plus bg-white text-slate-900">
 		<!-- Previous Experience Section (matching ExperienceSection + ExperienceItem) -->
-		{#if data.experiences.length > 0}
+		{#if visibleExperiences.length > 0}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers (matching ExperienceSection.svelte) -->
-				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+				<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 					<h2 class="text-base font-bold text-slate-900 uppercase">
 						{language === 'sv' ? 'Tidigare Erfarenheter' : 'Previous Experience'}
 					</h2>
-					<div class="flex items-center">
-						<div class="h-px w-full bg-orange-500"></div>
-					</div>
 					<div class="flex items-center">
 						<div class="h-px flex-1 bg-slate-300"></div>
 					</div>
 				</div>
 
 				<div class="mt-4 space-y-6">
-					{#each data.experiences as exp}
+					{#each visibleExperiences as exp}
 						<!-- Experience Item (matching ExperienceItem.svelte) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<!-- Column 1: Empty -->
-							<div></div>
-
-							<!-- Column 2: Period, Company, Location -->
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
+							<!-- Column 1: Period, Company, Location -->
 							<div class="space-y-1">
 								<p class="text-sm font-semibold text-slate-900">
 									<span class="whitespace-nowrap">{formatDate(exp.startDate)}</span>
-									{#if exp.endDate}
-										<span> - </span>
-										<span class="whitespace-nowrap">{formatDate(exp.endDate)}</span>
-									{/if}
+									<span> - </span>
+									<span class="whitespace-nowrap">{formatDate(exp.endDate)}</span>
 								</p>
 								<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
 								{#if exp.location}
@@ -239,7 +292,7 @@
 								{/if}
 							</div>
 
-							<!-- Column 3: Role, Description, Technologies -->
+							<!-- Column 2: Role, Description, Technologies -->
 							<div class="space-y-3">
 								<h3 class="text-base font-bold break-words hyphens-auto text-slate-900" lang="en">
 									{t(exp.role)}
@@ -268,55 +321,33 @@
 		{/if}
 
 		<!-- Skills Section (matching SkillsCategorized with pills for techniques/methods) -->
-		{#if data.techniques.length > 0 || data.methods.length > 0}
+		{#if displayCategories().length > 0}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers -->
-				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+				<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 					<h2 class="text-base font-bold text-slate-900 uppercase">
 						{language === 'sv' ? 'Kompetenser' : 'Skills'}
 					</h2>
-					<div class="flex items-center">
-						<div class="h-px w-full bg-orange-500"></div>
-					</div>
 					<div class="flex items-center">
 						<div class="h-px flex-1 bg-slate-300"></div>
 					</div>
 				</div>
 
 				<div class="mt-4 space-y-4">
-					{#if data.techniques.length > 0}
-						<!-- Techniques Row (matching SkillsCategorized with skipFirstColumn) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+					{#each displayCategories() as category (category.id)}
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
-								{language === 'sv' ? 'Tekniker' : 'Techniques'}
+								{labelFor(category.name)}
 							</p>
 							<div class="flex flex-wrap gap-2">
-								{#each data.techniques as tech}
+								{#each category.skills as skill}
 									<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
-										>{tech}</span
+										>{skill}</span
 									>
 								{/each}
 							</div>
 						</div>
-					{/if}
-
-					{#if data.methods.length > 0}
-						<!-- Methods Row -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
-							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
-								{language === 'sv' ? 'Metoder' : 'Methods'}
-							</p>
-							<div class="flex flex-wrap gap-2">
-								{#each data.methods as method}
-									<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800"
-										>{method}</span
-									>
-								{/each}
-							</div>
-						</div>
-					{/if}
+					{/each}
 				</div>
 			</section>
 		{/if}
@@ -325,13 +356,10 @@
 		{#if data.languages.length > 0 || data.education.length > 0 || (data.portfolio && data.portfolio.length > 0)}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers -->
-				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+				<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 					<h2 class="text-base font-bold text-slate-900 uppercase">
 						{language === 'sv' ? 'Övrigt' : 'Other'}
 					</h2>
-					<div class="flex items-center">
-						<div class="h-px w-full bg-orange-500"></div>
-					</div>
 					<div class="flex items-center">
 						<div class="h-px flex-1 bg-slate-300"></div>
 					</div>
@@ -340,8 +368,7 @@
 				<div class="mt-4 space-y-4">
 					{#if data.languages.length > 0}
 						<!-- Languages Row (matching SkillsCategorized isLanguage) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 								{language === 'sv' ? 'Språk' : 'Languages'}
 							</p>
@@ -357,8 +384,7 @@
 
 					{#if data.education.length > 0}
 						<!-- Education Row (matching SkillsCategorized isEducation) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 								{language === 'sv' ? 'Utbildning' : 'Education'}
 							</p>
@@ -375,8 +401,7 @@
 
 					{#if data.portfolio && data.portfolio.length > 0}
 						<!-- Portfolio Row (matching SkillsCategorized isPortfolio) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">Portfolio</p>
 							<div class="flex flex-wrap gap-2 text-sm text-slate-800">
 								{#each data.portfolio as url}

@@ -184,7 +184,6 @@ const summariseHighlights = async (brand: string, text: string): Promise<string[
 			]
 		});
 		const rawContent = response.output_text ?? '';
-		console.log('[presence] highlight raw response', rawContent.slice(0, 400));
 		const payload = extractJsonPayload(rawContent);
 		const items = Array.isArray(payload.highlights) ? payload.highlights : [];
 		return items
@@ -290,7 +289,6 @@ const runBraveSearch = async (
 ): Promise<RankResult> => {
 	if (!BRAVE_SEARCH_KEY) return {};
 	try {
-		console.log('[presence] brave search request', { query, host });
 		const offsets = [0, 20, 40];
 		for (const offset of offsets) {
 			let attempt = 0;
@@ -308,15 +306,6 @@ const runBraveSearch = async (
 						}
 					}
 				);
-
-				console.log('[presence] brave search response', {
-					status: candidate.status,
-					redirected: candidate.redirected,
-					finalUrl: candidate.url,
-					contentType: candidate.headers.get('content-type'),
-					offset,
-					attempt
-				});
 
 				if (candidate.status === 429) {
 					attempt += 1;
@@ -386,7 +375,6 @@ const runOpenAISearch = async (query: string, host: string): Promise<RankResult>
 			]
 		});
 		const rawContent = response.output_text ?? '';
-		console.log('[presence] openai search raw response', rawContent.slice(0, 400));
 		const payload = extractJsonPayload(rawContent);
 		const rankValue = Number(payload.rank);
 		const rank = Number.isFinite(rankValue) ? rankValue : undefined;
@@ -439,8 +427,6 @@ const runBraveGrounding = async (
 	if (!groundingEnabled || !BRAVE_AI_GROUNDING_KEY) return undefined;
 
 	try {
-		console.log('[presence] brave grounding request', { query, host });
-
 		const res = await fetchWithTimeout(
 			fetcher,
 			'https://api.search.brave.com/res/v1/chat/completions',
@@ -462,13 +448,6 @@ const runBraveGrounding = async (
 				})
 			}
 		);
-
-		console.log('[presence] brave grounding response', {
-			status: res.status,
-			redirected: res.redirected,
-			finalUrl: res.url,
-			contentType: res.headers.get('content-type')
-		});
 
 		if (!res.ok) {
 			const body = await res.text();

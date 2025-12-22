@@ -433,8 +433,8 @@
 	$: measurementSignature && void measureHeadlineHeight();
 </script>
 
-<section class="flex flex-1 items-center justify-center px-6 pt-12 pb-16 md:px-24 md:pt-24">
-	<div class="flex flex-col items-center gap-4 text-center">
+<section class="relative flex flex-1 items-center justify-center overflow-hidden px-6 pt-12 pb-16 md:px-24 md:pt-24">
+	<div class="relative z-10 flex flex-col items-center gap-4 text-center">
 		<p class="text-xs tracking-[0.4em] text-white/55 uppercase md:text-sm">{eyebrow}</p>
 		<div
 			class="grid place-items-center overflow-hidden"
@@ -448,18 +448,18 @@
 		>
 			{#if shouldAnimate}
 				{#key headlineKey}
-						<h1
-							class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
-							style={`height: ${
-								headlineHeightPx
-									? `${headlineHeightPx}px`
-									: currentItem.type === 'brand'
-										? brandClampHeight
-										: clampFont
-							}; font-size: ${clampFont};`}
-							use:observeHeadline
-							in:fly={isInitialBrandDisplay ? flyInInitialBrand : flyInDefault}
-							out:fly={flyOutDefault}
+					<h1
+						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 text-center leading-[1.05] font-semibold tracking-[0.04em] uppercase sm:gap-5"
+						style={`height: ${
+							headlineHeightPx
+								? `${headlineHeightPx}px`
+								: currentItem.type === 'brand'
+									? brandClampHeight
+									: clampFont
+						}; font-size: ${clampFont};`}
+						use:observeHeadline
+						in:fly={isInitialBrandDisplay ? flyInInitialBrand : flyInDefault}
+						out:fly={flyOutDefault}
 					>
 						{#if currentItem.type === 'brand' && currentItem.logo}
 							<span class="sr-only">{brandText}</span>
@@ -474,18 +474,18 @@
 						{/if}
 					</h1>
 				{/key}
-				{:else}
-					<h1
-						class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 sm:gap-5 leading-[1.05] font-semibold tracking-[0.04em] text-center uppercase"
-						style={`height: ${
-							headlineHeightPx
-								? `${headlineHeightPx}px`
-								: currentItem.type === 'brand'
-									? brandClampHeight
-									: clampFont
-						}; font-size: ${clampFont};`}
-						use:observeHeadline
-					>
+			{:else}
+				<h1
+					class="col-start-1 row-start-1 inline-flex items-center justify-center gap-3 text-center leading-[1.05] font-semibold tracking-[0.04em] uppercase sm:gap-5"
+					style={`height: ${
+						headlineHeightPx
+							? `${headlineHeightPx}px`
+							: currentItem.type === 'brand'
+								? brandClampHeight
+								: clampFont
+					}; font-size: ${clampFont};`}
+					use:observeHeadline
+				>
 					{#if currentItem.type === 'brand' && currentItem.logo}
 						<span class="sr-only">{brandText}</span>
 						<img class="hero-brand-logo" src={currentItem.logo} alt={brandText} />

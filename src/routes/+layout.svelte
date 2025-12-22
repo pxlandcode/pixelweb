@@ -11,7 +11,8 @@
 		SiteFooter,
 		ContactPostcard,
 		LaunchCountdownOverlay,
-		RollingText
+		RollingText,
+		SnowBackground
 	} from '$lib/components';
 	import { Button, Icon } from '@pixelcode_/blocks/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
@@ -24,6 +25,7 @@
 		resetFloatingNavState,
 		setFloatingNavState
 	} from '$lib/stores/floatingNav';
+	import { marqueeHeight } from '$lib/stores/marquee';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import Lenis from 'lenis';
 	import { page } from '$app/stores';
@@ -90,6 +92,15 @@
 				? resolvedMeta.jsonLd
 				: [resolvedMeta.jsonLd]
 			: []
+	);
+	const isChristmas = $derived(Boolean($page.data?.isChristmas));
+	const snowLayerHeight = $derived(
+		`max(0px, calc(100dvh - ${Math.max(0, Math.round($marqueeHeight))}px))`
+	);
+	const showSnowBackground = $derived(
+		isChristmas &&
+			!$page.url.pathname.startsWith('/internal') &&
+			!$page.url.pathname.startsWith('/print')
 	);
 
 	let lenis: Lenis | undefined;
@@ -212,6 +223,16 @@
 
 	{#if !$page.url.pathname.startsWith('/internal')}
 		<LaunchCountdownOverlay targetIso={LAUNCH_COUNTDOWN_TARGET} />
+	{/if}
+
+	{#if showSnowBackground}
+		<div
+			class="pointer-events-none fixed inset-x-0 top-0 z-0 overflow-hidden"
+			style:height={snowLayerHeight}
+			aria-hidden="true"
+		>
+			<SnowBackground />
+		</div>
 	{/if}
 
 	{#if !$page.url.pathname.startsWith('/internal')}

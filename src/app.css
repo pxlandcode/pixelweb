@@ -156,8 +156,10 @@
 	font-display: swap;
 }
 
+
+/* new primary??? #f35b3f */
 @theme {
-	--color-primary: #f35b3f;
+	--color-primary: #E76F51;
 	--color-background: #18191b;
 	--color-foreground: #f5f6f8;
     --color-text: #18191b;

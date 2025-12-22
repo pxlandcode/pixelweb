@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
 	import {
 		Cardstack,
@@ -36,16 +38,16 @@
 	const bannerTitle =
 		'We design, build and support digital products that create real business value.';
 
-	export let data: PageData;
-	export let form: ActionData | undefined;
+	let { data, form } = $props<{ data: PageData; form?: ActionData }>();
 
-	$: leadValues = form?.values ?? { website_url: '', email: '' };
-	$: newsPosts = data.news?.posts ?? [];
-	$: newsError = data.news?.error;
+	const leadValues = $derived(form?.values ?? { website_url: '', email: '' });
+	const newsPosts = $derived(data.news?.posts ?? []);
+	const newsError = $derived(data.news?.error);
+	const isChristmas = $derived(Boolean(data.isChristmas));
 </script>
 
 <main class="flex min-h-screen flex-col bg-background text-[#f0f0f0]">
-	<HeroFirstFold {logos} heroProps={{ brandLogo: pixelLogoUrl }} />
+	<HeroFirstFold {logos} heroProps={{ brandLogo: pixelLogoUrl, isChristmas }} />
 	<ImageFeaturePair
 		{leadTitle}
 		{leftTitle}

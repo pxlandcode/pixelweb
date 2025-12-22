@@ -1,72 +1,59 @@
 <script lang="ts">
-	import { MockResumeService } from '$lib/api/mock-resumes';
-	import { soloImages } from '$lib/images/manifest';
-	import { Button, Card } from '@pixelcode_/blocks/components';
-	import { FileText, User } from 'lucide-svelte';
+	import { Card } from '@pixelcode_/blocks/components';
+	import { User, Phone, Calendar, Briefcase, Mail } from 'lucide-svelte';
 
-	const people = MockResumeService.getPeople();
+	const { data } = $props();
 
-	const peopleWithResumes = people.map((person) => {
-		const personResumes = MockResumeService.getResumesForPerson(person.id);
-		const mainResume = MockResumeService.getMainResume(person.id);
-		const portrait = soloImages[person.portraitId];
-
-		return {
-			...person,
-			resumes: personResumes,
-			mainResume,
-			portraitUrl: portrait?.src,
-			portraitSrcset: portrait?.srcset
-		};
-	});
+	const employees = $derived(data.employees ?? []);
 </script>
 
-<div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+<div class="">
 	<div class="mb-12">
 		<h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Employees</h1>
 		<p class="mt-4 text-lg text-slate-500">
-			Manage and view profiles and resumes for all Pixel&Code employees.
+			Manage employee information, payroll details, and emergency contacts.
 		</p>
 	</div>
 
-	<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-		{#each peopleWithResumes as person}
-			<a href="/internal/employees/{person.id}" class="block h-full">
+	<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+		{#each employees as employee}
+			<a href="/internal/employees/{employee.id}" class="block h-full">
 				<Card
 					class="flex h-full flex-col overflow-hidden rounded-none transition-all hover:shadow-md"
 				>
 					<div class="aspect-square w-full overflow-hidden bg-slate-100">
-						{#if person.portraitUrl}
+						{#if employee.avatar_url}
 							<img
-								src={person.portraitUrl}
-								srcset={person.portraitSrcset}
-								alt={person.name}
+								src={employee.avatar_url}
+								alt={[employee.first_name, employee.last_name].filter(Boolean).join(' ')}
 								class="h-full w-full object-cover object-top transition-transform duration-500 hover:scale-105"
 							/>
 						{:else}
 							<div class="flex h-full w-full items-center justify-center text-slate-300">
-								<User size={48} />
+								<User size={64} />
 							</div>
 						{/if}
 					</div>
 
-					<div class="flex flex-1 flex-col p-6">
-						<div class="mb-4">
-							<h3 class="text-xl font-semibold text-slate-900">{person.name}</h3>
-							<p class="text-sm font-medium text-primary">{person.title}</p>
+					<div class="flex flex-1 flex-col p-5">
+						<div class="mb-3">
+							<h3 class="text-lg font-semibold text-slate-900">
+								{[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Unnamed'}
+							</h3>
+							{#if employee.email}
+								<div class="flex items-center gap-1.5">
+									<Mail size={14} />
+									<p class="truncate text-sm text-slate-500">{employee.email}</p>
+								</div>
+							{/if}
 						</div>
 
-						<div class="mt-auto flex items-center justify-between text-xs text-slate-500">
-							<span class="flex items-center gap-1">
-								<FileText size={14} />
-								{person.resumes.length} Resume{person.resumes.length !== 1 ? 's' : ''}
-							</span>
-							{#if person.mainResume}
-								<span
-									class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset"
-								>
-									Main
-								</span>
+						<div class="mt-auto space-y-2 text-xs text-slate-500">
+							{#if employee.phone}
+								<div class="flex items-center gap-1.5">
+									<Phone size={14} />
+									<span>{employee.phone}</span>
+								</div>
 							{/if}
 						</div>
 					</div>
@@ -74,4 +61,14 @@
 			</a>
 		{/each}
 	</div>
+
+	{#if employees.length === 0}
+		<div class="rounded-lg border border-dashed border-slate-300 p-12 text-center">
+			<User size={48} class="mx-auto mb-4 text-slate-300" />
+			<h3 class="text-lg font-medium text-slate-900">No employees found</h3>
+			<p class="mt-2 text-sm text-slate-500">
+				Employees will appear here once they have the employee role assigned.
+			</p>
+		</div>
+	{/if}
 </div>

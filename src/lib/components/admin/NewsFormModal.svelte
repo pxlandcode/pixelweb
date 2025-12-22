@@ -8,7 +8,7 @@
 		Select,
 		TextArea
 	} from '@pixelcode_/blocks/components';
-        import { createEventDispatcher, onDestroy, tick } from 'svelte';
+	import { createEventDispatcher, onDestroy, tick } from 'svelte';
 	import Uppy from '@uppy/core';
 	import Dashboard from '@uppy/dashboard';
 	import XHRUpload from '@uppy/xhr-upload';
@@ -88,7 +88,6 @@
 			return;
 		}
 
-		console.log('[NewsFormModal] Destroying Uppy instance');
 		uppy.cancelAll();
 		uppy.destroy();
 		if (uppyContainer) {
@@ -131,14 +130,8 @@
 
 	const initializeUppy = () => {
 		if (uppy || !uppyContainer) {
-			console.log('[NewsFormModal] Skipping Uppy init', {
-				hasInstance: Boolean(uppy),
-				hasContainer: Boolean(uppyContainer)
-			});
 			return;
 		}
-
-		console.log('[NewsFormModal] Initializing Uppy', { container: uppyContainer });
 
 		uppy = new Uppy({
 			autoProceed: true,
@@ -167,12 +160,10 @@
 		});
 
 		uppy.on('file-added', (file) => {
-			console.log('[NewsFormModal] Uppy file added', file);
 			setPreviewFromLocalFile(file as AnyUppyFile);
 		});
 
 		uppy.on('file-removed', (file, reason) => {
-			console.log('[NewsFormModal] Uppy file removed', { file, reason });
 			revokeTempObjectUrl();
 			if (!coverImageUrl) {
 				previewUrl = '';
@@ -182,7 +173,6 @@
 		uppy.on('upload', () => {
 			isUploading = true;
 			uploadError = null;
-			console.log('[NewsFormModal] Upload started');
 		});
 
 		uppy.on('upload-error', (_file, error) => {
@@ -194,13 +184,11 @@
 		uppy.on('upload-success', (file, response) => {
 			isUploading = false;
 			uploadError = null;
-			console.log('[NewsFormModal] Upload success', response);
 
 			const url = response?.body?.url as string | undefined;
 			const path = response?.body?.path as string | undefined;
 
 			if (!url) {
-				console.warn('[NewsFormModal] Upload response missing URL', response);
 				uploadError = 'Upload succeeded but no URL was returned.';
 				return;
 			}
@@ -209,12 +197,10 @@
 			coverImageUrl = url;
 			previewUrl = url;
 			copied = false;
-			console.log('[NewsFormModal] Stored upload info', { url, path, fileName: file.name });
 		});
 
 		uppy.on('complete', () => {
 			isUploading = false;
-			console.log('[NewsFormModal] Upload complete');
 		});
 	};
 
@@ -223,11 +209,9 @@
 			void (async () => {
 				await tick();
 				if (!open) {
-					console.log('[NewsFormModal] Drawer closed before Uppy init, skipping');
 					return;
 				}
 				if (uppyContainer && !uppy) {
-					console.log('[NewsFormModal] Drawer opened, initializing Uppy after tick');
 					initializeUppy();
 				}
 			})();
@@ -368,18 +352,22 @@
 				</Select>
 			</FormControl>
 
-				<FormControl
-					label="Cover image"
-					class="gap-2 text-sm"
-					bl="Upload a new image or keep the existing cover."
-					tag="div"
-				>
+			<FormControl
+				label="Cover image"
+				class="gap-2 text-sm"
+				bl="Upload a new image or keep the existing cover."
+				tag="div"
+			>
 				<div class="flex flex-col gap-3">
 					{#if previewUrl}
 						<div class="flex flex-col gap-3">
-					<div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-						<img src={previewUrl} alt="Cover image preview" class="aspect-square w-full object-cover" />
-					</div>
+							<div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+								<img
+									src={previewUrl}
+									alt="Cover image preview"
+									class="aspect-square w-full object-cover"
+								/>
+							</div>
 
 							<div class="flex flex-wrap items-center gap-2">
 								<Button
@@ -415,7 +403,7 @@
 						class:hidden={!showUploader}
 						class="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-1.5"
 					>
-							<div bind:this={uppyContainer} class="uppy-container h-44 w-full" />
+						<div bind:this={uppyContainer} class="uppy-container h-44 w-full" />
 					</div>
 
 					{#if uploadError}

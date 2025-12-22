@@ -6,6 +6,8 @@
 
 	let isModalOpen = $state(false);
 	let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+	let editUser = $state(data.users[0] ?? null);
+	let editMode: 'create' | 'edit' = $state('create');
 
 	const handleUserCreated = (event: CustomEvent<{ message?: string }>) => {
 		feedback = { type: 'success', message: event.detail?.message ?? 'User created successfully.' };
@@ -37,6 +39,16 @@
 		type="button"
 		onclick={() => {
 			feedback = null;
+			editMode = 'create';
+			editUser = {
+				id: '',
+				first_name: '',
+				last_name: '',
+				email: '',
+				roles: ['employee'],
+				avatar_url: null,
+				active: true
+			};
 			isModalOpen = true;
 		}}
 	>
@@ -51,11 +63,21 @@
 {/if}
 
 <div class="mt-6">
-	<UserTable users={data.users} {form} />
+	<UserTable
+		users={data.users}
+		{form}
+		onEdit={(u) => {
+			editMode = 'edit';
+			editUser = u;
+			isModalOpen = true;
+		}}
+	/>
 </div>
 
 <UserFormModal
 	bind:open={isModalOpen}
+	mode={editMode}
+	initial={editUser ?? undefined}
 	on:success={handleUserCreated}
 	on:error={handleCreateError}
 	on:close={() => (isModalOpen = false)}

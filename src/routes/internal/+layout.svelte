@@ -13,6 +13,12 @@
 		'/internal/preboard'
 	]);
 	const routeId = $derived($page.route.id ?? '');
+
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		document.body.classList.add('internal-light');
+		return () => document.body.classList.remove('internal-light');
+	});
 </script>
 
 <Mode.Watcher defaultMode="light" />
@@ -26,6 +32,7 @@
 		<AdminLayout
 			profile={data.profile}
 			role={data.role}
+			roles={data.roles}
 			userEmail={data.user?.email ?? null}
 			{unauthorizedMessage}
 		>

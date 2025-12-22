@@ -4,7 +4,7 @@
 	import X from 'lucide-svelte/icons/x';
 	import Plus from 'lucide-svelte/icons/plus';
 	import GripVertical from 'lucide-svelte/icons/grip-vertical';
-	import type { TechCategory } from '$lib/types/internal-resumes';
+	import type { TechCategory } from '$lib/types/resume';
 
 	let { categories = $bindable([]), isEditing = false } = $props<{
 		categories: TechCategory[];
@@ -17,7 +17,7 @@
 		'Backend',
 		'Database',
 		'DevOps',
-		'Methodologies',
+		'Methods',
 		'Architecture',
 		'Design',
 		'Soft Skills'
@@ -26,9 +26,19 @@
 	// Ensure all predefined categories exist in the data
 	$effect(() => {
 		if (isEditing) {
-			const existingIds = new Set(categories.map((c) => c.id));
 			let hasChanges = false;
-			const newCategories = [...categories];
+
+			// Normalize legacy "Methodologies" to "Methods"
+			const normalizedCategories = categories.map((c) => {
+				if (c.id === 'methodologies' || c.name.toLowerCase() === 'methodologies') {
+					hasChanges = true;
+					return { ...c, id: 'methods', name: 'Methods' };
+				}
+				return c;
+			});
+
+			const existingIds = new Set(normalizedCategories.map((c) => c.id));
+			const newCategories = [...normalizedCategories];
 
 			PREDEFINED_CATEGORIES.forEach((catName) => {
 				const id = catName.toLowerCase().replace(/\s+/g, '-');

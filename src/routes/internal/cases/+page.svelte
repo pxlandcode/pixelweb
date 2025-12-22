@@ -12,19 +12,10 @@
 	let draggedItem = $state<CaseRecord | null>(null);
 	let dragOverIndex = $state<number | null>(null);
 
-	// Debug: Log the cases data to see what we're getting
-	$effect(() => {
-		console.log('Cases data:', data.cases);
-		console.log('Main page cases:', mainPageCases);
-	});
-
 	// Separate main page cases and all cases
 	const mainPageCases = $derived(
 		data.cases
-			.filter((c) => {
-				console.log('Case:', c.title, 'showOnMainPage:', c.showOnMainPage, 'status:', c.status);
-				return c.showOnMainPage && c.status === 'published';
-			})
+			.filter((c) => c.showOnMainPage && c.status === 'published')
 			.sort((a, b) => a.displayOrder - b.displayOrder)
 	);
 

@@ -1,13 +1,18 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import {
 		Accordion,
 		Alert,
 		Badge,
 		Button,
+		Drawer,
 		Icon,
 		Card,
 		FormControl,
-		TextArea
+		Input,
+		TextArea,
+		Toaster,
+		toast
 	} from '@pixelcode_/blocks/components';
 	import { RollingText } from '$lib/components';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
@@ -19,6 +24,7 @@
 	import { fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 	import * as messages from '$lib/paraglide/messages';
+	import { User, Phone, MapPin, CreditCard, AlertTriangle, Save, Pencil, X } from 'lucide-svelte';
 
 	type Language = 'sv' | 'en';
 	type MessageFn = (args?: Record<string, unknown>, options?: { locale?: Language }) => string;
@@ -100,11 +106,10 @@
 			title: messages.preboard_resource_discord_title,
 			description: [
 				messages.preboard_resource_discord_desc_1,
-				messages.preboard_resource_discord_desc_2,
-				messages.preboard_resource_discord_desc_3
+				messages.preboard_resource_discord_desc_2
 			],
 			link: {
-				href: 'https://discord.gg/BSjy9EAj',
+				href: 'https://discord.gg/BvztnFe7',
 				labelMessage: messages.preboard_resource_discord_link_label
 			}
 		},
@@ -172,9 +177,9 @@
 
 	const contactPeople = [
 		{
-			name: 'Ivo Lesz Svedberg',
-			phone: '073 041 22 00',
-			email: 'ivo.lesz@pixelcode.se'
+			name: 'Pierre Elmén',
+			phone: '076 340 72 37',
+			email: 'pierre.elmen@pixelcode.se'
 		},
 		{
 			name: 'Nicklas Arleij',
@@ -184,16 +189,44 @@
 	];
 
 	const heroFormUrl = 'mailto:hello@pixelcode.se?subject=Preboarding%20basic%20information';
-	const feedbackMailto =
-		'mailto:hello@pixelcode.se?subject=Pixel%20%26%20Code%20preboarding%20feedback';
 
 	let activeSlide = $state(0);
 	let slideInterval: ReturnType<typeof setInterval> | null = null;
 	let feedbackMessage = $state('');
+	let feedbackSubmitting = $state(false);
+
+	// Basic info drawer state
+	let basicInfoDrawerOpen = $state(false);
+	let isSaving = $state(false);
+	let editingProfile = $state(false);
+	let editingInfo = $state(false);
+	let editingEmergency = $state(false);
 
 	const { data } = $props<{ data: PageData }>();
 	let language: Language = $state(data.lang);
 	const unauthorized = $derived(Boolean(data.unauthorized));
+
+	// Employee data from server
+	const currentUserProfile = $derived(data.currentUserProfile);
+	const employeeInfo = $derived(data.employeeInfo);
+	const emergencyContact = $derived(data.emergencyContact);
+
+	// Check if sections have data
+	const hasProfileData = $derived(
+		Boolean(currentUserProfile?.first_name || currentUserProfile?.last_name)
+	);
+	const hasInfoData = $derived(
+		Boolean(
+			employeeInfo?.phone ||
+				employeeInfo?.address ||
+				employeeInfo?.personal_identity_number ||
+				employeeInfo?.bank_name ||
+				employeeInfo?.bank_account
+		)
+	);
+	const hasEmergencyData = $derived(
+		Boolean(emergencyContact?.name || emergencyContact?.relationship || emergencyContact?.phone)
+	);
 
 	const localeOptions = $derived({ locale: language });
 
@@ -321,10 +354,6 @@
 	const toggleIconColor = $derived(language === 'sv' ? 'text-[#ffd200]' : 'text-[#003dff]');
 	const toggleTextColor = $derived(language === 'sv' ? 'text-[#ffd200]' : 'text-[#ff003c]');
 
-	const feedbackHref = $derived(
-		`${feedbackMailto}&body=${encodeURIComponent(feedbackMessage ?? '')}`
-	);
-
 	const PixelCodeLucideIcon = IconPixelCode as unknown as (typeof import('lucide-svelte'))['Icon'];
 
 	function switchLanguage(next: Language) {
@@ -355,15 +384,17 @@
 	<title>{pageTitle}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-white pb-24 text-text">
+<Toaster />
+
+<div class="min-h-screen bg-[#18191b] pb-24 text-white">
 	<section
-		class="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-background"
+		class="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#18191b]"
 	>
 		<button
 			type="button"
 			class={`group absolute top-6 right-6 z-20 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-white transition ${toggleBackgroundClass} cursor-pointer`}
 			aria-label={languageToggleAria}
-			on:click={() => switchLanguage(nextLanguage)}
+			onclick={() => switchLanguage(nextLanguage)}
 		>
 			<RollingText>
 				<Icon icon={PixelCodeLucideIcon} size="md" class={`${toggleIconColor}`} />
@@ -404,7 +435,7 @@
 				<Button
 					variant="primary"
 					size="md"
-					href={heroFormUrl}
+					onclick={() => (basicInfoDrawerOpen = true)}
 					class="bg-primary text-white hover:bg-[#ff765a]"
 				>
 					{heroPrimaryCta}
@@ -435,7 +466,7 @@
 		</div>
 	{/if}
 
-	<section class="bg-background text-white">
+	<section class="bg-[#18191b] text-white">
 		<div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:px-8">
 			<header
 				class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"
@@ -501,7 +532,7 @@
 			</div>
 		</div>
 	</section>
-	<section class="bg-background text-white">
+	<section class="bg-[#18191b] text-white">
 		<div class="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 py-20 sm:px-6 lg:px-8">
 			<section class="space-y-8">
 				<header class="space-y-2">
@@ -527,7 +558,7 @@
 
 								{#if resource.contact}
 									<div
-										class="rounded-lg border border-white/10 bg-white/5 p-3 text-xs tracking-[0.3em] text-white/60 uppercase"
+										class=" border border-white/10 bg-white/5 p-3 text-xs tracking-[0.3em] text-white/60 uppercase"
 									>
 										<p>{emailLabel}: {resource.contact.email}</p>
 										<p>{phoneLabel}: {resource.contact.phone}</p>
@@ -553,7 +584,7 @@
 
 			<section class="grid gap-8 lg:grid-cols-[2fr,3fr] lg:items-center">
 				<div
-					class="space-y-4 rounded-3xl border border-white/10 bg-[#111216]/80 p-6 shadow-2xl shadow-black/40 backdrop-blur"
+					class="space-y-4 border border-white/10 bg-[#111216]/80 p-6 shadow-2xl shadow-black/40 backdrop-blur"
 				>
 					<p class="text-sm tracking-[0.35em] text-white/60 uppercase">{storyLabel}</p>
 					<h2 class="text-3xl font-semibold">{storyTitle}</h2>
@@ -593,7 +624,7 @@
 				<section class="grid gap-4 md:grid-cols-2">
 					{#each pair as image}
 						<div
-							class="overflow-hidden rounded-3xl border border-white/10 bg-[#0b0c10] shadow-2xl shadow-black/40"
+							class="overflow-hidden border border-white/10 bg-[#0b0c10] shadow-2xl shadow-black/40"
 						>
 							<img
 								src={image.src}
@@ -618,7 +649,7 @@
 						<ul class="mt-4 space-y-3 text-sm text-white/75">
 							{#each note.body as bullet}
 								<li class="flex gap-2">
-									<span class="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+									<span class="mt-2 h-1.5 w-1.5 flex-shrink-0 bg-primary"></span>
 									<span>{bullet}</span>
 								</li>
 							{/each}
@@ -643,13 +674,6 @@
 							<p>{orgLabel}: {companyInfo.orgNumber}</p>
 							<p>{emailLabel}: {companyInfo.email}</p>
 						</div>
-						<Button
-							variant="ghost"
-							href="mailto:hello@pixelcode.se"
-							class="mt-4 w-fit border border-white/20 bg-white/10 text-white hover:bg-white/20"
-						>
-							{contactButton}
-						</Button>
 					</Card>
 
 					<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
@@ -671,10 +695,27 @@
 				<Card class="border border-white/10 bg-[#111216]/80 p-6 text-white backdrop-blur-xl">
 					<h3 class="text-2xl font-semibold">{feedbackTitleCopy}</h3>
 					<p class="mt-2 text-sm text-white/75">{feedbackDescription}</p>
-					<form class="mt-4 space-y-4">
+					<form
+						method="POST"
+						action="?/submitFeedback"
+						use:enhance={() => {
+							feedbackSubmitting = true;
+							return async ({ result, update }) => {
+								feedbackSubmitting = false;
+								if (result.type === 'success') {
+									feedbackMessage = '';
+									toast.success(language === 'sv' ? 'Tack för din feedback!' : 'Thank you for your feedback!');
+								} else {
+									toast.error(language === 'sv' ? 'Något gick fel. Försök igen.' : 'Something went wrong. Please try again.');
+								}
+								await update({ reset: false });
+							};
+						}}
+						class="mt-4 space-y-4"
+					>
 						<FormControl label={feedbackLabelCopy} class="text-sm text-white/70">
 							<TextArea
-								name="feedback"
+								name="message"
 								rows={5}
 								bind:value={feedbackMessage}
 								placeholder={feedbackPlaceholder}
@@ -682,11 +723,12 @@
 							/>
 						</FormControl>
 						<Button
+							type="submit"
 							variant="primary"
-							href={feedbackHref}
+							disabled={feedbackSubmitting || !feedbackMessage.trim()}
 							class="bg-primary text-white hover:bg-[#ff765a]"
 						>
-							{feedbackCta}
+							{feedbackSubmitting ? (language === 'sv' ? 'Skickar...' : 'Sending...') : feedbackCta}
 						</Button>
 					</form>
 				</Card>
@@ -725,6 +767,348 @@
 		</div>
 	</section>
 </div>
+
+<!-- Basic Information Drawer -->
+<Drawer
+	bind:open={basicInfoDrawerOpen}
+	variant="modal"
+	title={language === 'sv' ? 'Din grundinformation' : 'Your basic information'}
+	subtitle={language === 'sv'
+		? 'Fyll i dina uppgifter innan din första dag'
+		: 'Fill in your details before your first day'}
+	dismissable
+	class="max-h-[90vh] w-full max-w-2xl overflow-y-auto"
+>
+	<form
+		method="POST"
+		action="?/updateBasicInfo"
+		use:enhance={() => {
+			isSaving = true;
+			return async ({ result, update }) => {
+				isSaving = false;
+				if (result.type === 'success') {
+					toast.success?.(language === 'sv' ? 'Information sparad!' : 'Information saved!') ??
+						toast(language === 'sv' ? 'Information sparad!' : 'Information saved!');
+					editingProfile = false;
+					editingInfo = false;
+					editingEmergency = false;
+				} else if (result.type === 'failure') {
+					const errorMsg =
+						(result.data as { error?: string })?.error ??
+						(language === 'sv' ? 'Något gick fel' : 'Something went wrong');
+					toast.error?.(errorMsg) ?? toast(errorMsg);
+				}
+				await update({ reset: false });
+			};
+		}}
+		class="space-y-6"
+	>
+		<!-- Profile Section -->
+		<section class="border border-slate-200 bg-slate-50 p-4">
+			<div class="mb-4 flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="flex h-8 w-8 items-center justify-center bg-indigo-100 text-indigo-600">
+						<User size={16} />
+					</div>
+					<h3 class="font-semibold text-slate-900">
+						{language === 'sv' ? 'Namn' : 'Name'}
+					</h3>
+				</div>
+				{#if hasProfileData && !editingProfile}
+					<button
+						type="button"
+						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+						onclick={() => (editingProfile = true)}
+					>
+						<Pencil size={14} />
+						{language === 'sv' ? 'Redigera' : 'Edit'}
+					</button>
+				{:else if editingProfile}
+					<button
+						type="button"
+						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+						onclick={() => (editingProfile = false)}
+					>
+						<X size={14} />
+						{language === 'sv' ? 'Avbryt' : 'Cancel'}
+					</button>
+				{/if}
+			</div>
+
+			{#if !hasProfileData || editingProfile}
+				<div class="grid gap-3 sm:grid-cols-2">
+					<FormControl label={language === 'sv' ? 'Förnamn' : 'First name'} class="gap-1.5 text-sm">
+						<Input
+							name="first_name"
+							value={currentUserProfile?.first_name ?? ''}
+							class="bg-white text-gray-900"
+						/>
+					</FormControl>
+					<FormControl
+						label={language === 'sv' ? 'Efternamn' : 'Last name'}
+						class="gap-1.5 text-sm"
+					>
+						<Input
+							name="last_name"
+							value={currentUserProfile?.last_name ?? ''}
+							class="bg-white text-gray-900"
+						/>
+					</FormControl>
+				</div>
+			{:else}
+				<div class="grid gap-3 sm:grid-cols-2">
+					<div>
+						<p class="text-xs font-medium text-slate-500">
+							{language === 'sv' ? 'Förnamn' : 'First name'}
+						</p>
+						<p class="mt-0.5 text-slate-900">{currentUserProfile?.first_name || '—'}</p>
+						<input type="hidden" name="first_name" value={currentUserProfile?.first_name ?? ''} />
+					</div>
+					<div>
+						<p class="text-xs font-medium text-slate-500">
+							{language === 'sv' ? 'Efternamn' : 'Last name'}
+						</p>
+						<p class="mt-0.5 text-slate-900">{currentUserProfile?.last_name || '—'}</p>
+						<input type="hidden" name="last_name" value={currentUserProfile?.last_name ?? ''} />
+					</div>
+				</div>
+			{/if}
+		</section>
+
+		<!-- Employee Info Section -->
+		<section class="border border-slate-200 bg-slate-50 p-4">
+			<div class="mb-4 flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="flex h-8 w-8 items-center justify-center bg-emerald-100 text-emerald-600">
+						<Phone size={16} />
+					</div>
+					<h3 class="font-semibold text-slate-900">
+						{language === 'sv' ? 'Kontakt & Lön' : 'Contact & Payroll'}
+					</h3>
+				</div>
+				{#if hasInfoData && !editingInfo}
+					<button
+						type="button"
+						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+						onclick={() => (editingInfo = true)}
+					>
+						<Pencil size={14} />
+						{language === 'sv' ? 'Redigera' : 'Edit'}
+					</button>
+				{:else if editingInfo}
+					<button
+						type="button"
+						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+						onclick={() => (editingInfo = false)}
+					>
+						<X size={14} />
+						{language === 'sv' ? 'Avbryt' : 'Cancel'}
+					</button>
+				{/if}
+			</div>
+
+			{#if !hasInfoData || editingInfo}
+				<div class="space-y-4">
+					<div class="grid gap-3 sm:grid-cols-2">
+						<FormControl label={language === 'sv' ? 'Telefon' : 'Phone'} class="gap-1.5 text-sm">
+							<Input
+								name="phone"
+								type="tel"
+								value={employeeInfo?.phone ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+						<FormControl label={language === 'sv' ? 'Adress' : 'Address'} class="gap-1.5 text-sm">
+							<Input
+								name="address"
+								value={employeeInfo?.address ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+					</div>
+					<FormControl
+						label={language === 'sv' ? 'Personnummer' : 'Personal identity number'}
+						class="gap-1.5 text-sm"
+					>
+						<Input
+							name="personal_identity_number"
+							value={employeeInfo?.personal_identity_number ?? ''}
+							placeholder="YYYYMMDD-XXXX"
+							class="bg-white text-gray-900"
+						/>
+					</FormControl>
+					<div class="grid gap-3 sm:grid-cols-2">
+						<FormControl
+							label={language === 'sv' ? 'Banknamn' : 'Bank name'}
+							class="gap-1.5 text-sm"
+						>
+							<Input
+								name="bank_name"
+								value={employeeInfo?.bank_name ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+						<FormControl
+							label={language === 'sv' ? 'Bankkonto' : 'Bank account'}
+							bl={language === 'sv' ? 'Clearing + kontonummer' : 'Clearing + account number'}
+							class="gap-1.5 text-sm"
+						>
+							<Input
+								name="bank_account"
+								value={employeeInfo?.bank_account ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+					</div>
+				</div>
+			{:else}
+				<div class="space-y-3">
+					<div class="grid gap-3 sm:grid-cols-2">
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Telefon' : 'Phone'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{employeeInfo?.phone || '—'}</p>
+							<input type="hidden" name="phone" value={employeeInfo?.phone ?? ''} />
+						</div>
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Adress' : 'Address'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{employeeInfo?.address || '—'}</p>
+							<input type="hidden" name="address" value={employeeInfo?.address ?? ''} />
+						</div>
+					</div>
+					<div>
+						<p class="text-xs font-medium text-slate-500">
+							{language === 'sv' ? 'Personnummer' : 'Personal identity number'}
+						</p>
+						<p class="mt-0.5 text-slate-900">{employeeInfo?.personal_identity_number || '—'}</p>
+						<input
+							type="hidden"
+							name="personal_identity_number"
+							value={employeeInfo?.personal_identity_number ?? ''}
+						/>
+					</div>
+					<div class="grid gap-3 sm:grid-cols-2">
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Banknamn' : 'Bank name'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{employeeInfo?.bank_name || '—'}</p>
+							<input type="hidden" name="bank_name" value={employeeInfo?.bank_name ?? ''} />
+						</div>
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Bankkonto' : 'Bank account'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{employeeInfo?.bank_account || '—'}</p>
+							<input type="hidden" name="bank_account" value={employeeInfo?.bank_account ?? ''} />
+						</div>
+					</div>
+				</div>
+			{/if}
+		</section>
+
+		<!-- Emergency Contact Section -->
+		<section class="border border-slate-200 bg-slate-50 p-4">
+			<div class="mb-4 flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="flex h-8 w-8 items-center justify-center bg-amber-100 text-amber-600">
+						<AlertTriangle size={16} />
+					</div>
+					<h3 class="font-semibold text-slate-900">
+						{language === 'sv' ? 'Nödkontakt' : 'Emergency Contact'}
+					</h3>
+				</div>
+				{#if hasEmergencyData && !editingEmergency}
+					<button
+						type="button"
+						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+						onclick={() => (editingEmergency = true)}
+					>
+						<Pencil size={14} />
+						{language === 'sv' ? 'Redigera' : 'Edit'}
+					</button>
+				{:else if editingEmergency}
+					<button
+						type="button"
+						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+						onclick={() => (editingEmergency = false)}
+					>
+						<X size={14} />
+						{language === 'sv' ? 'Avbryt' : 'Cancel'}
+					</button>
+				{/if}
+			</div>
+
+			{#if !hasEmergencyData || editingEmergency}
+				<div class="grid gap-3 sm:grid-cols-3">
+					<FormControl label={language === 'sv' ? 'Namn' : 'Name'} class="gap-1.5 text-sm">
+						<Input
+							name="emergency_name"
+							value={emergencyContact?.name ?? ''}
+							class="bg-white text-gray-900"
+						/>
+					</FormControl>
+					<FormControl
+						label={language === 'sv' ? 'Relation' : 'Relationship'}
+						class="gap-1.5 text-sm"
+					>
+						<Input
+							name="emergency_relationship"
+							value={emergencyContact?.relationship ?? ''}
+							placeholder={language === 'sv' ? 't.ex. Make/Maka, Förälder' : 'e.g. Spouse, Parent'}
+							class="bg-white text-gray-900"
+						/>
+					</FormControl>
+					<FormControl label={language === 'sv' ? 'Telefon' : 'Phone'} class="gap-1.5 text-sm">
+						<Input
+							name="emergency_phone"
+							type="tel"
+							value={emergencyContact?.phone ?? ''}
+							class="bg-white text-gray-900"
+						/>
+					</FormControl>
+				</div>
+			{:else}
+				<div class="grid gap-3 sm:grid-cols-3">
+					<div>
+						<p class="text-xs font-medium text-slate-500">{language === 'sv' ? 'Namn' : 'Name'}</p>
+						<p class="mt-0.5 text-slate-900">{emergencyContact?.name || '—'}</p>
+						<input type="hidden" name="emergency_name" value={emergencyContact?.name ?? ''} />
+					</div>
+					<div>
+						<p class="text-xs font-medium text-slate-500">
+							{language === 'sv' ? 'Relation' : 'Relationship'}
+						</p>
+						<p class="mt-0.5 text-slate-900">{emergencyContact?.relationship || '—'}</p>
+						<input
+							type="hidden"
+							name="emergency_relationship"
+							value={emergencyContact?.relationship ?? ''}
+						/>
+					</div>
+					<div>
+						<p class="text-xs font-medium text-slate-500">
+							{language === 'sv' ? 'Telefon' : 'Phone'}
+						</p>
+						<p class="mt-0.5 text-slate-900">{emergencyContact?.phone || '—'}</p>
+						<input type="hidden" name="emergency_phone" value={emergencyContact?.phone ?? ''} />
+					</div>
+				</div>
+			{/if}
+		</section>
+
+		<!-- Save Button -->
+		<div class="flex justify-end pt-2">
+			<Button type="submit" variant="primary" loading={isSaving} loading-text="Sparar…">
+				<Save size={16} class="mr-2" />
+				{language === 'sv' ? 'Spara' : 'Save'}
+			</Button>
+		</div>
+	</form>
+</Drawer>
 
 <style>
 	:global(.preboard-section) {

@@ -4,12 +4,10 @@
 	import { t, getLocalizedValue, setLocalizedValue, type Language } from '../utils';
 
 	let {
-		name = $bindable(),
 		title = $bindable(),
 		isEditing = false,
 		language = 'sv'
 	}: {
-		name: string;
 		title: LocalizedText;
 		isEditing?: boolean;
 		language?: Language;
@@ -18,9 +16,6 @@
 
 {#if isEditing}
 	<div class="space-y-3">
-		<FormControl label="Name">
-			<Input bind:value={name} class="border-slate-300 bg-white text-lg font-bold text-slate-900" />
-		</FormControl>
 		<FormControl label="Title (SV)">
 			<Input
 				value={getLocalizedValue(title, 'sv')}
@@ -38,9 +33,6 @@
 	</div>
 {:else}
 	<div>
-		{#if name}
-			<h1 class="mb-2 text-4xl font-bold text-slate-900">{name}</h1>
-		{/if}
 		<h2 class="text-xl font-medium text-slate-700">{t(title, language)}</h2>
 	</div>
 {/if}

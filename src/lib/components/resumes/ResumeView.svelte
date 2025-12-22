@@ -24,29 +24,62 @@
 		ResumeFooter,
 		type Language
 	} from './components';
+	import type { Person, TechCategory } from '$lib/types/resume';
 
 	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
 
 	let {
 		data,
 		image,
-		language = 'sv',
-		isEditing = false
+		language = $bindable('sv'),
+		isEditing = false,
+		person,
+		profileTechStack
 	}: {
 		data: ResumeData;
-		image?: ImageResource;
+		image?: ImageResource | string | null;
 		language?: Language;
 		isEditing?: boolean;
+		person?: Person;
+		profileTechStack?: TechCategory[];
 	} = $props();
+
+	let profileCategories = $state(structuredClone(profileTechStack ?? person?.techStack ?? []));
+	const displayName = $derived(person?.name ?? data.name ?? '');
+
+	const resolvedImage: ImageResource | string | null = $derived.by(() => {
+		return image ?? person?.avatar_url ?? null;
+	});
+
+	$effect(() => {
+		profileCategories = structuredClone(profileTechStack ?? person?.techStack ?? []);
+	});
+
+	// Helper to ensure all items have unique IDs
+	const ensureIds = <T extends { _id?: string }>(items: T[]): T[] => {
+		return items.map((item) => ({
+			...item,
+			_id: item._id ?? crypto.randomUUID()
+		}));
+	};
 
 	// Local editing state
 	let editingData = $state<ResumeData>(structuredClone(data));
 
-	// Sync prop changes to local state
+	// Sync prop changes to local state and ensure IDs
 	$effect(() => {
 		if (!isEditing) {
-			editingData = structuredClone(data);
+			const cloned = structuredClone(data);
+			cloned.experiences = ensureIds(cloned.experiences);
+			cloned.highlightedExperiences = ensureIds(cloned.highlightedExperiences);
+			editingData = cloned;
 		}
+	});
+
+	$effect(() => {
+		editingData.name = displayName;
+		editingData.techniques = profileCategories.flatMap((cat) => cat.skills ?? []);
+		editingData.methods = [];
 	});
 
 	// Toggle language
@@ -57,6 +90,7 @@
 	// Experience management
 	const addExperience = () => {
 		const newExp: ExperienceItem = {
+			_id: crypto.randomUUID(),
 			startDate: new Date().toISOString().split('T')[0],
 			endDate: null,
 			company: 'Company Name',
@@ -65,7 +99,7 @@
 			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
 			technologies: []
 		};
-		editingData.experiences = [...editingData.experiences, newExp];
+		editingData.experiences = [newExp, ...editingData.experiences];
 	};
 
 	const removeExperience = (index: number) => {
@@ -80,9 +114,17 @@
 		editingData.experiences = items;
 	};
 
+	const reorderExperience = (fromIndex: number, toIndex: number) => {
+		const items = [...editingData.experiences];
+		const [removed] = items.splice(fromIndex, 1);
+		items.splice(toIndex, 0, removed);
+		editingData.experiences = items;
+	};
+
 	// Highlighted experience management
 	const addHighlightedExperience = () => {
 		const newExp: HighlightedExperience = {
+			_id: crypto.randomUUID(),
 			company: 'Company Name',
 			role: { sv: 'Roll', en: 'Role' },
 			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
@@ -170,15 +212,12 @@
 				<!-- Profile Image + Name/Title row -->
 				<div class="flex items-start gap-6">
 					<div class="h-[216px] w-[216px] flex-shrink-0">
-						<ResumeProfileImage {image} name={editingData.name} />
+						<ResumeProfileImage image={resolvedImage} name={displayName} />
 					</div>
 					<div class="flex-1">
-						<ResumeNameTitle
-							bind:name={editingData.name}
-							bind:title={editingData.title}
-							{isEditing}
-							{language}
-						/>
+						<!-- Name fixed from profile; allow title editing -->
+						<h1 class="mb-2 text-4xl font-bold text-slate-900">{displayName}</h1>
+						<ResumeNameTitle bind:title={editingData.title} {isEditing} {language} />
 					</div>
 				</div>
 
@@ -213,7 +252,7 @@
 				<!-- Left Column: Image + Skills + Contact -->
 				<div class="consultant-profile">
 					<!-- Profile Image -->
-					<ResumeProfileImage {image} name={editingData.name} />
+					<ResumeProfileImage image={resolvedImage ?? image} name={displayName} />
 
 					<!-- Example Skills -->
 					<ResumeExampleSkills bind:skills={editingData.exampleSkills} {isEditing} {language} />
@@ -232,7 +271,7 @@
 				<div class="space-y-6">
 					<!-- Name and Title -->
 					<ResumeNameTitle
-						bind:name={editingData.name}
+						name={displayName}
 						bind:title={editingData.title}
 						{isEditing}
 						{language}
@@ -263,12 +302,14 @@
 		onAdd={addExperience}
 		onRemove={removeExperience}
 		onMove={moveExperience}
+		onReorder={reorderExperience}
 	/>
 
 	<!-- Skills Section -->
 	<ResumeSkills
 		bind:techniques={editingData.techniques}
 		bind:methods={editingData.methods}
+		bind:profileTechStack={profileCategories}
 		{isEditing}
 		{language}
 	/>

@@ -1,13 +1,26 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
 import { AUTH_COOKIE_NAMES } from '$lib/server/supabase';
+import { ResumeService } from '$lib/services/resume';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '$env/static/private';
 
-const PDF_FILENAME = (id: string, lang: string) => `resume-${id}-${lang}.pdf`;
+const toSafeFilename = (value: string) =>
+	value.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\s+/g, ' ') || 'resume';
+
+const PDF_FILENAME = async (id: string, lang: string) => {
+	const resume = await ResumeService.getResume(id);
+	const person = resume ? await ResumeService.getPerson(resume.personId) : undefined;
+	const name = toSafeFilename(person?.name ?? 'resume');
+	const kind = lang === 'sv' ? 'CV' : 'Resume';
+	return `${name} - Pixel&Code - ${kind}.pdf`;
+};
 
 export const GET: RequestHandler = async ({ params, url, cookies }) => {
 	const resumeId = params.id;
+	if (!resumeId) {
+		throw error(400, 'Invalid resume id');
+	}
 	const lang = url.searchParams.get('lang') ?? 'sv';
 
 	let chromium: typeof import('playwright').chromium;
@@ -147,7 +160,7 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 			status: 200,
 			headers: {
 				'Content-Type': 'application/pdf',
-				'Content-Disposition': `attachment; filename="${PDF_FILENAME(resumeId, lang)}"`
+				'Content-Disposition': `attachment; filename="${await PDF_FILENAME(resumeId, lang)}"`
 			}
 		});
 	} catch (err) {

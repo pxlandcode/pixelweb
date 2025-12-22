@@ -12,7 +12,14 @@ export const load: PageServerLoad = async ({ params, url, cookies }) => {
 	const langParam = url.searchParams.get('lang');
 	const language = langParam === 'en' ? 'en' : 'sv';
 
-	const resume = ResumeService.getResume(params.id);
+	const resumeId = params.id;
+
+	if (!resumeId) {
+		throw error(400, 'Invalid resume id');
+	}
+
+	const resume = await ResumeService.getResume(resumeId);
+	const resumePerson = await ResumeService.getPerson(resume?.personId ?? '');
 
 	if (!resume) {
 		throw error(404, 'Resume not found');
@@ -20,12 +27,13 @@ export const load: PageServerLoad = async ({ params, url, cookies }) => {
 
 	return {
 		resume,
+		resumePerson,
 		language,
 		meta: {
 			title: `Resume ${resume.title}`,
 			description: 'Printable resume',
 			noindex: true,
-			path: `/print/resumes/${params.id}`
+			path: `/print/resumes/${resumeId}`
 		}
 	};
 };

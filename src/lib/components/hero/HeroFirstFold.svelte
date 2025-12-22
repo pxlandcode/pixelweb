@@ -5,6 +5,7 @@
 	import { resetFloatingNavState, setFloatingNavState } from '$lib/stores/floatingNav';
 	import { siteHeaderState, updateSiteHeaderState } from '$lib/stores/siteHeader';
 	import { contactModal } from '$lib/stores/contactModal';
+	import { resetMarqueeHeight, setMarqueeHeight } from '$lib/stores/marquee';
 	import type { ComponentProps } from 'svelte';
 
 	type HeroSectionProps = ComponentProps<typeof HeroSection>;
@@ -19,6 +20,8 @@
 	export let parallaxDistance = 280;
 	export let parallaxMultiplier = 0.45;
 	export let floatThreshold = 96;
+	let heroSectionProps: Partial<HeroSectionProps> = {};
+	let publishedMarqueeHeight = 0;
 
 	function handleCtaClick(e: MouseEvent) {
 		if (ctaHref === '#contact') {
@@ -59,6 +62,17 @@
 			: heroSectionHeight
 				? `${heroSectionHeight}px`
 				: '100dvh';
+	$: {
+		const { isChristmas: _isChristmas, ...rest } = heroProps;
+		heroSectionProps = rest;
+	}
+
+	function publishMarqueeHeight(height: number) {
+		const nextHeight = Math.max(0, height);
+		if (nextHeight === publishedMarqueeHeight) return;
+		publishedMarqueeHeight = nextHeight;
+		setMarqueeHeight(nextHeight);
+	}
 
 	function recalcMeasurements() {
 		if (firstFoldSection) {
@@ -80,6 +94,7 @@
 		} else {
 			marqueeHeight = 0;
 		}
+		publishMarqueeHeight(marqueeHeight);
 
 		if (heroButtonContainer) {
 			const rect = heroButtonContainer.getBoundingClientRect();
@@ -107,6 +122,7 @@
 	onDestroy(() => {
 		resetFloatingNavState();
 		updateSiteHeaderState({ parallaxOffset: 0 });
+		resetMarqueeHeight();
 	});
 </script>
 
@@ -122,7 +138,7 @@
 		style:transform={`translate3d(0, ${heroParallaxOffset}px, 0)`}
 	>
 		<div class="first-fold__hero flex w-full flex-col items-center gap-6" bind:this={heroSectionEl}>
-			<HeroSection {...heroProps} />
+			<HeroSection {...heroSectionProps} />
 			{#if showCta}
 				<div
 					class="flex transform-gpu justify-center pt-2 transition-all duration-200 ease-in-out"

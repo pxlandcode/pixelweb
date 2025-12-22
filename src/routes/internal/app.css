@@ -8,6 +8,7 @@
 	--color-text: #0f172a;
 	--color-card-bg: #ffffff;
 	--color-card-border: rgba(0, 0, 0, 0.05);
+    --color-input: #ffffff;
 	--font-sans: 'Montserrat', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
 		sans-serif;
 }
@@ -22,6 +23,8 @@ body {
 	background: var(--color-background);
 	color: var(--color-text);
 }
+
+
 
 .dark {
 	--color-background: #0f0f11;
