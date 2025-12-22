@@ -34,7 +34,7 @@ const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 	{ pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
 	{ pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
 	{ pattern: /^\/internal\/employees(\/.*)?$/, roles: ['admin', 'employer', 'employee'] },
-	{ pattern: /^\/internal\/feedback(\/.*)?$/, roles: ['admin', 'employer'] },
+	{ pattern: /^\/internal\/feedback(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
 	{
 		pattern: /^\/internal\/resumes\/consultant\//,
 		roles: ['admin', 'cms_admin', 'employee', 'employer']

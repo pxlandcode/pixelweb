@@ -54,7 +54,7 @@
 		{
 			label: 'Feedback',
 			href: '/internal/feedback',
-			allowed: ['admin', 'employer'] satisfies AdminRole[]
+			allowed: ['admin', 'employer', 'cms_admin', 'employee'] satisfies AdminRole[]
 		}
 	];
 
