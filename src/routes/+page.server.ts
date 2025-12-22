@@ -8,7 +8,7 @@ import { fetchNewsPosts } from '$lib/server/news';
 import { mockNewsPosts } from '$lib/mockdata/newsPosts';
 import { dev } from '$app/environment';
 import { buildOrganizationSchema, buildWebsiteSchema } from '$lib/seo';
-import { IS_CHRISTMAS } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 const LeadSchema = z.object({
 	website_url: z
@@ -31,7 +31,7 @@ const homeMeta = {
 };
 
 export const load: PageServerLoad = async (_event) => {
-	const isChristmas = String(IS_CHRISTMAS ?? '').toLowerCase() === 'true';
+	const isChristmas = String(env.IS_CHRISTMAS ?? '').toLowerCase() === 'true';
 
 	// Always try to fetch from Supabase first so CMS content is the source of truth.
 	const news = await fetchNewsPosts();

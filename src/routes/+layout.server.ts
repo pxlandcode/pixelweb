@@ -1,8 +1,8 @@
 import type { LayoutServerLoad } from './$types';
-import { IS_CHRISTMAS } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 export const load: LayoutServerLoad = async () => {
-	const isChristmas = String(IS_CHRISTMAS ?? '').toLowerCase() === 'true';
+	const isChristmas = String(env.IS_CHRISTMAS ?? '').toLowerCase() === 'true';
 
 	return { isChristmas };
 };
