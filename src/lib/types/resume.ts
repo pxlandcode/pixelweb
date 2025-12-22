@@ -37,6 +37,7 @@ export type ContactPerson = {
 };
 
 export type HighlightedExperience = {
+	_id?: string; // Internal ID for tracking in UI
 	company: string;
 	role: LocalizedText;
 	description: LocalizedText;
@@ -45,6 +46,7 @@ export type HighlightedExperience = {
 };
 
 export type ExperienceItem = {
+	_id?: string; // Internal ID for tracking in UI
 	startDate: string;
 	endDate?: string | null;
 	company: string;

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Button, Card } from '@pixelcode_/blocks/components';
-	import { ArrowLeft, Calendar, CheckCircle2, FileText, User } from 'lucide-svelte';
+	import { ArrowLeft, Calendar, CheckCircle2, Copy, FileText, Trash2, User } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { TechStackEditor } from '$lib/components';
+	import { confirm } from '$lib/utils/confirm';
 
 	const { data } = $props();
 
@@ -14,6 +15,7 @@
 	);
 
 	let isEditing = $state(false);
+	let isLoading = $state(false);
 	let editingBio = $state(profile?.bio ?? '');
 	let editingTechStack = $state(structuredClone(techStack));
 	const techStackJson = $derived(JSON.stringify(editingTechStack ?? []));
@@ -21,6 +23,19 @@
 	let resumeList = $state(resumes ?? []);
 	let draggedResume: any = $state(null);
 	let dragOverIndex: number | null = $state(null);
+
+	// Sort resumes: main first, then by updated_at descending
+	const sortedResumeList = $derived(
+		[...resumeList].sort((a, b) => {
+			// Main resume always first
+			if (a.is_main && !b.is_main) return -1;
+			if (!a.is_main && b.is_main) return 1;
+			// Then by updated_at descending
+			const dateA = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+			const dateB = new Date(b.updated_at ?? b.created_at ?? 0).getTime();
+			return dateB - dateA;
+		})
+	);
 
 	$effect(() => {
 		editingBio = profile?.bio ?? '';
@@ -69,6 +84,7 @@
 	};
 
 	const addResume = async () => {
+		isLoading = true;
 		const formData = new FormData();
 		formData.set('person_id', profile.id);
 		const res = await fetch('?/createResume', { method: 'POST', body: formData });
@@ -77,8 +93,42 @@
 			// Refresh list
 			location.reload();
 		}
+		isLoading = false;
+	};
+
+	const deleteResume = async (resumeId: string) => {
+		isLoading = true;
+		const formData = new FormData();
+		formData.set('resume_id', resumeId);
+		const res = await fetch('?/deleteResume', { method: 'POST', body: formData });
+		if (res.ok) {
+			// Remove from local list
+			resumeList = resumeList.filter((r) => r.id !== resumeId);
+		}
+		isLoading = false;
+	};
+
+	const copyResume = async (resumeId: string) => {
+		isLoading = true;
+		const formData = new FormData();
+		formData.set('resume_id', resumeId);
+		const res = await fetch('?/copyResume', { method: 'POST', body: formData });
+		if (res.ok) {
+			location.reload();
+		}
+		isLoading = false;
 	};
 </script>
+
+<!-- Loading bar at top -->
+{#if isLoading}
+	<div class="fixed top-0 left-0 z-50 h-1 w-full overflow-hidden bg-indigo-100">
+		<div
+			class="h-full w-1/3 animate-pulse bg-indigo-600"
+			style="animation: loading-bar 1s ease-in-out infinite;"
+		></div>
+	</div>
+{/if}
 
 <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
 	<div class="mb-8">
@@ -208,7 +258,7 @@
 			</div>
 
 			<div class="space-y-4">
-				{#each resumeList as resume, index (resume.id)}
+				{#each sortedResumeList as resume, index (resume.id)}
 					<div
 						draggable="true"
 						ondragstart={() => handleDragStart(resume)}
@@ -246,18 +296,42 @@
 								</div>
 								<div class="mt-1 flex items-center gap-4 text-sm text-slate-500">
 									<span class="flex items-center gap-1">
-										Version {resume.version_name ?? 'Main'}
-									</span>
-									<span class="flex items-center gap-1">
 										<Calendar size={14} />
 										Updated {resume.updated_at ?? resume.created_at ?? '—'}
 									</span>
 								</div>
 							</div>
 						</div>
+						<div class="flex items-center gap-1">
+							<button
+								type="button"
+								class="cursor-pointer rounded-md p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+								onclick={(e) => {
+									e.stopPropagation();
+									copyResume(resume.id);
+								}}
+								title="Copy resume"
+							>
+								<Copy size={18} />
+							</button>
+							<button
+								type="button"
+								class="cursor-pointer rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+								onclick={(e) => e.stopPropagation()}
+								title="Delete resume"
+								use:confirm={{
+									title: 'Delete resume?',
+									description: `Are you sure you want to delete "${resume.version_name}"? This cannot be undone.`,
+									actionLabel: 'Delete',
+									action: () => deleteResume(resume.id)
+								}}
+							>
+								<Trash2 size={18} />
+							</button>
+						</div>
 					</div>
 				{/each}
-				{#if resumeList.length === 0}
+				{#if sortedResumeList.length === 0}
 					<div class="rounded-lg border-2 border-dashed border-slate-200 p-12 text-center">
 						<FileText size={48} class="mx-auto mb-4 text-slate-300" />
 						<h3 class="text-lg font-medium text-slate-900">No resumes found</h3>
@@ -268,3 +342,17 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	@keyframes loading-bar {
+		0% {
+			transform: translateX(-100%);
+		}
+		50% {
+			transform: translateX(200%);
+		}
+		100% {
+			transform: translateX(-100%);
+		}
+	}
+</style>

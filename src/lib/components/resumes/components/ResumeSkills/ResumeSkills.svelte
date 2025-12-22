@@ -19,20 +19,26 @@
 
 	const normalize = (value: string) => value.trim().toLowerCase();
 	const profileSkills = $derived(
-		profileTechStack?.flatMap((cat) => cat.skills ?? []).map((s) => s.trim()).filter(Boolean) ?? []
+		profileTechStack
+			?.flatMap((cat) => cat.skills ?? [])
+			.map((s) => s.trim())
+			.filter(Boolean) ?? []
 	);
 	const profileSet = $derived(new Set(profileSkills.map(normalize)));
 	const extraTechniques = $derived(
-		techniques.filter((tech) => !profileSet.has(normalize(tech))).map((t) => t.trim()).filter(Boolean)
+		techniques
+			.filter((tech) => !profileSet.has(normalize(tech)))
+			.map((t) => t.trim())
+			.filter(Boolean)
 	);
 
-const translations: Record<string, { sv: string; en: string }> = {
+	const translations: Record<string, { sv: string; en: string }> = {
 		frontend: { sv: 'Frontend', en: 'Frontend' },
 		backend: { sv: 'Backend', en: 'Backend' },
 		tools: { sv: 'Verktyg', en: 'Tools' },
 		design: { sv: 'Design', en: 'Design' },
 		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
-		'devops': { sv: 'DevOps', en: 'DevOps' },
+		devops: { sv: 'DevOps', en: 'DevOps' },
 		database: { sv: 'Databas', en: 'Database' },
 		methodologies: { sv: 'Metoder', en: 'Methods' },
 		architecture: { sv: 'Arkitektur', en: 'Architecture' },
@@ -47,28 +53,20 @@ const translations: Record<string, { sv: string; en: string }> = {
 		return entry ? entry[lang] : name;
 	};
 
-const displayCategories = $derived(() =>
-	(profileTechStack ?? [])
-		.filter((cat) => (cat.skills ?? []).length > 0)
-		.map((cat) => ({ ...cat, name: labelFor(cat.name, language) }))
-);
-
-	$effect(() => {
-		console.log('ResumeSkills -> profileTechStack', profileTechStack);
-		console.log('ResumeSkills -> displayCategories', displayCategories());
-	});
+	const displayCategories = $derived(() =>
+		(profileTechStack ?? [])
+			.filter((cat) => (cat.skills ?? []).length > 0)
+			.map((cat) => ({ ...cat, name: labelFor(cat.name, language) }))
+	);
 </script>
 
 {#if isEditing || displayCategories().length > 0}
 	<section class="resume-print-section mt-8">
 		<!-- Section Header with dividers -->
-		<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+		<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 			<h2 class="text-base font-bold text-slate-900 uppercase">
 				{language === 'sv' ? 'Kompetenser' : 'Skills'}
 			</h2>
-			<div class="flex items-center">
-				<div class="h-px w-full bg-orange-500"></div>
-			</div>
 			<div class="flex items-center">
 				<div class="h-px flex-1 bg-slate-300"></div>
 			</div>
@@ -86,8 +84,7 @@ const displayCategories = $derived(() =>
 				</div>
 			{:else}
 				{#each displayCategories() as category (category.id)}
-					<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-						<div></div>
+					<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 						<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 							{labelFor(category.name, language)}
 						</p>

@@ -31,7 +31,7 @@
 	{#if isEditing}
 		<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 			<h3 class="mb-4 text-sm font-semibold text-slate-700">Highlighted Experiences</h3>
-			{#each experiences as exp, index}
+			{#each experiences as exp, index (exp._id ?? index)}
 				<div class="mb-4 rounded-xs border border-slate-200 bg-white p-4">
 					<div class="mb-4 flex items-center justify-between">
 						<h4 class="font-semibold text-slate-700">
@@ -113,7 +113,9 @@
 							</div>
 						</div>
 						<div>
-							<label class="mb-1 block text-sm font-medium text-slate-700">Technologies</label>
+							<label class="mb-1 block text-sm font-medium text-slate-700"
+								>{language === 'sv' ? 'Nyckeltekniker' : 'Key Technologies'}</label
+							>
 							<TechStackSelector
 								bind:value={exp.technologies}
 								onchange={(techs) => (exp.technologies = techs ?? [])}
@@ -139,7 +141,9 @@
 				</div>
 				{#if exp.technologies.length > 0}
 					<div class="space-y-1">
-						<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Technologies</p>
+						<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+							{language === 'sv' ? 'Nyckeltekniker' : 'Key Technologies'}
+						</p>
 						<div class="flex flex-wrap gap-2">
 							{#each exp.technologies as tech}
 								<span class="rounded-xs bg-slate-100 px-3 py-1 text-xs text-slate-800">{tech}</span>

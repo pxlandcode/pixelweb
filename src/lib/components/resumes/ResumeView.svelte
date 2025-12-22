@@ -31,7 +31,7 @@
 	let {
 		data,
 		image,
-		language = 'sv',
+		language = $bindable('sv'),
 		isEditing = false,
 		person,
 		profileTechStack
@@ -50,25 +50,29 @@
 	const resolvedImage: ImageResource | string | null = $derived.by(() => {
 		return image ?? person?.avatar_url ?? null;
 	});
-	$effect(() => {
-		console.log('[ResumeView] image debug', {
-			image,
-			personAvatar: person?.avatar_url,
-			resolvedImage
-		});
-	});
 
 	$effect(() => {
 		profileCategories = structuredClone(profileTechStack ?? person?.techStack ?? []);
 	});
 
+	// Helper to ensure all items have unique IDs
+	const ensureIds = <T extends { _id?: string }>(items: T[]): T[] => {
+		return items.map((item) => ({
+			...item,
+			_id: item._id ?? crypto.randomUUID()
+		}));
+	};
+
 	// Local editing state
 	let editingData = $state<ResumeData>(structuredClone(data));
 
-	// Sync prop changes to local state
+	// Sync prop changes to local state and ensure IDs
 	$effect(() => {
 		if (!isEditing) {
-			editingData = structuredClone(data);
+			const cloned = structuredClone(data);
+			cloned.experiences = ensureIds(cloned.experiences);
+			cloned.highlightedExperiences = ensureIds(cloned.highlightedExperiences);
+			editingData = cloned;
 		}
 	});
 
@@ -86,6 +90,7 @@
 	// Experience management
 	const addExperience = () => {
 		const newExp: ExperienceItem = {
+			_id: crypto.randomUUID(),
 			startDate: new Date().toISOString().split('T')[0],
 			endDate: null,
 			company: 'Company Name',
@@ -94,7 +99,7 @@
 			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
 			technologies: []
 		};
-		editingData.experiences = [...editingData.experiences, newExp];
+		editingData.experiences = [newExp, ...editingData.experiences];
 	};
 
 	const removeExperience = (index: number) => {
@@ -109,9 +114,17 @@
 		editingData.experiences = items;
 	};
 
+	const reorderExperience = (fromIndex: number, toIndex: number) => {
+		const items = [...editingData.experiences];
+		const [removed] = items.splice(fromIndex, 1);
+		items.splice(toIndex, 0, removed);
+		editingData.experiences = items;
+	};
+
 	// Highlighted experience management
 	const addHighlightedExperience = () => {
 		const newExp: HighlightedExperience = {
+			_id: crypto.randomUUID(),
 			company: 'Company Name',
 			role: { sv: 'Roll', en: 'Role' },
 			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
@@ -289,6 +302,7 @@
 		onAdd={addExperience}
 		onRemove={removeExperience}
 		onMove={moveExperience}
+		onReorder={reorderExperience}
 	/>
 
 	<!-- Skills Section -->

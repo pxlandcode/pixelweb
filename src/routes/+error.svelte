@@ -9,9 +9,6 @@
 	let status = $derived(page.status);
 	let error = $derived(page.error);
 
-	console.log('Error page - status:', status, 'type:', typeof status);
-	console.log('Error page - error:', error);
-
 	type Vec = { x: number; y: number };
 	type HighScoreEntry = {
 		id: string;

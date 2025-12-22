@@ -1,13 +1,13 @@
 <script lang="ts">
-import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types/resume';
-import { soloImages } from '$lib/images/manifest';
+	import type { ResumeData, LocalizedText, Person, TechCategory } from '$lib/types/resume';
+	import { soloImages } from '$lib/images/manifest';
 	import pdfStyles from './pdf-print.css?inline';
 	import andLogo from '$lib/assets/and.svg?url';
 	import pixelcodeLogoDark from '$lib/assets/pixelcodelogodark.svg?url';
 	import worldclassUrl from '$lib/assets/worldclass.svg';
 
-type ImageResource = (typeof soloImages)[keyof typeof soloImages];
-type Language = 'sv' | 'en';
+	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
+	type Language = 'sv' | 'en';
 
 	let {
 		data,
@@ -32,16 +32,11 @@ type Language = 'sv' | 'en';
 		return source;
 	});
 
-	let profileTechStack: TechCategory[] =
-		initialProfileTechStack ?? (person?.techStack ?? []);
+	let profileTechStack: TechCategory[] = initialProfileTechStack ?? person?.techStack ?? [];
 	const profileHasSkills = $derived(profileTechStack.some((cat) => cat.skills.length > 0));
 	const normalize = (value: string) => value.trim().toLowerCase();
 	const profileSkillSet = $derived(
-		new Set(
-			profileTechStack
-				.flatMap((cat) => cat.skills ?? [])
-				.map((skill) => normalize(skill))
-		)
+		new Set(profileTechStack.flatMap((cat) => cat.skills ?? []).map((skill) => normalize(skill)))
 	);
 	const extraTechniques = $derived(
 		(data.techniques ?? []).filter((tech) => !profileSkillSet.has(normalize(tech)))
@@ -52,7 +47,7 @@ type Language = 'sv' | 'en';
 		tools: { sv: 'Verktyg', en: 'Tools' },
 		design: { sv: 'Design', en: 'Design' },
 		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
-		'devops': { sv: 'DevOps', en: 'DevOps' },
+		devops: { sv: 'DevOps', en: 'DevOps' },
 		database: { sv: 'Databas', en: 'Database' },
 		methodologies: { sv: 'Metoder', en: 'Methods' },
 		architecture: { sv: 'Arkitektur', en: 'Architecture' },
@@ -66,7 +61,9 @@ type Language = 'sv' | 'en';
 		return entry ? entry[language] : name;
 	};
 	const displayCategories = $derived(() => {
-		const categories: TechCategory[] = profileTechStack.filter((cat) => (cat.skills ?? []).length > 0);
+		const categories: TechCategory[] = profileTechStack.filter(
+			(cat) => (cat.skills ?? []).length > 0
+		);
 		if (extraTechniques.length > 0) {
 			categories.push({ id: 'other', name: labelFor('other'), skills: extraTechniques });
 		}
@@ -77,9 +74,7 @@ type Language = 'sv' | 'en';
 	});
 
 	$effect(() => {
-		profileTechStack = initialProfileTechStack ?? (person?.techStack ?? []);
-		console.log('ResumePrint -> profileTechStack', profileTechStack);
-		console.log('ResumePrint -> displayCategories', displayCategories());
+		profileTechStack = initialProfileTechStack ?? person?.techStack ?? [];
 	});
 
 	const visibleHighlighted = $derived(data.highlightedExperiences.filter((exp) => !exp.hidden));
@@ -237,7 +232,7 @@ type Language = 'sv' | 'en';
 									{#if exp.technologies.length > 0}
 										<div class="space-y-1">
 											<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-												Technologies
+												{language === 'sv' ? 'Nyckeltekniker' : 'Key Technologies'}
 											</p>
 											<div class="flex flex-wrap gap-2">
 												{#each exp.technologies as tech}
@@ -271,13 +266,10 @@ type Language = 'sv' | 'en';
 		{#if visibleExperiences.length > 0}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers (matching ExperienceSection.svelte) -->
-				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+				<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 					<h2 class="text-base font-bold text-slate-900 uppercase">
 						{language === 'sv' ? 'Tidigare Erfarenheter' : 'Previous Experience'}
 					</h2>
-					<div class="flex items-center">
-						<div class="h-px w-full bg-orange-500"></div>
-					</div>
 					<div class="flex items-center">
 						<div class="h-px flex-1 bg-slate-300"></div>
 					</div>
@@ -286,18 +278,13 @@ type Language = 'sv' | 'en';
 				<div class="mt-4 space-y-6">
 					{#each visibleExperiences as exp}
 						<!-- Experience Item (matching ExperienceItem.svelte) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<!-- Column 1: Empty -->
-							<div></div>
-
-							<!-- Column 2: Period, Company, Location -->
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
+							<!-- Column 1: Period, Company, Location -->
 							<div class="space-y-1">
 								<p class="text-sm font-semibold text-slate-900">
 									<span class="whitespace-nowrap">{formatDate(exp.startDate)}</span>
-									{#if exp.endDate}
-										<span> - </span>
-										<span class="whitespace-nowrap">{formatDate(exp.endDate)}</span>
-									{/if}
+									<span> - </span>
+									<span class="whitespace-nowrap">{formatDate(exp.endDate)}</span>
 								</p>
 								<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
 								{#if exp.location}
@@ -305,7 +292,7 @@ type Language = 'sv' | 'en';
 								{/if}
 							</div>
 
-							<!-- Column 3: Role, Description, Technologies -->
+							<!-- Column 2: Role, Description, Technologies -->
 							<div class="space-y-3">
 								<h3 class="text-base font-bold break-words hyphens-auto text-slate-900" lang="en">
 									{t(exp.role)}
@@ -337,13 +324,10 @@ type Language = 'sv' | 'en';
 		{#if displayCategories().length > 0}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers -->
-				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+				<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 					<h2 class="text-base font-bold text-slate-900 uppercase">
 						{language === 'sv' ? 'Kompetenser' : 'Skills'}
 					</h2>
-					<div class="flex items-center">
-						<div class="h-px w-full bg-orange-500"></div>
-					</div>
 					<div class="flex items-center">
 						<div class="h-px flex-1 bg-slate-300"></div>
 					</div>
@@ -351,8 +335,7 @@ type Language = 'sv' | 'en';
 
 				<div class="mt-4 space-y-4">
 					{#each displayCategories() as category (category.id)}
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 								{labelFor(category.name)}
 							</p>
@@ -373,13 +356,10 @@ type Language = 'sv' | 'en';
 		{#if data.languages.length > 0 || data.education.length > 0 || (data.portfolio && data.portfolio.length > 0)}
 			<section class="resume-print-section mb-8">
 				<!-- Section Header with dividers -->
-				<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+				<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 					<h2 class="text-base font-bold text-slate-900 uppercase">
 						{language === 'sv' ? 'Övrigt' : 'Other'}
 					</h2>
-					<div class="flex items-center">
-						<div class="h-px w-full bg-orange-500"></div>
-					</div>
 					<div class="flex items-center">
 						<div class="h-px flex-1 bg-slate-300"></div>
 					</div>
@@ -388,8 +368,7 @@ type Language = 'sv' | 'en';
 				<div class="mt-4 space-y-4">
 					{#if data.languages.length > 0}
 						<!-- Languages Row (matching SkillsCategorized isLanguage) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 								{language === 'sv' ? 'Språk' : 'Languages'}
 							</p>
@@ -405,8 +384,7 @@ type Language = 'sv' | 'en';
 
 					{#if data.education.length > 0}
 						<!-- Education Row (matching SkillsCategorized isEducation) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 								{language === 'sv' ? 'Utbildning' : 'Education'}
 							</p>
@@ -423,8 +401,7 @@ type Language = 'sv' | 'en';
 
 					{#if data.portfolio && data.portfolio.length > 0}
 						<!-- Portfolio Row (matching SkillsCategorized isPortfolio) -->
-						<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-							<div></div>
+						<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 							<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">Portfolio</p>
 							<div class="flex flex-wrap gap-2 text-sm text-slate-800">
 								{#each data.portfolio as url}

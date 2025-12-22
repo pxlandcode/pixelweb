@@ -33,13 +33,10 @@
 {#if isEditing || languages.length > 0 || education.length > 0 || (portfolio && portfolio.length > 0)}
 	<section class="resume-print-section mt-8">
 		<!-- Section Header with dividers -->
-		<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
+		<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 			<h2 class="text-base font-bold text-slate-900 uppercase">
 				{language === 'sv' ? 'Övrigt' : 'Other'}
 			</h2>
-			<div class="flex items-center">
-				<div class="h-px w-full bg-orange-500"></div>
-			</div>
 			<div class="flex items-center">
 				<div class="h-px flex-1 bg-slate-300"></div>
 			</div>
@@ -168,8 +165,7 @@
 			{:else}
 				{#if languages.length > 0}
 					<!-- Languages Row -->
-					<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-						<div></div>
+					<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 						<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 							{language === 'sv' ? 'Språk' : 'Languages'}
 						</p>
@@ -188,8 +184,7 @@
 
 				{#if education.length > 0}
 					<!-- Education Row -->
-					<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-						<div></div>
+					<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 						<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">
 							{language === 'sv' ? 'Utbildning' : 'Education'}
 						</p>
@@ -206,8 +201,7 @@
 
 				{#if portfolio && portfolio.length > 0}
 					<!-- Portfolio Row -->
-					<div class="grid gap-6 md:grid-cols-[15%_15%_1fr]">
-						<div></div>
+					<div class="grid gap-6 md:grid-cols-[18%_1fr]">
 						<p class="pt-1 text-xs font-bold tracking-wide text-slate-700 uppercase">Portfolio</p>
 						<div class="flex flex-wrap gap-2 text-sm text-slate-800">
 							{#each portfolio as url}

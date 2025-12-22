@@ -3,15 +3,22 @@
 	import { Download, Edit, Save, X } from 'lucide-svelte';
 	import ResumeView from '$lib/components/resumes/ResumeView.svelte';
 	import { fly } from 'svelte/transition';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data } = $props();
 
 	let showDownloadOptions = $state(false);
-	let downloadLanguage: 'sv' | 'en' = $state('sv');
+	let viewLanguage: 'sv' | 'en' = $state((data.language as 'sv' | 'en') ?? 'sv');
+	let downloadLanguage: 'sv' | 'en' = $state((data.language as 'sv' | 'en') ?? 'sv');
 	let isEditing = $state(false);
 	let saving = $state(false);
 	let errorMessage = $state<string | null>(null);
-	let resumeViewRef: InstanceType<typeof ResumeView> | null = null;
+	let resumeViewRef: ReturnType<typeof ResumeView> | null = $state(null);
+
+	// Sync downloadLanguage when viewLanguage changes
+	$effect(() => {
+		downloadLanguage = viewLanguage;
+	});
 
 	const personName = $derived(data.resumePerson?.name ?? 'Resume');
 	const avatarImage = $derived(data.avatarUrl ?? data.resumePerson?.avatar_url ?? null);
@@ -45,6 +52,8 @@
 			}
 			isEditing = false;
 			toast.success?.('Resume saved!') ?? toast('Resume saved!');
+			// Refetch page data to update the view with saved content
+			await invalidateAll();
 		} catch (err) {
 			errorMessage = err instanceof Error ? err.message : 'Failed to save resume';
 			toast.error?.(errorMessage) ?? toast(errorMessage);
@@ -155,7 +164,7 @@
 			<ResumeView
 				data={data.resume.data}
 				bind:this={resumeViewRef}
-				language={data.language as 'sv' | 'en'}
+				bind:language={viewLanguage}
 				person={data.resumePerson ?? undefined}
 				image={avatarImage ?? undefined}
 				profileTechStack={data.resumePerson?.techStack}

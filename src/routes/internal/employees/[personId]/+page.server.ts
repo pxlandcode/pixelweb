@@ -47,11 +47,20 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 		console.warn('[employees detail] resumes error', resumesResult.error);
 	}
 
+	// Helper to extract English title from content
+	const getEnglishTitle = (content: any): string | null => {
+		const title = content?.title;
+		if (!title) return null;
+		if (typeof title === 'string') return title;
+		if (typeof title === 'object' && title.en) return title.en;
+		return null;
+	};
+
 	const resumes =
 		resumesResult.data?.map((r) => ({
 			id: String(r.id),
 			user_id: r.user_id,
-			version_name: r.version_name ?? 'Main',
+			version_name: getEnglishTitle(r.content) ?? r.version_name ?? 'Main',
 			is_main: Boolean(r.is_main),
 			is_active: Boolean(r.is_active ?? true),
 			allow_word_export: Boolean(r.allow_word_export ?? false),
@@ -101,7 +110,10 @@ export const actions: Actions = {
 			}
 		}
 
-		const { error } = await adminClient.from('profiles').update({ bio, tech_stack: techStack }).eq('id', personId);
+		const { error } = await adminClient
+			.from('profiles')
+			.update({ bio, tech_stack: techStack })
+			.eq('id', personId);
 
 		if (error) {
 			return fail(500, { ok: false, message: error.message });
@@ -130,7 +142,8 @@ export const actions: Actions = {
 			.eq('id', personId)
 			.maybeSingle();
 
-		const name = [profileRow?.first_name, profileRow?.last_name].filter(Boolean).join(' ') || 'New resume';
+		const name =
+			[profileRow?.first_name, profileRow?.last_name].filter(Boolean).join(' ') || 'New resume';
 
 		const { data, error } = await adminClient
 			.from('resumes')
@@ -206,6 +219,124 @@ export const actions: Actions = {
 			.update({ is_main: true })
 			.eq('user_id', personId)
 			.eq('id', orderedIds[0]);
+
+		return { ok: true };
+	},
+
+	copyResume: async ({ request, cookies, params }) => {
+		const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
+		const adminClient = getSupabaseAdminClient();
+
+		if (!supabase || !adminClient) {
+			return fail(401, { ok: false, message: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const resumeId = formData.get('resume_id');
+		const personId = params.personId;
+
+		if (typeof resumeId !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid resume id' });
+		}
+
+		// Fetch the original resume
+		const { data: original, error: fetchError } = await adminClient
+			.from('resumes')
+			.select('*')
+			.eq('id', resumeId)
+			.eq('user_id', personId)
+			.maybeSingle();
+
+		if (fetchError || !original) {
+			return fail(404, { ok: false, message: 'Resume not found' });
+		}
+
+		// Get the English title from content for the copy name
+		const content = original.content ?? {};
+		const title = content.title;
+		let copyTitle = 'Copy';
+		if (typeof title === 'string' && title) {
+			copyTitle = `${title} (Copy)`;
+		} else if (typeof title === 'object' && title?.en) {
+			copyTitle = `${title.en} (Copy)`;
+		} else if (original.version_name) {
+			copyTitle = `${original.version_name} (Copy)`;
+		}
+
+		// Insert the copy
+		const { data, error } = await adminClient
+			.from('resumes')
+			.insert({
+				user_id: personId,
+				version_name: copyTitle,
+				is_main: false,
+				is_active: original.is_active ?? true,
+				allow_word_export: original.allow_word_export ?? false,
+				content: original.content,
+				preview_html: original.preview_html
+			})
+			.select('id')
+			.single();
+
+		if (error) {
+			return fail(500, { ok: false, message: error.message });
+		}
+
+		return { ok: true, id: data?.id };
+	},
+
+	deleteResume: async ({ request, cookies, params }) => {
+		const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
+		const adminClient = getSupabaseAdminClient();
+
+		if (!supabase || !adminClient) {
+			return fail(401, { ok: false, message: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const resumeId = formData.get('resume_id');
+		const personId = params.personId;
+
+		if (typeof resumeId !== 'string') {
+			return fail(400, { ok: false, message: 'Invalid resume id' });
+		}
+
+		// Check the resume belongs to this person
+		const { data: existing } = await adminClient
+			.from('resumes')
+			.select('id, user_id, is_main')
+			.eq('id', resumeId)
+			.eq('user_id', personId)
+			.maybeSingle();
+
+		if (!existing) {
+			return fail(404, { ok: false, message: 'Resume not found' });
+		}
+
+		// Delete the resume
+		const { error } = await adminClient
+			.from('resumes')
+			.delete()
+			.eq('id', resumeId)
+			.eq('user_id', personId);
+
+		if (error) {
+			return fail(500, { ok: false, message: error.message });
+		}
+
+		// If deleted resume was main, set a new main
+		if (existing.is_main) {
+			const { data: remaining } = await adminClient
+				.from('resumes')
+				.select('id')
+				.eq('user_id', personId)
+				.order('created_at', { ascending: false })
+				.limit(1);
+
+			if (remaining && remaining.length > 0) {
+				await adminClient.from('resumes').update({ is_main: true }).eq('id', remaining[0].id);
+			}
+		}
 
 		return { ok: true };
 	}
