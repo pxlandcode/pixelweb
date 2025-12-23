@@ -5,6 +5,11 @@
 	const { data } = $props();
 
 	const employees = $derived(data.employees ?? []);
+	const currentUserId = $derived(data.user?.id ?? null);
+	const roles = $derived((data.roles ?? []) as string[]);
+	const canViewAllProfiles = $derived(
+		roles.some((role) => role === 'admin' || role === 'employer' || role === 'cms_admin')
+	);
 </script>
 
 <div class="">
@@ -17,9 +22,17 @@
 
 	<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 		{#each employees as employee}
-			<a href="/internal/employees/{employee.id}" class="block h-full">
+			{@const canView = canViewAllProfiles || (!!currentUserId && employee.id === currentUserId)}
+			<svelte:element
+				this={canView ? 'a' : 'div'}
+				href={canView ? `/internal/employees/${employee.id}` : undefined}
+				class="block h-full"
+				aria-disabled={!canView}
+			>
 				<Card
-					class="flex h-full flex-col overflow-hidden rounded-none transition-all hover:shadow-md"
+					class={`flex h-full flex-col overflow-hidden rounded-none transition-all ${
+						canView ? 'hover:shadow-md' : 'cursor-not-allowed opacity-95'
+					}`}
 				>
 					<div class="aspect-square w-full overflow-hidden bg-slate-100">
 						{#if employee.avatar_url}
@@ -58,7 +71,7 @@
 						</div>
 					</div>
 				</Card>
-			</a>
+			</svelte:element>
 		{/each}
 	</div>
 

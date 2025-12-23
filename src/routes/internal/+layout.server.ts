@@ -29,7 +29,7 @@ const PUBLIC_PATHS = ['/internal/login', '/internal/reset-password'] as const;
 
 // Role guard configuration centralizes who can visit each internal path.
 const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
-	{ pattern: /^\/internal$/, roles: ['admin', 'cms_admin'] },
+	{ pattern: /^\/internal$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
 	{ pattern: /^\/internal\/users/, roles: ['admin', 'employer'] },
 	{ pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
 	{ pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
@@ -42,6 +42,28 @@ const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 	{ pattern: /^\/internal\/resumes(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] }
 ];
 
+const normalizeRole = (role: string | null | undefined): Role | null => {
+	if (!role) return null;
+	const value = role.toLowerCase().replace(/\s+/g, '_');
+
+	switch (value) {
+		case 'admin':
+			return 'admin';
+		case 'cms_admin':
+		case 'cms-admin':
+		case 'cmsadmin':
+			return 'cms_admin';
+		case 'employee':
+		case 'employees':
+			return 'employee';
+		case 'employer':
+		case 'employers':
+			return 'employer';
+		default:
+			return null;
+	}
+};
+
 const guardRoute = (pathname: string, roles: Role[]): string | null => {
 	const match = roleGuards.find((guard) => guard.pattern.test(pathname));
 	if (!match) {
@@ -52,7 +74,7 @@ const guardRoute = (pathname: string, roles: Role[]): string | null => {
 	const allowed = roles.some((role) => match.roles.includes(role));
 	if (!allowed) {
 		if (roles.includes('employee') || roles.includes('employer')) {
-			return '/internal/preboard?unauthorized=1';
+			return '/internal';
 		}
 
 		return '/internal?unauthorized=1';
@@ -129,7 +151,7 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 			})()
 		]);
 
-		const roleRows = (rolesResult.data as { role: Role }[] | null) ?? [];
+		const roleRows = (rolesResult.data as { role: string }[] | null) ?? [];
 		const roleError = rolesResult.error;
 
 		if (roleError) {
@@ -144,16 +166,42 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 			});
 		}
 
-		let roles = roleRows.map((row) => row.role).filter(Boolean);
+		const rolesFromTable = roleRows
+			.map((row) => normalizeRole(row.role))
+			.filter(Boolean) as Role[];
+
+		let roles = rolesFromTable;
 
 		if (roles.length === 0) {
-			const appRoles = (userData.user.app_metadata?.roles as Role[] | undefined) ?? [];
-			if (appRoles.length > 0) {
-				roles = appRoles;
+			const appRolesNormalized = (
+				Array.isArray(userData.user.app_metadata?.roles)
+					? (userData.user.app_metadata?.roles as string[])
+					: []
+			)
+				.map((r) => normalizeRole(r))
+				.filter(Boolean) as Role[];
+
+			if (appRolesNormalized.length > 0) {
+				roles = appRolesNormalized;
 			} else if (typeof userData.user.app_metadata?.role === 'string') {
-				roles = [userData.user.app_metadata.role as Role];
+				const normalizedRole = normalizeRole(userData.user.app_metadata.role);
+				if (normalizedRole) {
+					roles = [normalizedRole];
+				}
 			}
 		}
+
+		roles = Array.from(new Set(roles));
+
+		console.info('[internal layout] role debug', {
+			userId,
+			pathname,
+			rawRoleRows: roleRows,
+			normalizedTableRoles: rolesFromTable,
+			appMetadataRoles: userData.user.app_metadata?.roles ?? null,
+			appMetadataRole: userData.user.app_metadata?.role ?? null,
+			finalRoles: roles
+		});
 
 		if (roles.length === 0) {
 			console.warn('[internal layout] no explicit role found, defaulting to employee', {
@@ -169,7 +217,8 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 		if (redirectTo) {
 			console.warn('[internal layout] guard redirect', {
 				pathname,
-				role,
+				role: primaryRole,
+				roles,
 				redirectTo
 			});
 			throw redirect(303, redirectTo);
@@ -183,6 +232,10 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 			meta: internalMeta(pathname)
 		} satisfies LoadResult;
 	} catch (error) {
+		if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+			throw error;
+		}
+
 		console.error('[internal layout] load error', error);
 		clearAuthCookies(cookies);
 		throw redirect(303, '/internal/login');

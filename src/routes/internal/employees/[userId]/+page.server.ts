@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import {
 	AUTH_COOKIE_NAMES,
 	createSupabaseServerClient,
@@ -37,7 +37,16 @@ export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 	const roles = (userRoles ?? []).map((r) => r.role);
 	const isAdmin = roles.includes('admin');
 	const isEmployer = roles.includes('employer');
+	const isCmsAdmin = roles.includes('cms_admin');
 	const isOwnProfile = currentUser?.id === userId;
+
+	// Employees without elevated roles can only view their own profile.
+	if (!isAdmin && !isEmployer && !isCmsAdmin && !isOwnProfile) {
+		const destination = currentUser?.id
+			? `/internal/employees/${currentUser.id}`
+			: '/internal/employees';
+		throw redirect(303, destination);
+	}
 
 	// Can edit if: admin, employer, or own profile
 	const canEdit = isAdmin || isEmployer || isOwnProfile;

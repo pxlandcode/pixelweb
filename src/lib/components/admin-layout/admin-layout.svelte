@@ -24,7 +24,7 @@
 		{
 			label: 'Dashboard',
 			href: '/internal',
-			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
+			allowed: ['admin', 'cms_admin', 'employee', 'employer'] satisfies AdminRole[]
 		},
 		{
 			label: 'Users',
