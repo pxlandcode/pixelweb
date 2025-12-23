@@ -10,7 +10,6 @@
 		ComboBoxHandler,
 		Datepicker,
 		Divider,
-		Drawer,
 		Dropdown,
 		FileZone,
 		FormControl,
@@ -33,6 +32,7 @@
 		Row,
 		toast
 	} from '@pixelcode_/blocks/components';
+	import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import {
 		Info,
 		CheckCircle,
@@ -592,7 +592,7 @@
 						</Button>
 					</div>
 				</Card>
-				<Drawer
+				<PixelDrawer
 					bind:open={drawerRightOpen}
 					variant="right"
 					title="Notifications"
@@ -605,8 +605,8 @@
 						</p>
 						<Alert variant="info" icon={Info}>Drawer content accepts any blocks or forms.</Alert>
 					</div>
-				</Drawer>
-				<Drawer
+				</PixelDrawer>
+				<PixelDrawer
 					bind:open={drawerLeftOpen}
 					variant="left"
 					title="Navigation"
@@ -618,8 +618,8 @@
 						<Button variant="ghost" class="justify-start">Projects</Button>
 						<Button variant="ghost" class="justify-start">Settings</Button>
 					</div>
-				</Drawer>
-				<Drawer
+				</PixelDrawer>
+				<PixelDrawer
 					bind:open={drawerTopOpen}
 					variant="top"
 					title="Banner drawer"
@@ -627,8 +627,8 @@
 					dismissable
 				>
 					<p class="text-sm text-muted-fg">Use top drawers for announcements or quick filters.</p>
-				</Drawer>
-				<Drawer
+				</PixelDrawer>
+				<PixelDrawer
 					bind:open={drawerBottomOpen}
 					variant="bottom"
 					title="Bottom sheet"
@@ -639,8 +639,8 @@
 						<p class="text-sm text-muted-fg">Attach actions that need extra context.</p>
 						<Button variant="primary">Confirm action</Button>
 					</div>
-				</Drawer>
-				<Drawer
+				</PixelDrawer>
+				<PixelDrawer
 					bind:open={drawerModalOpen}
 					variant="modal"
 					title="Centered modal"
@@ -654,7 +654,7 @@
 							<Button variant="ghost" onclick={() => (drawerModalOpen = false)}>Cancel</Button>
 						</div>
 					</div>
-				</Drawer>
+				</PixelDrawer>
 			</section>
 
 			<!-- File Zone Section -->

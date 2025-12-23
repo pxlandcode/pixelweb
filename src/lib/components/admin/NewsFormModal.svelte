@@ -1,13 +1,6 @@
 <script lang="ts">
-	import {
-		Alert,
-		Button,
-		Drawer,
-		FormControl,
-		Input,
-		Select,
-		TextArea
-	} from '@pixelcode_/blocks/components';
+import { Alert, Button, FormControl, Input, Select, TextArea } from '@pixelcode_/blocks/components';
+import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import { createEventDispatcher, onDestroy, tick } from 'svelte';
 	import Uppy from '@uppy/core';
 	import Dashboard from '@uppy/dashboard';
@@ -294,7 +287,7 @@
 	});
 </script>
 
-<Drawer
+<PixelDrawer
 	variant="right"
 	bind:open
 	title={modalTitle}
@@ -508,7 +501,7 @@
 			</Button>
 		</div>
 	</form>
-</Drawer>
+</PixelDrawer>
 
 <style>
 	:global(.uppy-container .uppy-Dashboard) {

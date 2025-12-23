@@ -3,7 +3,8 @@
 </script>
 
 <script lang="ts">
-	import { Alert, Button, Drawer, FormControl, Input } from '@pixelcode_/blocks/components';
+	import { Alert, Button, FormControl, Input } from '@pixelcode_/blocks/components';
+	import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import { createEventDispatcher, onDestroy, tick } from 'svelte';
 	import Uppy from '@uppy/core';
 	import Dashboard from '@uppy/dashboard';
@@ -347,7 +348,7 @@
 	};
 </script>
 
-<Drawer
+<PixelDrawer
 	variant="right"
 	bind:open
 	{title}
@@ -645,7 +646,7 @@
 			</Button>
 		</div>
 	</form>
-</Drawer>
+</PixelDrawer>
 
 <style>
 	:global(.uppy-container .uppy-Dashboard) {

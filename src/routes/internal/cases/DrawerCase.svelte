@@ -1,12 +1,6 @@
 <script lang="ts">
-	import {
-		Button,
-		Drawer,
-		FormControl,
-		Input,
-		Select,
-		TextArea
-	} from '@pixelcode_/blocks/components';
+import { Button, FormControl, Input, Select, TextArea } from '@pixelcode_/blocks/components';
+import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import { createEventDispatcher, onDestroy, tick } from 'svelte';
 	import Uppy from '@uppy/core';
 	import Dashboard from '@uppy/dashboard';
@@ -323,7 +317,7 @@
 	});
 </script>
 
-<Drawer
+<PixelDrawer
 	variant="right"
 	bind:open
 	title={caseData ? 'Edit case' : 'Create case'}
@@ -493,8 +487,8 @@ Mobile-first design"
 				</Button>
 			</div>
 		</div>
-	</div>
-</Drawer>
+		</div>
+</PixelDrawer>
 
 <!-- Hidden forms for server actions -->
 <form method="POST" action="?/create" class="hidden" bind:this={createForm}>

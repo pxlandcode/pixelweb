@@ -5,7 +5,6 @@
 		Alert,
 		Badge,
 		Button,
-		Drawer,
 		Icon,
 		Card,
 		FormControl,
@@ -15,6 +14,7 @@
 		toast
 	} from '@pixelcode_/blocks/components';
 	import { RollingText } from '$lib/components';
+	import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import IconPixelCode from '$lib/icons/IconPixelCode.svelte';
 	import { soloImages } from '$lib/images/manifest';
 	import worldclassUrl from '$lib/assets/worldclass.svg?url';
@@ -394,7 +394,7 @@
 			type="button"
 			class={`group absolute top-6 right-6 z-20 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-white transition ${toggleBackgroundClass} cursor-pointer`}
 			aria-label={languageToggleAria}
-			onclick={() => switchLanguage(nextLanguage)}
+			on:click={() => switchLanguage(nextLanguage)}
 		>
 			<RollingText>
 				<Icon icon={PixelCodeLucideIcon} size="md" class={`${toggleIconColor}`} />
@@ -435,7 +435,10 @@
 				<Button
 					variant="primary"
 					size="md"
-					onclick={() => (basicInfoDrawerOpen = true)}
+					onclick={() => {
+						console.info('[preboard] hero CTA clicked, toggling drawer');
+						basicInfoDrawerOpen = true;
+					}}
 					class="bg-primary text-white hover:bg-[#ff765a]"
 				>
 					{heroPrimaryCta}
@@ -704,9 +707,15 @@
 								feedbackSubmitting = false;
 								if (result.type === 'success') {
 									feedbackMessage = '';
-									toast.success(language === 'sv' ? 'Tack för din feedback!' : 'Thank you for your feedback!');
+									toast.success(
+										language === 'sv' ? 'Tack för din feedback!' : 'Thank you for your feedback!'
+									);
 								} else {
-									toast.error(language === 'sv' ? 'Något gick fel. Försök igen.' : 'Something went wrong. Please try again.');
+									toast.error(
+										language === 'sv'
+											? 'Något gick fel. Försök igen.'
+											: 'Something went wrong. Please try again.'
+									);
 								}
 								await update({ reset: false });
 							};
@@ -769,7 +778,7 @@
 </div>
 
 <!-- Basic Information Drawer -->
-<Drawer
+<PixelDrawer
 	bind:open={basicInfoDrawerOpen}
 	variant="modal"
 	title={language === 'sv' ? 'Din grundinformation' : 'Your basic information'}
@@ -779,336 +788,356 @@
 	dismissable
 	class="max-h-[90vh] w-full max-w-2xl overflow-y-auto"
 >
-	<form
-		method="POST"
-		action="?/updateBasicInfo"
-		use:enhance={() => {
-			isSaving = true;
-			return async ({ result, update }) => {
-				isSaving = false;
-				if (result.type === 'success') {
-					toast.success?.(language === 'sv' ? 'Information sparad!' : 'Information saved!') ??
-						toast(language === 'sv' ? 'Information sparad!' : 'Information saved!');
-					editingProfile = false;
-					editingInfo = false;
-					editingEmergency = false;
-				} else if (result.type === 'failure') {
-					const errorMsg =
-						(result.data as { error?: string })?.error ??
-						(language === 'sv' ? 'Något gick fel' : 'Something went wrong');
-					toast.error?.(errorMsg) ?? toast(errorMsg);
-				}
-				await update({ reset: false });
-			};
-		}}
-		class="space-y-6"
+	<div
+		class="max-h-[70vh] overflow-y-auto pr-2"
+		on:wheel|stopPropagation
+		on:touchmove|stopPropagation
 	>
-		<!-- Profile Section -->
-		<section class="border border-slate-200 bg-slate-50 p-4">
-			<div class="mb-4 flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<div class="flex h-8 w-8 items-center justify-center bg-indigo-100 text-indigo-600">
-						<User size={16} />
+		<form
+			method="POST"
+			action="?/updateBasicInfo"
+			use:enhance={() => {
+				isSaving = true;
+				return async ({ result, update }) => {
+					isSaving = false;
+					if (result.type === 'success') {
+						toast.success?.(language === 'sv' ? 'Information sparad!' : 'Information saved!') ??
+							toast(language === 'sv' ? 'Information sparad!' : 'Information saved!');
+						editingProfile = false;
+						editingInfo = false;
+						editingEmergency = false;
+						basicInfoDrawerOpen = false;
+					} else if (result.type === 'failure') {
+						const errorMsg =
+							(result.data as { error?: string })?.error ??
+							(language === 'sv' ? 'Något gick fel' : 'Something went wrong');
+						toast.error?.(errorMsg) ?? toast(errorMsg);
+					}
+					await update({ reset: false });
+					// Ensure drawer closes after the update cycle as well.
+					if (result.type === 'success') {
+						basicInfoDrawerOpen = false;
+					}
+				};
+			}}
+			class="space-y-6"
+			on:wheel|stopPropagation
+			on:touchmove|stopPropagation
+		>
+			<!-- Profile Section -->
+			<section class="border border-slate-200 bg-slate-50 p-4">
+				<div class="mb-4 flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<div class="flex h-8 w-8 items-center justify-center bg-indigo-100 text-indigo-600">
+							<User size={16} />
+						</div>
+						<h3 class="font-semibold text-slate-900">
+							{language === 'sv' ? 'Namn' : 'Name'}
+						</h3>
 					</div>
-					<h3 class="font-semibold text-slate-900">
-						{language === 'sv' ? 'Namn' : 'Name'}
-					</h3>
+					{#if hasProfileData && !editingProfile}
+						<button
+							type="button"
+							class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+							on:click={() => (editingProfile = true)}
+						>
+							<Pencil size={14} />
+							{language === 'sv' ? 'Redigera' : 'Edit'}
+						</button>
+					{:else if editingProfile}
+						<button
+							type="button"
+							class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+							on:click={() => (editingProfile = false)}
+						>
+							<X size={14} />
+							{language === 'sv' ? 'Avbryt' : 'Cancel'}
+						</button>
+					{/if}
 				</div>
-				{#if hasProfileData && !editingProfile}
-					<button
-						type="button"
-						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-						onclick={() => (editingProfile = true)}
-					>
-						<Pencil size={14} />
-						{language === 'sv' ? 'Redigera' : 'Edit'}
-					</button>
-				{:else if editingProfile}
-					<button
-						type="button"
-						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-						onclick={() => (editingProfile = false)}
-					>
-						<X size={14} />
-						{language === 'sv' ? 'Avbryt' : 'Cancel'}
-					</button>
-				{/if}
-			</div>
 
-			{#if !hasProfileData || editingProfile}
-				<div class="grid gap-3 sm:grid-cols-2">
-					<FormControl label={language === 'sv' ? 'Förnamn' : 'First name'} class="gap-1.5 text-sm">
-						<Input
-							name="first_name"
-							value={currentUserProfile?.first_name ?? ''}
-							class="bg-white text-gray-900"
-						/>
-					</FormControl>
-					<FormControl
-						label={language === 'sv' ? 'Efternamn' : 'Last name'}
-						class="gap-1.5 text-sm"
-					>
-						<Input
-							name="last_name"
-							value={currentUserProfile?.last_name ?? ''}
-							class="bg-white text-gray-900"
-						/>
-					</FormControl>
-				</div>
-			{:else}
-				<div class="grid gap-3 sm:grid-cols-2">
-					<div>
-						<p class="text-xs font-medium text-slate-500">
-							{language === 'sv' ? 'Förnamn' : 'First name'}
-						</p>
-						<p class="mt-0.5 text-slate-900">{currentUserProfile?.first_name || '—'}</p>
-						<input type="hidden" name="first_name" value={currentUserProfile?.first_name ?? ''} />
-					</div>
-					<div>
-						<p class="text-xs font-medium text-slate-500">
-							{language === 'sv' ? 'Efternamn' : 'Last name'}
-						</p>
-						<p class="mt-0.5 text-slate-900">{currentUserProfile?.last_name || '—'}</p>
-						<input type="hidden" name="last_name" value={currentUserProfile?.last_name ?? ''} />
-					</div>
-				</div>
-			{/if}
-		</section>
-
-		<!-- Employee Info Section -->
-		<section class="border border-slate-200 bg-slate-50 p-4">
-			<div class="mb-4 flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<div class="flex h-8 w-8 items-center justify-center bg-emerald-100 text-emerald-600">
-						<Phone size={16} />
-					</div>
-					<h3 class="font-semibold text-slate-900">
-						{language === 'sv' ? 'Kontakt & Lön' : 'Contact & Payroll'}
-					</h3>
-				</div>
-				{#if hasInfoData && !editingInfo}
-					<button
-						type="button"
-						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-						onclick={() => (editingInfo = true)}
-					>
-						<Pencil size={14} />
-						{language === 'sv' ? 'Redigera' : 'Edit'}
-					</button>
-				{:else if editingInfo}
-					<button
-						type="button"
-						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-						onclick={() => (editingInfo = false)}
-					>
-						<X size={14} />
-						{language === 'sv' ? 'Avbryt' : 'Cancel'}
-					</button>
-				{/if}
-			</div>
-
-			{#if !hasInfoData || editingInfo}
-				<div class="space-y-4">
+				{#if !hasProfileData || editingProfile}
 					<div class="grid gap-3 sm:grid-cols-2">
+						<FormControl
+							label={language === 'sv' ? 'Förnamn' : 'First name'}
+							class="gap-1.5 text-sm"
+						>
+							<Input
+								name="first_name"
+								value={currentUserProfile?.first_name ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+						<FormControl
+							label={language === 'sv' ? 'Efternamn' : 'Last name'}
+							class="gap-1.5 text-sm"
+						>
+							<Input
+								name="last_name"
+								value={currentUserProfile?.last_name ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+					</div>
+				{:else}
+					<div class="grid gap-3 sm:grid-cols-2">
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Förnamn' : 'First name'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{currentUserProfile?.first_name || '—'}</p>
+							<input type="hidden" name="first_name" value={currentUserProfile?.first_name ?? ''} />
+						</div>
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Efternamn' : 'Last name'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{currentUserProfile?.last_name || '—'}</p>
+							<input type="hidden" name="last_name" value={currentUserProfile?.last_name ?? ''} />
+						</div>
+					</div>
+				{/if}
+			</section>
+
+			<!-- Employee Info Section -->
+			<section class="border border-slate-200 bg-slate-50 p-4">
+				<div class="mb-4 flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<div class="flex h-8 w-8 items-center justify-center bg-emerald-100 text-emerald-600">
+							<Phone size={16} />
+						</div>
+						<h3 class="font-semibold text-slate-900">
+							{language === 'sv' ? 'Kontakt & Lön' : 'Contact & Payroll'}
+						</h3>
+					</div>
+					{#if hasInfoData && !editingInfo}
+						<button
+							type="button"
+							class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+							on:click={() => (editingInfo = true)}
+						>
+							<Pencil size={14} />
+							{language === 'sv' ? 'Redigera' : 'Edit'}
+						</button>
+					{:else if editingInfo}
+						<button
+							type="button"
+							class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+							on:click={() => (editingInfo = false)}
+						>
+							<X size={14} />
+							{language === 'sv' ? 'Avbryt' : 'Cancel'}
+						</button>
+					{/if}
+				</div>
+
+				{#if !hasInfoData || editingInfo}
+					<div class="space-y-4">
+						<div class="grid gap-3 sm:grid-cols-2">
+							<FormControl label={language === 'sv' ? 'Telefon' : 'Phone'} class="gap-1.5 text-sm">
+								<Input
+									name="phone"
+									type="tel"
+									value={employeeInfo?.phone ?? ''}
+									class="bg-white text-gray-900"
+								/>
+							</FormControl>
+							<FormControl label={language === 'sv' ? 'Adress' : 'Address'} class="gap-1.5 text-sm">
+								<Input
+									name="address"
+									value={employeeInfo?.address ?? ''}
+									class="bg-white text-gray-900"
+								/>
+							</FormControl>
+						</div>
+						<FormControl
+							label={language === 'sv' ? 'Personnummer' : 'Personal identity number'}
+							class="gap-1.5 text-sm"
+						>
+							<Input
+								name="personal_identity_number"
+								value={employeeInfo?.personal_identity_number ?? ''}
+								placeholder="YYYYMMDD-XXXX"
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+						<div class="grid gap-3 sm:grid-cols-2">
+							<FormControl
+								label={language === 'sv' ? 'Banknamn' : 'Bank name'}
+								class="gap-1.5 text-sm"
+							>
+								<Input
+									name="bank_name"
+									value={employeeInfo?.bank_name ?? ''}
+									class="bg-white text-gray-900"
+								/>
+							</FormControl>
+							<FormControl
+								label={language === 'sv' ? 'Bankkonto' : 'Bank account'}
+								bl={language === 'sv' ? 'Clearing + kontonummer' : 'Clearing + account number'}
+								class="gap-1.5 text-sm"
+							>
+								<Input
+									name="bank_account"
+									value={employeeInfo?.bank_account ?? ''}
+									class="bg-white text-gray-900"
+								/>
+							</FormControl>
+						</div>
+					</div>
+				{:else}
+					<div class="space-y-3">
+						<div class="grid gap-3 sm:grid-cols-2">
+							<div>
+								<p class="text-xs font-medium text-slate-500">
+									{language === 'sv' ? 'Telefon' : 'Phone'}
+								</p>
+								<p class="mt-0.5 text-slate-900">{employeeInfo?.phone || '—'}</p>
+								<input type="hidden" name="phone" value={employeeInfo?.phone ?? ''} />
+							</div>
+							<div>
+								<p class="text-xs font-medium text-slate-500">
+									{language === 'sv' ? 'Adress' : 'Address'}
+								</p>
+								<p class="mt-0.5 text-slate-900">{employeeInfo?.address || '—'}</p>
+								<input type="hidden" name="address" value={employeeInfo?.address ?? ''} />
+							</div>
+						</div>
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Personnummer' : 'Personal identity number'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{employeeInfo?.personal_identity_number || '—'}</p>
+							<input
+								type="hidden"
+								name="personal_identity_number"
+								value={employeeInfo?.personal_identity_number ?? ''}
+							/>
+						</div>
+						<div class="grid gap-3 sm:grid-cols-2">
+							<div>
+								<p class="text-xs font-medium text-slate-500">
+									{language === 'sv' ? 'Banknamn' : 'Bank name'}
+								</p>
+								<p class="mt-0.5 text-slate-900">{employeeInfo?.bank_name || '—'}</p>
+								<input type="hidden" name="bank_name" value={employeeInfo?.bank_name ?? ''} />
+							</div>
+							<div>
+								<p class="text-xs font-medium text-slate-500">
+									{language === 'sv' ? 'Bankkonto' : 'Bank account'}
+								</p>
+								<p class="mt-0.5 text-slate-900">{employeeInfo?.bank_account || '—'}</p>
+								<input type="hidden" name="bank_account" value={employeeInfo?.bank_account ?? ''} />
+							</div>
+						</div>
+					</div>
+				{/if}
+			</section>
+
+			<!-- Emergency Contact Section -->
+			<section class="border border-slate-200 bg-slate-50 p-4">
+				<div class="mb-4 flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<div class="flex h-8 w-8 items-center justify-center bg-amber-100 text-amber-600">
+							<AlertTriangle size={16} />
+						</div>
+						<h3 class="font-semibold text-slate-900">
+							{language === 'sv' ? 'Nödkontakt' : 'Emergency Contact'}
+						</h3>
+					</div>
+					{#if hasEmergencyData && !editingEmergency}
+						<button
+							type="button"
+							class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+							on:click={() => (editingEmergency = true)}
+						>
+							<Pencil size={14} />
+							{language === 'sv' ? 'Redigera' : 'Edit'}
+						</button>
+					{:else if editingEmergency}
+						<button
+							type="button"
+							class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+							on:click={() => (editingEmergency = false)}
+						>
+							<X size={14} />
+							{language === 'sv' ? 'Avbryt' : 'Cancel'}
+						</button>
+					{/if}
+				</div>
+
+				{#if !hasEmergencyData || editingEmergency}
+					<div class="grid gap-3 sm:grid-cols-3">
+						<FormControl label={language === 'sv' ? 'Namn' : 'Name'} class="gap-1.5 text-sm">
+							<Input
+								name="emergency_name"
+								value={emergencyContact?.name ?? ''}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
+						<FormControl
+							label={language === 'sv' ? 'Relation' : 'Relationship'}
+							class="gap-1.5 text-sm"
+						>
+							<Input
+								name="emergency_relationship"
+								value={emergencyContact?.relationship ?? ''}
+								placeholder={language === 'sv'
+									? 't.ex. Make/Maka, Förälder'
+									: 'e.g. Spouse, Parent'}
+								class="bg-white text-gray-900"
+							/>
+						</FormControl>
 						<FormControl label={language === 'sv' ? 'Telefon' : 'Phone'} class="gap-1.5 text-sm">
 							<Input
-								name="phone"
+								name="emergency_phone"
 								type="tel"
-								value={employeeInfo?.phone ?? ''}
-								class="bg-white text-gray-900"
-							/>
-						</FormControl>
-						<FormControl label={language === 'sv' ? 'Adress' : 'Address'} class="gap-1.5 text-sm">
-							<Input
-								name="address"
-								value={employeeInfo?.address ?? ''}
+								value={emergencyContact?.phone ?? ''}
 								class="bg-white text-gray-900"
 							/>
 						</FormControl>
 					</div>
-					<FormControl
-						label={language === 'sv' ? 'Personnummer' : 'Personal identity number'}
-						class="gap-1.5 text-sm"
-					>
-						<Input
-							name="personal_identity_number"
-							value={employeeInfo?.personal_identity_number ?? ''}
-							placeholder="YYYYMMDD-XXXX"
-							class="bg-white text-gray-900"
-						/>
-					</FormControl>
-					<div class="grid gap-3 sm:grid-cols-2">
-						<FormControl
-							label={language === 'sv' ? 'Banknamn' : 'Bank name'}
-							class="gap-1.5 text-sm"
-						>
-							<Input
-								name="bank_name"
-								value={employeeInfo?.bank_name ?? ''}
-								class="bg-white text-gray-900"
+				{:else}
+					<div class="grid gap-3 sm:grid-cols-3">
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Namn' : 'Name'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{emergencyContact?.name || '—'}</p>
+							<input type="hidden" name="emergency_name" value={emergencyContact?.name ?? ''} />
+						</div>
+						<div>
+							<p class="text-xs font-medium text-slate-500">
+								{language === 'sv' ? 'Relation' : 'Relationship'}
+							</p>
+							<p class="mt-0.5 text-slate-900">{emergencyContact?.relationship || '—'}</p>
+							<input
+								type="hidden"
+								name="emergency_relationship"
+								value={emergencyContact?.relationship ?? ''}
 							/>
-						</FormControl>
-						<FormControl
-							label={language === 'sv' ? 'Bankkonto' : 'Bank account'}
-							bl={language === 'sv' ? 'Clearing + kontonummer' : 'Clearing + account number'}
-							class="gap-1.5 text-sm"
-						>
-							<Input
-								name="bank_account"
-								value={employeeInfo?.bank_account ?? ''}
-								class="bg-white text-gray-900"
-							/>
-						</FormControl>
-					</div>
-				</div>
-			{:else}
-				<div class="space-y-3">
-					<div class="grid gap-3 sm:grid-cols-2">
+						</div>
 						<div>
 							<p class="text-xs font-medium text-slate-500">
 								{language === 'sv' ? 'Telefon' : 'Phone'}
 							</p>
-							<p class="mt-0.5 text-slate-900">{employeeInfo?.phone || '—'}</p>
-							<input type="hidden" name="phone" value={employeeInfo?.phone ?? ''} />
-						</div>
-						<div>
-							<p class="text-xs font-medium text-slate-500">
-								{language === 'sv' ? 'Adress' : 'Address'}
-							</p>
-							<p class="mt-0.5 text-slate-900">{employeeInfo?.address || '—'}</p>
-							<input type="hidden" name="address" value={employeeInfo?.address ?? ''} />
+							<p class="mt-0.5 text-slate-900">{emergencyContact?.phone || '—'}</p>
+							<input type="hidden" name="emergency_phone" value={emergencyContact?.phone ?? ''} />
 						</div>
 					</div>
-					<div>
-						<p class="text-xs font-medium text-slate-500">
-							{language === 'sv' ? 'Personnummer' : 'Personal identity number'}
-						</p>
-						<p class="mt-0.5 text-slate-900">{employeeInfo?.personal_identity_number || '—'}</p>
-						<input
-							type="hidden"
-							name="personal_identity_number"
-							value={employeeInfo?.personal_identity_number ?? ''}
-						/>
-					</div>
-					<div class="grid gap-3 sm:grid-cols-2">
-						<div>
-							<p class="text-xs font-medium text-slate-500">
-								{language === 'sv' ? 'Banknamn' : 'Bank name'}
-							</p>
-							<p class="mt-0.5 text-slate-900">{employeeInfo?.bank_name || '—'}</p>
-							<input type="hidden" name="bank_name" value={employeeInfo?.bank_name ?? ''} />
-						</div>
-						<div>
-							<p class="text-xs font-medium text-slate-500">
-								{language === 'sv' ? 'Bankkonto' : 'Bank account'}
-							</p>
-							<p class="mt-0.5 text-slate-900">{employeeInfo?.bank_account || '—'}</p>
-							<input type="hidden" name="bank_account" value={employeeInfo?.bank_account ?? ''} />
-						</div>
-					</div>
-				</div>
-			{/if}
-		</section>
-
-		<!-- Emergency Contact Section -->
-		<section class="border border-slate-200 bg-slate-50 p-4">
-			<div class="mb-4 flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<div class="flex h-8 w-8 items-center justify-center bg-amber-100 text-amber-600">
-						<AlertTriangle size={16} />
-					</div>
-					<h3 class="font-semibold text-slate-900">
-						{language === 'sv' ? 'Nödkontakt' : 'Emergency Contact'}
-					</h3>
-				</div>
-				{#if hasEmergencyData && !editingEmergency}
-					<button
-						type="button"
-						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-						onclick={() => (editingEmergency = true)}
-					>
-						<Pencil size={14} />
-						{language === 'sv' ? 'Redigera' : 'Edit'}
-					</button>
-				{:else if editingEmergency}
-					<button
-						type="button"
-						class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-						onclick={() => (editingEmergency = false)}
-					>
-						<X size={14} />
-						{language === 'sv' ? 'Avbryt' : 'Cancel'}
-					</button>
 				{/if}
+			</section>
+
+			<!-- Save Button -->
+			<div class="flex justify-end pt-2">
+				<Button type="submit" variant="primary" loading={isSaving} loading-text="Sparar…">
+					<Save size={16} class="mr-2" />
+					{language === 'sv' ? 'Spara' : 'Save'}
+				</Button>
 			</div>
-
-			{#if !hasEmergencyData || editingEmergency}
-				<div class="grid gap-3 sm:grid-cols-3">
-					<FormControl label={language === 'sv' ? 'Namn' : 'Name'} class="gap-1.5 text-sm">
-						<Input
-							name="emergency_name"
-							value={emergencyContact?.name ?? ''}
-							class="bg-white text-gray-900"
-						/>
-					</FormControl>
-					<FormControl
-						label={language === 'sv' ? 'Relation' : 'Relationship'}
-						class="gap-1.5 text-sm"
-					>
-						<Input
-							name="emergency_relationship"
-							value={emergencyContact?.relationship ?? ''}
-							placeholder={language === 'sv' ? 't.ex. Make/Maka, Förälder' : 'e.g. Spouse, Parent'}
-							class="bg-white text-gray-900"
-						/>
-					</FormControl>
-					<FormControl label={language === 'sv' ? 'Telefon' : 'Phone'} class="gap-1.5 text-sm">
-						<Input
-							name="emergency_phone"
-							type="tel"
-							value={emergencyContact?.phone ?? ''}
-							class="bg-white text-gray-900"
-						/>
-					</FormControl>
-				</div>
-			{:else}
-				<div class="grid gap-3 sm:grid-cols-3">
-					<div>
-						<p class="text-xs font-medium text-slate-500">{language === 'sv' ? 'Namn' : 'Name'}</p>
-						<p class="mt-0.5 text-slate-900">{emergencyContact?.name || '—'}</p>
-						<input type="hidden" name="emergency_name" value={emergencyContact?.name ?? ''} />
-					</div>
-					<div>
-						<p class="text-xs font-medium text-slate-500">
-							{language === 'sv' ? 'Relation' : 'Relationship'}
-						</p>
-						<p class="mt-0.5 text-slate-900">{emergencyContact?.relationship || '—'}</p>
-						<input
-							type="hidden"
-							name="emergency_relationship"
-							value={emergencyContact?.relationship ?? ''}
-						/>
-					</div>
-					<div>
-						<p class="text-xs font-medium text-slate-500">
-							{language === 'sv' ? 'Telefon' : 'Phone'}
-						</p>
-						<p class="mt-0.5 text-slate-900">{emergencyContact?.phone || '—'}</p>
-						<input type="hidden" name="emergency_phone" value={emergencyContact?.phone ?? ''} />
-					</div>
-				</div>
-			{/if}
-		</section>
-
-		<!-- Save Button -->
-		<div class="flex justify-end pt-2">
-			<Button type="submit" variant="primary" loading={isSaving} loading-text="Sparar…">
-				<Save size={16} class="mr-2" />
-				{language === 'sv' ? 'Spara' : 'Save'}
-			</Button>
-		</div>
-	</form>
-</Drawer>
+		</form>
+	</div></PixelDrawer
+>
 
 <style>
 	:global(.preboard-section) {
