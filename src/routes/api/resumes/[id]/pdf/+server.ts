@@ -8,6 +8,9 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from '$env/static/private';
 const toSafeFilename = (value: string) =>
 	value.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\s+/g, ' ') || 'resume';
 
+const isHttpError = (err: unknown): err is { status: number } =>
+	!!err && typeof err === 'object' && 'status' in err;
+
 const PDF_FILENAME = async (id: string, lang: string) => {
 	const resume = await ResumeService.getResume(id);
 	const person = resume ? await ResumeService.getPerson(resume.personId) : undefined;
@@ -31,9 +34,19 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 		throw error(500, 'PDF export not available. Please install the playwright dependency.');
 	}
 
-	const browser = await chromium.launch({ headless: true });
+	let browser: import('playwright').Browser | null = null;
 
 	try {
+		try {
+			browser = await chromium.launch({ headless: true });
+		} catch (err) {
+			console.error('[pdf] Playwright launch failed. Install browsers for PDF export.', err);
+			throw error(
+				500,
+				'PDF export not available. Playwright browser binaries are missing. Run `npx playwright install --with-deps chromium`.'
+			);
+		}
+
 		const page = await browser.newPage({
 			viewport: { width: 1123, height: 1587 }
 		});
@@ -164,9 +177,14 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 			}
 		});
 	} catch (err) {
-		console.error('Failed to generate PDF', err);
+		console.error('[pdf] Failed to generate PDF', err);
+		if (isHttpError(err)) {
+			throw err;
+		}
 		throw error(500, 'Could not generate PDF.');
 	} finally {
-		await browser.close();
+		if (browser) {
+			await browser.close();
+		}
 	}
 };

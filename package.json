@@ -9,6 +9,7 @@
 		"prebuild": "npm run generate:paraglide",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"postinstall": "playwright install --with-deps chromium || playwright install chromium || true",
 		"generate:paraglide": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -35,7 +36,6 @@
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"sass-embedded": "^1.93.3",
-		"playwright": "^1.49.0",
 		"svelte": "^5.39.6",
 		"svelte-check": "^4.0.0",
 		"tailwind-merge": "^3.3.1",
@@ -47,6 +47,7 @@
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
 	"dependencies": {
+		"playwright": "^1.49.0",
 		"@supabase/supabase-js": "^2.48.0",
 		"@uppy/core": "^4.2.4",
 		"@uppy/dashboard": "^4.1.1",
