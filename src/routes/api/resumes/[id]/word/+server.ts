@@ -4,7 +4,10 @@ import { ResumeService, getText } from '$lib/services/resume';
 import type { LocalizedText, ResumeData, TechCategory } from '$lib/types/resume';
 
 const toSafeFilename = (value: string) =>
-	value.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\s+/g, ' ') || 'resume';
+	value
+		.replace(/[\\/:*?"<>|]+/g, '')
+		.trim()
+		.replace(/\s+/g, ' ') || 'resume';
 
 const buildFilename = async (resumeId: string, lang: 'sv' | 'en') => {
 	const resume = await ResumeService.getResume(resumeId);
@@ -45,7 +48,10 @@ const renderCategories = (categories: TechCategory[]) => {
 	return categories
 		.map(
 			(cat) =>
-				`<section><h3>${cat.name}</h3><p>${cat.skills.map((s) => s.trim()).filter(Boolean).join(', ')}</p></section>`
+				`<section><h3>${cat.name}</h3><p>${cat.skills
+					.map((s) => s.trim())
+					.filter(Boolean)
+					.join(', ')}</p></section>`
 		)
 		.join('');
 };
@@ -95,14 +101,20 @@ const renderHtmlSection = (
 		categories.push({
 			id: 'other',
 			name: labelFor('other', lang),
-			skills: techniques.split(',').map((s) => s.trim()).filter(Boolean)
+			skills: techniques
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean)
 		});
 	}
 	if (methods) {
 		categories.push({
 			id: 'methods',
 			name: labelFor('methods', lang),
-			skills: methods.split(',').map((s) => s.trim()).filter(Boolean)
+			skills: methods
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean)
 		});
 	}
 	const nonEmptyCategories = categories.filter((cat) => (cat.skills ?? []).length > 0);
@@ -217,7 +229,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		tools: { sv: 'Verktyg', en: 'Tools' },
 		design: { sv: 'Design', en: 'Design' },
 		'ui/ux': { sv: 'UI/UX', en: 'UI/UX' },
-		'devops': { sv: 'DevOps', en: 'DevOps' },
+		devops: { sv: 'DevOps', en: 'DevOps' },
 		methods: { sv: 'Metoder', en: 'Methods' },
 		other: { sv: 'Övrigt', en: 'Other' }
 	};
@@ -239,11 +251,13 @@ ${renderHtmlSection(resume.data, lang, profileSkills, labelFor)}
 </body>
 </html>`;
 
+	const filename = await buildFilename(resumeId, lang);
+
 	return new Response(html, {
 		status: 200,
 		headers: {
 			'Content-Type': 'application/msword',
-			'Content-Disposition': `attachment; filename="${await buildFilename(resumeId, lang)}"`,
+			'Content-Disposition': `attachment; filename="${filename}"`,
 			'Cache-Control': 'no-cache, no-store, must-revalidate'
 		}
 	});

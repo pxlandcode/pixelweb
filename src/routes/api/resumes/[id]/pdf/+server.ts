@@ -6,7 +6,10 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '$env/static/private';
 
 const toSafeFilename = (value: string) =>
-	value.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\s+/g, ' ') || 'resume';
+	value
+		.replace(/[\\/:*?"<>|]+/g, '')
+		.trim()
+		.replace(/\s+/g, ' ') || 'resume';
 
 const isHttpError = (err: unknown): err is { status: number } =>
 	!!err && typeof err === 'object' && 'status' in err;
@@ -172,11 +175,13 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 			margin: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' }
 		});
 
+		const filename = await PDF_FILENAME(resumeId, lang);
+
 		return new Response(new Uint8Array(pdfBuffer), {
 			status: 200,
 			headers: {
 				'Content-Type': 'application/pdf',
-				'Content-Disposition': `attachment; filename="${await PDF_FILENAME(resumeId, lang)}"`
+				'Content-Disposition': `attachment; filename="${filename}"`
 			}
 		});
 	} catch (err) {
