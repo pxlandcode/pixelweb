@@ -58,10 +58,7 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 			});
 		} catch (err) {
 			console.error('[pdf] Playwright launch failed. Install browsers for PDF export.', err);
-			throw error(
-				500,
-				'PDF export not available. Playwright browser binaries are missing.'
-			);
+			throw error(500, 'PDF export not available. Playwright browser binaries are missing.');
 		}
 
 		const page = await browser.newPage({
