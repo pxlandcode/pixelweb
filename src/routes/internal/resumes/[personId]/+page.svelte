@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { TechStackEditor } from '$lib/components';
 	import { confirm } from '$lib/utils/confirm';
+	import { loading } from '$lib/stores/loading';
 
 	const { data } = $props();
 
@@ -16,7 +17,6 @@
 	);
 
 	let isEditing = $state(false);
-	let isLoading = $state(false);
 	let editingBio = $state(profile?.bio ?? '');
 	let editingTechStack = $state(structuredClone(techStack));
 	const techStackJson = $derived(JSON.stringify(editingTechStack ?? []));
@@ -79,11 +79,16 @@
 
 	const saveOrder = async () => {
 		if (!canEdit) return;
-		const order = resumeList.map((r) => r.id);
-		const formData = new FormData();
-		formData.set('person_id', profile.id);
-		formData.set('resume_order', JSON.stringify(order));
-		await fetch('?/updateResumeOrder', { method: 'POST', body: formData });
+		loading(true, 'Saving order...');
+		try {
+			const order = resumeList.map((r) => r.id);
+			const formData = new FormData();
+			formData.set('person_id', profile.id);
+			formData.set('resume_order', JSON.stringify(order));
+			await fetch('?/updateResumeOrder', { method: 'POST', body: formData });
+		} finally {
+			loading(false);
+		}
 	};
 
 	const handleDrop = async (event: DragEvent, index: number) => {
@@ -97,53 +102,52 @@
 
 	const addResume = async () => {
 		if (!canEdit) return;
-		isLoading = true;
-		const formData = new FormData();
-		formData.set('person_id', profile.id);
-		const res = await fetch('?/createResume', { method: 'POST', body: formData });
-		if (res.ok) {
-			const { id } = await res.json().catch(() => ({}));
-			// Refresh list
-			location.reload();
+		loading(true, 'Creating resume...');
+		try {
+			const formData = new FormData();
+			formData.set('person_id', profile.id);
+			const res = await fetch('?/createResume', { method: 'POST', body: formData });
+			if (res.ok) {
+				const { id } = await res.json().catch(() => ({}));
+				// Refresh list
+				location.reload();
+			}
+		} finally {
+			loading(false);
 		}
-		isLoading = false;
 	};
 
 	const deleteResume = async (resumeId: string) => {
 		if (!canEdit) return;
-		isLoading = true;
-		const formData = new FormData();
-		formData.set('resume_id', resumeId);
-		const res = await fetch('?/deleteResume', { method: 'POST', body: formData });
-		if (res.ok) {
-			// Remove from local list
-			resumeList = resumeList.filter((r) => r.id !== resumeId);
+		loading(true, 'Deleting resume...');
+		try {
+			const formData = new FormData();
+			formData.set('resume_id', resumeId);
+			const res = await fetch('?/deleteResume', { method: 'POST', body: formData });
+			if (res.ok) {
+				// Remove from local list
+				resumeList = resumeList.filter((r) => r.id !== resumeId);
+			}
+		} finally {
+			loading(false);
 		}
-		isLoading = false;
 	};
 
 	const copyResume = async (resumeId: string) => {
 		if (!canEdit) return;
-		isLoading = true;
-		const formData = new FormData();
-		formData.set('resume_id', resumeId);
-		const res = await fetch('?/copyResume', { method: 'POST', body: formData });
-		if (res.ok) {
-			location.reload();
+		loading(true, 'Copying resume...');
+		try {
+			const formData = new FormData();
+			formData.set('resume_id', resumeId);
+			const res = await fetch('?/copyResume', { method: 'POST', body: formData });
+			if (res.ok) {
+				location.reload();
+			}
+		} finally {
+			loading(false);
 		}
-		isLoading = false;
 	};
 </script>
-
-<!-- Loading bar at top -->
-{#if isLoading}
-	<div class="fixed top-0 left-0 z-50 h-1 w-full overflow-hidden bg-indigo-100">
-		<div
-			class="h-full w-1/3 animate-pulse bg-indigo-600"
-			style="animation: loading-bar 1s ease-in-out infinite;"
-		></div>
-	</div>
-{/if}
 
 <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
 	<div class="mb-8">

@@ -4,6 +4,7 @@
 	import ResumeView from '$lib/components/resumes/ResumeView.svelte';
 	import { fly } from 'svelte/transition';
 	import { invalidateAll } from '$app/navigation';
+	import { loading } from '$lib/stores/loading';
 
 	let { data } = $props();
 
@@ -13,6 +14,7 @@
 	let downloadLanguage: 'sv' | 'en' = $state((data.language as 'sv' | 'en') ?? 'sv');
 	let isEditing = $state(false);
 	let saving = $state(false);
+	let downloading: 'pdf' | 'word' | null = $state(null);
 	let errorMessage = $state<string | null>(null);
 	let resumeViewRef: ReturnType<typeof ResumeView> | null = $state(null);
 
@@ -47,6 +49,7 @@
 		if (!resumeViewRef) return;
 		saving = true;
 		errorMessage = null;
+		loading(true, 'Saving resume...');
 		try {
 			const content = resumeViewRef.getEditedData();
 			const formData = new FormData();
@@ -68,6 +71,42 @@
 			toast.error?.(errorMessage) ?? toast(errorMessage);
 		} finally {
 			saving = false;
+			loading(false);
+		}
+	};
+
+	const downloadFile = async (type: 'pdf' | 'word') => {
+		const extension = type === 'pdf' ? 'pdf' : 'doc';
+		const label = type === 'pdf' ? 'Generating PDF...' : 'Generating Word file...';
+		const url = `/api/resumes/${data.resume.id}/${type}?lang=${downloadLanguage}`;
+		const filename = `${downloadBaseName}.${extension}`;
+
+		downloading = type;
+		loading(true, label);
+		showDownloadOptions = false;
+
+		try {
+			const response = await fetch(url, { credentials: 'include' });
+			if (!response.ok) {
+				const detail = await response.json().catch(() => null);
+				throw new Error(detail?.message ?? 'Failed to download file');
+			}
+			const blob = await response.blob();
+			const objectUrl = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = objectUrl;
+			link.download = filename;
+			link.rel = 'noopener';
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(objectUrl);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Failed to download file';
+			toast.error?.(message) ?? toast(message);
+		} finally {
+			downloading = null;
+			loading(false);
 		}
 	};
 </script>
@@ -134,11 +173,10 @@
 						<Button
 							size="sm"
 							variant="outline"
-							href={`/api/resumes/${data.resume.id}/word?lang=${downloadLanguage}`}
-							target="_blank"
-							rel="external"
-							download={`${downloadBaseName}.doc`}
-							onclick={() => (showDownloadOptions = false)}
+							type="button"
+							loading={downloading === 'word'}
+							loading-text="Generating..."
+							onclick={() => downloadFile('word')}
 						>
 							Word (Pre-beta)
 						</Button>
@@ -147,11 +185,10 @@
 						<Button
 							size="sm"
 							variant="primary"
-							href={`/api/resumes/${data.resume.id}/pdf?lang=${downloadLanguage}`}
-							target="_blank"
-							rel="external"
-							download={`${downloadBaseName}.pdf`}
-							onclick={() => (showDownloadOptions = false)}
+							type="button"
+							loading={downloading === 'pdf'}
+							loading-text="Generating..."
+							onclick={() => downloadFile('pdf')}
 						>
 							<Icon icon={Download} size="sm" />
 							PDF
