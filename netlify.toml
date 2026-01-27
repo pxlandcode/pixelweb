@@ -1,2 +1,5 @@
 [build.environment]
-  PLAYWRIGHT_BROWSERS_PATH = "/opt/build/repo/node_modules/playwright/.local-browsers"
+  PLAYWRIGHT_BROWSERS_PATH = "/opt/build/cache/ms-playwright"
+
+[build.cache]
+  directories = [".cache/ms-playwright"]
