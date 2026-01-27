@@ -4,6 +4,8 @@ import { AUTH_COOKIE_NAMES } from '$lib/server/supabase';
 import { ResumeService } from '$lib/services/resume';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '$env/static/private';
+import chromium from '@sparticuz/chromium';
+import { chromium as playwrightChromium } from 'playwright-core';
 
 const toSafeFilename = (value: string) =>
 	value
@@ -40,19 +42,17 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 	}
 	const lang = url.searchParams.get('lang') ?? 'sv';
 
-	let chromium: typeof import('playwright').chromium;
-	try {
-		({ chromium } = await import('playwright'));
-	} catch (err) {
-		console.error('Playwright import failed. Install `playwright` to enable PDF export.', err);
-		throw error(500, 'PDF export not available. Please install the playwright dependency.');
-	}
-
-	let browser: import('playwright').Browser | null = null;
+	let browser: import('playwright-core').Browser | null = null;
 
 	try {
 		try {
-			browser = await chromium.launch({
+			const executablePath = await chromium.executablePath();
+			if (!executablePath) {
+				throw new Error('Chromium executable path not found');
+			}
+
+			browser = await playwrightChromium.launch({
+				executablePath,
 				headless: true,
 				args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
 			});
@@ -60,7 +60,7 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 			console.error('[pdf] Playwright launch failed. Install browsers for PDF export.', err);
 			throw error(
 				500,
-				'PDF export not available. Playwright browser binaries are missing. Run `npx playwright install --with-deps chromium`.'
+				'PDF export not available. Playwright browser binaries are missing.'
 			);
 		}
 

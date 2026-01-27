@@ -9,7 +9,6 @@
 		"prebuild": "npm run generate:paraglide",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"postinstall": "playwright install chromium || true",
 		"generate:paraglide": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -47,7 +46,8 @@
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
 	"dependencies": {
-		"playwright": "^1.49.0",
+		"@sparticuz/chromium": "^131.0.0",
+		"playwright-core": "^1.49.0",
 		"@supabase/supabase-js": "^2.48.0",
 		"@uppy/core": "^4.2.4",
 		"@uppy/dashboard": "^4.1.1",
