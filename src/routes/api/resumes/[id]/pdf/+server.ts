@@ -45,26 +45,20 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 	let browser: import('playwright-core').Browser | null = null;
 
 	try {
-		try {
-			const executablePath = await chromium.executablePath();
-			if (!executablePath) {
-				throw new Error('Chromium executable path not found');
-			}
-
-			browser = await playwrightChromium.launch({
-				executablePath,
-				headless: chromium.headless ?? true,
-				args: [
-					...chromium.args,
-					'--no-sandbox',
-					'--disable-setuid-sandbox',
-					'--disable-dev-shm-usage'
-				]
-			});
-		} catch (err) {
-			console.error('[pdf] Playwright launch failed. Install browsers for PDF export.', err);
-			throw error(500, 'PDF export not available. Playwright browser binaries are missing.');
+		const executablePath = await chromium.executablePath();
+		if (!executablePath) {
+			throw new Error('Chromium executable path not found');
 		}
+
+		const headless = chromium.headless === undefined ? true : Boolean(chromium.headless);
+		const launchArgs = Array.isArray(chromium.args) ? [...chromium.args] : [];
+		launchArgs.push('--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage');
+
+		browser = await playwrightChromium.launch({
+			executablePath,
+			headless,
+			args: launchArgs
+		});
 
 		const page = await browser.newPage({
 			viewport: { width: 1123, height: 1587 }
