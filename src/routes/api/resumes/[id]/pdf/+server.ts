@@ -1,4 +1,6 @@
 import type { RequestHandler } from './$types';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { error } from '@sveltejs/kit';
 import { AUTH_COOKIE_NAMES } from '$lib/server/supabase';
 import { ResumeService } from '$lib/services/resume';
@@ -6,6 +8,12 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '$env/static/private';
 import chromium from '@sparticuz/chromium';
 import { chromium as playwrightChromium } from 'playwright-core';
+
+const isServerless =
+	Boolean(process.env.NETLIFY) ||
+	Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+	Boolean(process.env.VERCEL) ||
+	Boolean(process.env.CF_PAGES);
 
 const toSafeFilename = (value: string) =>
 	value
@@ -15,6 +23,84 @@ const toSafeFilename = (value: string) =>
 
 const isHttpError = (err: unknown): err is { status: number } =>
 	!!err && typeof err === 'object' && 'status' in err;
+
+const resolveLocalChromePath = (): string | null => {
+	const envPath =
+		process.env.CHROMIUM_EXECUTABLE_PATH ||
+		process.env.CHROME_PATH ||
+		process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+	if (envPath && existsSync(envPath)) {
+		return envPath;
+	}
+
+	const home = process.env.HOME ?? '';
+	const platform = process.platform;
+	const candidates =
+		platform === 'darwin'
+			? [
+					'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+					'/Applications/Chromium.app/Contents/MacOS/Chromium',
+					...(home
+						? [join(home, 'Applications/Google Chrome.app/Contents/MacOS/Google Chrome')]
+						: [])
+				]
+			: platform === 'win32'
+				? [
+						process.env.PROGRAMFILES
+							? join(process.env.PROGRAMFILES, 'Google/Chrome/Application/chrome.exe')
+							: '',
+						process.env['PROGRAMFILES(X86)']
+							? join(process.env['PROGRAMFILES(X86)'], 'Google/Chrome/Application/chrome.exe')
+							: '',
+						process.env.LOCALAPPDATA
+							? join(process.env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe')
+							: '',
+						process.env.PROGRAMFILES
+							? join(process.env.PROGRAMFILES, 'Chromium/Application/chrome.exe')
+							: ''
+					]
+				: [
+						'/usr/bin/google-chrome',
+						'/usr/bin/google-chrome-stable',
+						'/usr/bin/chromium',
+						'/usr/bin/chromium-browser'
+					];
+
+	for (const candidate of candidates) {
+		if (candidate && existsSync(candidate)) {
+			return candidate;
+		}
+	}
+
+	return null;
+};
+
+const launchBrowser = async (): Promise<import('playwright-core').Browser> => {
+	if (!isServerless) {
+		const localExecutablePath = resolveLocalChromePath();
+		if (!localExecutablePath) {
+			throw new Error(
+				'Local Chromium executable not found. Set CHROME_PATH or PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH.'
+			);
+		}
+		return playwrightChromium.launch({ executablePath: localExecutablePath, headless: true });
+	}
+
+	const executablePath = await chromium.executablePath();
+	if (!executablePath) {
+		throw new Error('Chromium executable path not found');
+	}
+
+	const headless = chromium.headless === undefined ? true : Boolean(chromium.headless);
+	const launchArgs = Array.isArray(chromium.args) ? [...chromium.args] : [];
+	launchArgs.push('--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage');
+
+	return playwrightChromium.launch({
+		executablePath,
+		headless,
+		args: launchArgs
+	});
+};
 
 const PDF_FILENAME = async (id: string, lang: string) => {
 	try {
@@ -45,20 +131,7 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 	let browser: import('playwright-core').Browser | null = null;
 
 	try {
-		const executablePath = await chromium.executablePath();
-		if (!executablePath) {
-			throw new Error('Chromium executable path not found');
-		}
-
-		const headless = chromium.headless === undefined ? true : Boolean(chromium.headless);
-		const launchArgs = Array.isArray(chromium.args) ? [...chromium.args] : [];
-		launchArgs.push('--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage');
-
-		browser = await playwrightChromium.launch({
-			executablePath,
-			headless,
-			args: launchArgs
-		});
+		browser = await launchBrowser();
 
 		const page = await browser.newPage({
 			viewport: { width: 1123, height: 1587 }
