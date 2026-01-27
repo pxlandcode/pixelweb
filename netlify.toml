@@ -1,5 +1,1 @@
-[build.environment]
-  PLAYWRIGHT_BROWSERS_PATH = "/opt/build/cache/ms-playwright"
 
-[build.cache]
-  directories = [".cache/ms-playwright"]
