@@ -15,11 +15,22 @@ const isHttpError = (err: unknown): err is { status: number } =>
 	!!err && typeof err === 'object' && 'status' in err;
 
 const PDF_FILENAME = async (id: string, lang: string) => {
-	const resume = await ResumeService.getResume(id);
-	const person = resume ? await ResumeService.getPerson(resume.personId) : undefined;
-	const name = toSafeFilename(person?.name ?? 'resume');
-	const kind = lang === 'sv' ? 'CV' : 'Resume';
-	return `${name} - Pixel&Code - ${kind}.pdf`;
+	try {
+		const resume = await ResumeService.getResume(id);
+		if (!resume) {
+			console.error('[pdf] Resume not found for ID:', id);
+			return 'Resume.pdf';
+		}
+		const person = await ResumeService.getPerson(resume.personId);
+		const name = toSafeFilename(person?.name ?? 'resume');
+		const kind = lang === 'sv' ? 'CV' : 'Resume';
+		const filename = `${name} - Pixel&Code - ${kind}.pdf`;
+		console.log('[pdf] Generated filename:', filename);
+		return filename;
+	} catch (err) {
+		console.error('[pdf] Error generating filename:', err);
+		return 'Resume.pdf';
+	}
 };
 
 export const GET: RequestHandler = async ({ params, url, cookies }) => {
@@ -176,6 +187,7 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 		});
 
 		const filename = await PDF_FILENAME(resumeId, lang);
+		console.log('[pdf] Response filename:', filename, 'type:', typeof filename);
 
 		return new Response(new Uint8Array(pdfBuffer), {
 			status: 200,

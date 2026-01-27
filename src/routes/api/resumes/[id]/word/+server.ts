@@ -10,11 +10,22 @@ const toSafeFilename = (value: string) =>
 		.replace(/\s+/g, ' ') || 'resume';
 
 const buildFilename = async (resumeId: string, lang: 'sv' | 'en') => {
-	const resume = await ResumeService.getResume(resumeId);
-	const person = resume ? await ResumeService.getPerson(resume.personId) : undefined;
-	const name = toSafeFilename(person?.name ?? 'resume');
-	const kind = lang === 'sv' ? 'CV' : 'Resume';
-	return `${name} - Pixel&Code - ${kind}.doc`;
+	try {
+		const resume = await ResumeService.getResume(resumeId);
+		if (!resume) {
+			console.error('[word] Resume not found for ID:', resumeId);
+			return 'Resume.doc';
+		}
+		const person = await ResumeService.getPerson(resume.personId);
+		const name = toSafeFilename(person?.name ?? 'resume');
+		const kind = lang === 'sv' ? 'CV' : 'Resume';
+		const filename = `${name} - Pixel&Code - ${kind}.doc`;
+		console.log('[word] Generated filename:', filename);
+		return filename;
+	} catch (err) {
+		console.error('[word] Error generating filename:', err);
+		return 'Resume.doc';
+	}
 };
 
 const localize = (value: LocalizedText, lang: 'sv' | 'en') => getText(value, lang);
@@ -252,6 +263,7 @@ ${renderHtmlSection(resume.data, lang, profileSkills, labelFor)}
 </html>`;
 
 	const filename = await buildFilename(resumeId, lang);
+	console.log('[word] Response filename:', filename, 'type:', typeof filename);
 
 	return new Response(html, {
 		status: 200,
