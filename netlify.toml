@@ -1,6 +1,2 @@
 [build.environment]
   PLAYWRIGHT_BROWSERS_PATH = "/opt/build/repo/node_modules/playwright/.local-browsers"
-
-[functions]
-  included_files = ["node_modules/playwright/.local-browsers/**"]
-  node_bundler = "esbuild"
