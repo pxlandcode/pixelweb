@@ -20,6 +20,7 @@
 			<p class="mb-1 text-sm font-medium text-slate-700">Summary (SV)</p>
 			<QuillEditor
 				content={getLocalizedValue(summary, 'sv')}
+				placeholder="Summary (SV)"
 				onchange={(html) => (summary = setLocalizedValue(summary, 'sv', html))}
 			/>
 		</div>
@@ -27,6 +28,7 @@
 			<p class="mb-1 text-sm font-medium text-slate-700">Summary (EN)</p>
 			<QuillEditor
 				content={getLocalizedValue(summary, 'en')}
+				placeholder="Summary (EN)"
 				onchange={(html) => (summary = setLocalizedValue(summary, 'en', html))}
 			/>
 		</div>

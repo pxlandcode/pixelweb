@@ -32,13 +32,25 @@
 					>
 				</div>
 				<FormControl label="Name">
-					<Input bind:value={contact.name} class="border-slate-300 bg-white text-slate-900" />
+					<Input
+						bind:value={contact.name}
+						placeholder="Name"
+						class="border-slate-300 bg-white text-slate-900"
+					/>
 				</FormControl>
 				<FormControl label="Phone">
-					<Input bind:value={contact.phone} class="border-slate-300 bg-white text-slate-900" />
+					<Input
+						bind:value={contact.phone}
+						placeholder="Phone"
+						class="border-slate-300 bg-white text-slate-900"
+					/>
 				</FormControl>
 				<FormControl label="Email">
-					<Input bind:value={contact.email} class="border-slate-300 bg-white text-slate-900" />
+					<Input
+						bind:value={contact.email}
+						placeholder="Email"
+						class="border-slate-300 bg-white text-slate-900"
+					/>
 				</FormControl>
 			</div>
 		{/each}

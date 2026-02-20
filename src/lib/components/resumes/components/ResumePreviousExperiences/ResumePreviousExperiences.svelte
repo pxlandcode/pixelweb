@@ -238,6 +238,7 @@
 									<FormControl label="Start Date (YYYY-MM-DD)">
 										<Input
 											bind:value={exp.startDate}
+											placeholder="YYYY-MM-DD"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -253,6 +254,7 @@
 									<FormControl label="Company">
 										<Input
 											bind:value={exp.company}
+											placeholder="Company"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -266,6 +268,7 @@
 														'sv',
 														e.currentTarget.value
 													))}
+												placeholder="Location (SV)"
 												class="border-slate-300 bg-white text-slate-900"
 											/>
 										</FormControl>
@@ -278,6 +281,7 @@
 														'en',
 														e.currentTarget.value
 													))}
+												placeholder="Location (EN)"
 												class="border-slate-300 bg-white text-slate-900"
 											/>
 										</FormControl>
@@ -289,6 +293,7 @@
 											value={getLocalizedValue(exp.role, 'sv')}
 											oninput={(e) =>
 												(exp.role = setLocalizedValue(exp.role, 'sv', e.currentTarget.value))}
+											placeholder="Role (SV)"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -297,6 +302,7 @@
 											value={getLocalizedValue(exp.role, 'en')}
 											oninput={(e) =>
 												(exp.role = setLocalizedValue(exp.role, 'en', e.currentTarget.value))}
+											placeholder="Role (EN)"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -306,6 +312,7 @@
 									<div class="rounded-xs border border-slate-300 bg-white">
 										<QuillEditor
 											content={getLocalizedValue(exp.description, 'sv')}
+											placeholder="Description (SV)"
 											onchange={(html) =>
 												(exp.description = setLocalizedValue(exp.description, 'sv', html))}
 										/>
@@ -316,6 +323,7 @@
 									<div class="rounded-xs border border-slate-300 bg-white">
 										<QuillEditor
 											content={getLocalizedValue(exp.description, 'en')}
+											placeholder="Description (EN)"
 											onchange={(html) =>
 												(exp.description = setLocalizedValue(exp.description, 'en', html))}
 										/>

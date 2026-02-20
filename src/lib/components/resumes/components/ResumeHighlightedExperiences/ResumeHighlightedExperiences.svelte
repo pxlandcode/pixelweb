@@ -72,7 +72,11 @@
 					</div>
 					<div class="space-y-3">
 						<FormControl label="Company">
-							<Input bind:value={exp.company} class="border-slate-300 bg-white text-slate-900" />
+							<Input
+								bind:value={exp.company}
+								placeholder="Company"
+								class="border-slate-300 bg-white text-slate-900"
+							/>
 						</FormControl>
 						<div class="grid grid-cols-2 gap-4">
 							<FormControl label="Role (SV)">
@@ -80,6 +84,7 @@
 									value={getLocalizedValue(exp.role, 'sv')}
 									oninput={(e) =>
 										(exp.role = setLocalizedValue(exp.role, 'sv', e.currentTarget.value))}
+									placeholder="Role (SV)"
 									class="border-slate-300 bg-white text-slate-900"
 								/>
 							</FormControl>
@@ -88,6 +93,7 @@
 									value={getLocalizedValue(exp.role, 'en')}
 									oninput={(e) =>
 										(exp.role = setLocalizedValue(exp.role, 'en', e.currentTarget.value))}
+									placeholder="Role (EN)"
 									class="border-slate-300 bg-white text-slate-900"
 								/>
 							</FormControl>
@@ -97,6 +103,7 @@
 							<div class="rounded-xs border border-slate-300 bg-white">
 								<QuillEditor
 									content={getLocalizedValue(exp.description, 'sv')}
+									placeholder="Description (SV)"
 									onchange={(html) =>
 										(exp.description = setLocalizedValue(exp.description, 'sv', html))}
 								/>
@@ -107,6 +114,7 @@
 							<div class="rounded-xs border border-slate-300 bg-white">
 								<QuillEditor
 									content={getLocalizedValue(exp.description, 'en')}
+									placeholder="Description (EN)"
 									onchange={(html) =>
 										(exp.description = setLocalizedValue(exp.description, 'en', html))}
 								/>

@@ -91,12 +91,12 @@
 	const addExperience = () => {
 		const newExp: ExperienceItem = {
 			_id: crypto.randomUUID(),
-			startDate: new Date().toISOString().split('T')[0],
-			endDate: null,
-			company: 'Company Name',
-			location: { sv: 'Plats', en: 'Location' },
-			role: { sv: 'Roll', en: 'Role' },
-			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
+			startDate: '',
+			endDate: '',
+			company: '',
+			location: { sv: '', en: '' },
+			role: { sv: '', en: '' },
+			description: { sv: '', en: '' },
 			technologies: []
 		};
 		editingData.experiences = [newExp, ...editingData.experiences];
@@ -125,9 +125,9 @@
 	const addHighlightedExperience = () => {
 		const newExp: HighlightedExperience = {
 			_id: crypto.randomUUID(),
-			company: 'Company Name',
-			role: { sv: 'Roll', en: 'Role' },
-			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
+			company: '',
+			role: { sv: '', en: '' },
+			description: { sv: '', en: '' },
 			technologies: []
 		};
 		editingData.highlightedExperiences = [...editingData.highlightedExperiences, newExp];
@@ -150,8 +150,8 @@
 	// Language management
 	const addLanguage = () => {
 		const newLang: LabeledItem = {
-			label: { sv: 'Språk', en: 'Language' },
-			value: { sv: 'Nivå', en: 'Level' }
+			label: { sv: '', en: '' },
+			value: { sv: '', en: '' }
 		};
 		editingData.languages = [...editingData.languages, newLang];
 	};
@@ -163,8 +163,8 @@
 	// Education management
 	const addEducation = () => {
 		const newEdu: LabeledItem = {
-			label: 'Institution',
-			value: { sv: 'Program', en: 'Program' }
+			label: '',
+			value: { sv: '', en: '' }
 		};
 		editingData.education = [...editingData.education, newEdu];
 	};
@@ -175,7 +175,7 @@
 
 	// Portfolio management
 	const addPortfolioUrl = () => {
-		editingData.portfolio = [...(editingData.portfolio ?? []), 'https://'];
+		editingData.portfolio = [...(editingData.portfolio ?? []), ''];
 	};
 
 	const removePortfolioUrl = (index: number) => {
@@ -184,7 +184,7 @@
 
 	// Contact management
 	const addContact = () => {
-		editingData.contacts = [...editingData.contacts, { name: 'Name', phone: '', email: '' }];
+		editingData.contacts = [...editingData.contacts, { name: '', phone: '', email: '' }];
 	};
 
 	const removeContact = (index: number) => {
