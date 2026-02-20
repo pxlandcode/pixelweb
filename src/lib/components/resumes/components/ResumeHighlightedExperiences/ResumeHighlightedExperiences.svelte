@@ -1,8 +1,16 @@
 <script lang="ts">
-	import type { HighlightedExperience, LocalizedText } from '$lib/types/resume';
+	import type { HighlightedExperience } from '$lib/types/resume';
 	import { Button, Input, FormControl } from '@pixelcode_/blocks/components';
 	import { QuillEditor, TechStackSelector } from '$lib/components';
-	import { t, getLocalizedValue, setLocalizedValue, type Language } from '../utils';
+	import { ResumeAiWriterDrawer } from '../ResumeAiWriterDrawer';
+	import {
+		t,
+		getLocalizedValue,
+		setLocalizedValue,
+		type Language,
+		type ResumeAiGenerateParams,
+		type ResumeAiGenerateResult
+	} from '../utils';
 
 	let {
 		experiences = $bindable(),
@@ -10,7 +18,8 @@
 		language = 'sv',
 		onAdd,
 		onRemove,
-		onMove
+		onMove,
+		onGenerateDescription
 	}: {
 		experiences: HighlightedExperience[];
 		isEditing?: boolean;
@@ -18,7 +27,19 @@
 		onAdd?: () => void;
 		onRemove?: (index: number) => void;
 		onMove?: (index: number, direction: 'up' | 'down') => void;
+		onGenerateDescription?: (params: ResumeAiGenerateParams) => Promise<ResumeAiGenerateResult>;
 	} = $props();
+	const debugLoggingEnabled = import.meta.env.DEV;
+	let aiDescriptionRevisionByRow = $state<Record<string, number>>({});
+
+	const getRowId = (exp: HighlightedExperience, index: number) => exp._id ?? `row-${index}`;
+	const getDescriptionRevision = (rowId: string) => aiDescriptionRevisionByRow[rowId] ?? 0;
+	const bumpDescriptionRevision = (rowId: string) => {
+		aiDescriptionRevisionByRow = {
+			...aiDescriptionRevisionByRow,
+			[rowId]: (aiDescriptionRevisionByRow[rowId] ?? 0) + 1
+		};
+	};
 </script>
 
 <div class="space-y-4">
@@ -32,6 +53,7 @@
 		<div class="rounded-xs border border-slate-200 bg-slate-50 p-4">
 			<h3 class="mb-4 text-sm font-semibold text-slate-700">Highlighted Experiences</h3>
 			{#each experiences as exp, index (exp._id ?? index)}
+				{@const rowId = getRowId(exp, index)}
 				<div class="mb-4 rounded-xs border border-slate-200 bg-white p-4">
 					<div class="mb-4 flex items-center justify-between">
 						<h4 class="font-semibold text-slate-700">
@@ -43,6 +65,60 @@
 							{/if}
 						</h4>
 						<div class="flex gap-2">
+							{#if onGenerateDescription}
+								<ResumeAiWriterDrawer
+									rowTitle={exp.company || `Experience ${index + 1}`}
+									sectionType="highlighted"
+									{language}
+									company={exp.company}
+									roleSv={getLocalizedValue(exp.role, 'sv')}
+									roleEn={getLocalizedValue(exp.role, 'en')}
+									descriptionSv={getLocalizedValue(exp.description, 'sv')}
+									descriptionEn={getLocalizedValue(exp.description, 'en')}
+									technologies={exp.technologies}
+									{onGenerateDescription}
+									onAccept={(payload) => {
+										let nextDescription = setLocalizedValue(
+											exp.description,
+											'sv',
+											payload.drafts.descriptionByLanguage.sv
+										);
+										nextDescription = setLocalizedValue(
+											nextDescription,
+											'en',
+											payload.drafts.descriptionByLanguage.en
+										);
+
+										let nextRole = setLocalizedValue(
+											exp.role,
+											'sv',
+											payload.drafts.roleByLanguage.sv
+										);
+										nextRole = setLocalizedValue(nextRole, 'en', payload.drafts.roleByLanguage.en);
+
+										const nextExp: HighlightedExperience = {
+											...exp,
+											description: nextDescription,
+											role: nextRole,
+											company: payload.drafts.company,
+											technologies: [...payload.drafts.technologies]
+										};
+
+										experiences = experiences.map((item, itemIndex) =>
+											itemIndex === index ? nextExp : item
+										);
+										bumpDescriptionRevision(rowId);
+										if (debugLoggingEnabled) {
+											console.info('[resume-ai] apply:highlighted-row', {
+												rowId,
+												language: payload.language,
+												svLength: payload.drafts.descriptionByLanguage.sv?.length ?? 0,
+												enLength: payload.drafts.descriptionByLanguage.en?.length ?? 0
+											});
+										}
+									}}
+								/>
+							{/if}
 							<Button
 								variant={exp.hidden ? 'outline' : 'ghost'}
 								size="sm"
@@ -101,29 +177,31 @@
 						<div>
 							<label class="mb-1 block text-sm font-medium text-slate-700">Description (SV)</label>
 							<div class="rounded-xs border border-slate-300 bg-white">
-								<QuillEditor
-									content={getLocalizedValue(exp.description, 'sv')}
-									placeholder="Description (SV)"
-									onchange={(html) =>
-										(exp.description = setLocalizedValue(exp.description, 'sv', html))}
-								/>
+								{#key `sv-${rowId}-${getDescriptionRevision(rowId)}`}
+									<QuillEditor
+										content={getLocalizedValue(exp.description, 'sv')}
+										placeholder="Description (SV)"
+										onchange={(html) =>
+											(exp.description = setLocalizedValue(exp.description, 'sv', html))}
+									/>
+								{/key}
 							</div>
 						</div>
 						<div>
 							<label class="mb-1 block text-sm font-medium text-slate-700">Description (EN)</label>
 							<div class="rounded-xs border border-slate-300 bg-white">
-								<QuillEditor
-									content={getLocalizedValue(exp.description, 'en')}
-									placeholder="Description (EN)"
-									onchange={(html) =>
-										(exp.description = setLocalizedValue(exp.description, 'en', html))}
-								/>
+								{#key `en-${rowId}-${getDescriptionRevision(rowId)}`}
+									<QuillEditor
+										content={getLocalizedValue(exp.description, 'en')}
+										placeholder="Description (EN)"
+										onchange={(html) =>
+											(exp.description = setLocalizedValue(exp.description, 'en', html))}
+									/>
+								{/key}
 							</div>
 						</div>
 						<div>
-							<label class="mb-1 block text-sm font-medium text-slate-700"
-								>{language === 'sv' ? 'Nyckeltekniker' : 'Key Technologies'}</label
-							>
+							<label class="mb-1 block text-sm font-medium text-slate-700">Key Technologies</label>
 							<TechStackSelector
 								bind:value={exp.technologies}
 								onchange={(techs) => (exp.technologies = techs ?? [])}

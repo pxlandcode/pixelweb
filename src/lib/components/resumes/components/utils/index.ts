@@ -2,6 +2,41 @@ import type { LocalizedText } from '$lib/types/resume';
 
 export type Language = 'sv' | 'en';
 
+export type ResumeAiSectionType = 'highlighted' | 'experience' | 'summary';
+export type ResumeAiFieldKey =
+	| 'company'
+	| 'role'
+	| 'location'
+	| 'technologies'
+	| 'startDate'
+	| 'endDate';
+
+export type ResumeAiGenerateResult = {
+	descriptionHtml: string;
+	company?: string;
+	role?: string;
+	location?: string;
+	technologies?: string[];
+	startDate?: string;
+	endDate?: string | null;
+};
+
+export type ResumeAiGenerateParams = {
+	prompt: string;
+	language: Language;
+	sectionType: ResumeAiSectionType;
+	company?: string;
+	role?: string;
+	location?: string;
+	technologies?: string[];
+	startDate?: string;
+	endDate?: string | null;
+	unlockedFields?: ResumeAiFieldKey[];
+	currentText?: string;
+	consultantName?: string;
+	resumeContext?: string;
+};
+
 /**
  * Resolve localized text to a string based on the current language
  */

@@ -5,6 +5,10 @@
 	import { fly } from 'svelte/transition';
 	import { invalidateAll } from '$app/navigation';
 	import { loading } from '$lib/stores/loading';
+	import type {
+		ResumeAiGenerateParams,
+		ResumeAiGenerateResult
+	} from '$lib/components/resumes/components/utils';
 
 	let { data } = $props();
 
@@ -36,6 +40,88 @@
 		const kind = downloadLanguage === 'sv' ? 'CV' : 'Resume';
 		return `${name} - Pixel&Code - ${kind}`;
 	});
+
+	const getErrorMessage = (payload: unknown, fallback: string) => {
+		if (!payload || typeof payload !== 'object') return fallback;
+		const asRecord = payload as Record<string, unknown>;
+		if (typeof asRecord.message === 'string') return asRecord.message;
+		if (typeof asRecord.error === 'string') return asRecord.error;
+		const nested = asRecord.data;
+		if (nested && typeof nested === 'object') {
+			const nestedRecord = nested as Record<string, unknown>;
+			if (typeof nestedRecord.message === 'string') return nestedRecord.message;
+			if (typeof nestedRecord.error === 'string') return nestedRecord.error;
+		}
+		return fallback;
+	};
+
+	const parseGenerateResult = (payload: unknown): ResumeAiGenerateResult | null => {
+		if (!payload || typeof payload !== 'object') return null;
+		const record = payload as Record<string, unknown>;
+		const result = record.result;
+		if (!result || typeof result !== 'object') return null;
+
+		const resultRecord = result as Record<string, unknown>;
+		if (typeof resultRecord.descriptionHtml !== 'string' || !resultRecord.descriptionHtml.trim()) {
+			return null;
+		}
+
+		const parsed: ResumeAiGenerateResult = {
+			descriptionHtml: resultRecord.descriptionHtml
+		};
+
+		if (typeof resultRecord.company === 'string' && resultRecord.company.trim()) {
+			parsed.company = resultRecord.company.trim();
+		}
+		if (typeof resultRecord.role === 'string' && resultRecord.role.trim()) {
+			parsed.role = resultRecord.role.trim();
+		}
+		if (typeof resultRecord.location === 'string' && resultRecord.location.trim()) {
+			parsed.location = resultRecord.location.trim();
+		}
+		if (Array.isArray(resultRecord.technologies)) {
+			const technologies = resultRecord.technologies
+				.filter((entry): entry is string => typeof entry === 'string')
+				.map((entry) => entry.trim())
+				.filter(Boolean);
+			if (technologies.length > 0) {
+				parsed.technologies = technologies;
+			}
+		}
+		if (typeof resultRecord.startDate === 'string' && resultRecord.startDate.trim()) {
+			parsed.startDate = resultRecord.startDate.trim();
+		}
+		if (resultRecord.endDate === null) {
+			parsed.endDate = null;
+		} else if (typeof resultRecord.endDate === 'string' && resultRecord.endDate.trim()) {
+			parsed.endDate = resultRecord.endDate.trim();
+		}
+
+		return parsed;
+	};
+
+	const generateDescription = async (
+		input: ResumeAiGenerateParams
+	): Promise<ResumeAiGenerateResult> => {
+		const response = await fetch(`/api/resumes/${data.resume.id}/ai-write`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				...input,
+				consultantName: personName
+			})
+		});
+		const payload = await response.json().catch(() => null);
+		if (!response.ok) {
+			throw new Error(getErrorMessage(payload, 'Failed to generate text'));
+		}
+
+		const result = parseGenerateResult(payload);
+		if (!result) {
+			throw new Error('AI response was empty');
+		}
+		return result;
+	};
 
 	const handleCancel = () => {
 		if (!canEdit) return;
@@ -221,6 +307,7 @@
 				person={data.resumePerson ?? undefined}
 				image={avatarImage ?? undefined}
 				profileTechStack={data.resumePerson?.techStack}
+				onGenerateDescription={generateDescription}
 				{isEditing}
 			/>
 		</div>
