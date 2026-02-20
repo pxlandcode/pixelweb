@@ -147,15 +147,10 @@
 								<p class="text-sm font-medium text-primary">Employee profile</p>
 							</div>
 
-							<div class="mt-auto flex items-center justify-between text-xs text-slate-500">
+							<div class="mt-auto flex items-center text-xs text-slate-500">
 								<span class="flex items-center gap-1">
 									<FileText size={14} />
 									View profile
-								</span>
-								<span
-									class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset"
-								>
-									DB
 								</span>
 							</div>
 						</div>
@@ -235,15 +230,10 @@
 											<p class="text-sm font-medium text-primary">Employee profile</p>
 										</div>
 
-										<div class="mt-auto flex items-center justify-between text-xs text-slate-500">
+										<div class="mt-auto flex items-center text-xs text-slate-500">
 											<span class="flex items-center gap-1">
 												<FileText size={14} />
 												View profile
-											</span>
-											<span
-												class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset"
-											>
-												DB
 											</span>
 										</div>
 									</div>
