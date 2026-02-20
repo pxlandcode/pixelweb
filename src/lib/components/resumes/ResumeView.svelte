@@ -3,7 +3,8 @@
 		ResumeData,
 		HighlightedExperience,
 		ExperienceItem,
-		LabeledItem
+		LabeledItem,
+		LocalizedText
 	} from '$lib/types/resume';
 	import { soloImages } from '$lib/images/manifest';
 	import worldclassUrl from '$lib/assets/worldclass.svg?url';
@@ -25,6 +26,7 @@
 		type Language
 	} from './components';
 	import type { Person, TechCategory } from '$lib/types/resume';
+	import type { ResumeAiGenerateParams, ResumeAiGenerateResult } from './components/utils';
 
 	type ImageResource = (typeof soloImages)[keyof typeof soloImages];
 
@@ -34,7 +36,8 @@
 		language = $bindable('sv'),
 		isEditing = false,
 		person,
-		profileTechStack
+		profileTechStack,
+		onGenerateDescription
 	}: {
 		data: ResumeData;
 		image?: ImageResource | string | null;
@@ -42,6 +45,7 @@
 		isEditing?: boolean;
 		person?: Person;
 		profileTechStack?: TechCategory[];
+		onGenerateDescription?: (params: ResumeAiGenerateParams) => Promise<ResumeAiGenerateResult>;
 	} = $props();
 
 	let profileCategories = $state(structuredClone(profileTechStack ?? person?.techStack ?? []));
@@ -82,6 +86,191 @@
 		editingData.methods = [];
 	});
 
+	const componentLanguage = $derived<Language>(isEditing ? 'en' : language);
+
+	const stripHtml = (value: string) => value.replace(/<[^>]*>/g, ' ');
+	const normalize = (value: string) => value.replace(/\s+/g, ' ').trim();
+	const clip = (value: string, maxLength = 280) => {
+		const cleaned = normalize(value);
+		if (!cleaned) return '';
+		if (cleaned.length <= maxLength) return cleaned;
+		return `${cleaned.slice(0, Math.max(0, maxLength - 3)).trim()}...`;
+	};
+	const getLocalized = (
+		value: LocalizedText | null | undefined,
+		targetLanguage: Language
+	): string => {
+		if (!value) return '';
+		if (typeof value === 'string') return value;
+		return value[targetLanguage] ?? value.sv ?? value.en ?? '';
+	};
+
+	const parseDateToTimestamp = (value: string | null | undefined): number | null => {
+		const normalizedValue = normalize(value ?? '');
+		if (!normalizedValue) return null;
+		const parsed = Date.parse(normalizedValue);
+		return Number.isNaN(parsed) ? null : parsed;
+	};
+
+	const getEndDateTimestamp = (value: string | null | undefined): number => {
+		const normalizedValue = normalize(value ?? '');
+		if (!normalizedValue) return Date.now();
+		const lowered = normalizedValue.toLowerCase();
+		if (['present', 'current', 'ongoing', 'nuvarande', 'pågående'].includes(lowered)) {
+			return Date.now();
+		}
+		return parseDateToTimestamp(normalizedValue) ?? 0;
+	};
+
+	const buildSummaryContext = (targetLanguage: Language): string => {
+		const lines: string[] = [];
+		lines.push(`Consultant name: ${displayName || 'Unknown'}`);
+		lines.push(`Title: ${clip(getLocalized(editingData.title, targetLanguage), 140) || 'Unknown'}`);
+		lines.push(
+			'Summary guidance: prioritize experience evidence first (highlighted + previous), then use skills as supporting context.'
+		);
+
+		const highlightedLines = editingData.highlightedExperiences
+			.filter((exp) => !exp.hidden)
+			.slice(0, 8)
+			.map((exp, index) => {
+				const company = clip(exp.company ?? '', 80) || 'Unknown company';
+				const role = clip(getLocalized(exp.role, targetLanguage), 120);
+				const description = clip(stripHtml(getLocalized(exp.description, targetLanguage)), 260);
+				const technologies = (exp.technologies ?? [])
+					.map((tech) => normalize(tech))
+					.filter(Boolean);
+				const parts = [
+					`H${index + 1}: ${company}`,
+					role ? `Role: ${role}` : '',
+					technologies.length > 0 ? `Tech: ${technologies.join(', ')}` : '',
+					description ? `Description: ${description}` : ''
+				].filter(Boolean);
+				return parts.join(' | ');
+			});
+		if (highlightedLines.length > 0) {
+			lines.push('Highlighted experience:');
+			lines.push(...highlightedLines);
+		}
+
+		const experienceLines = editingData.experiences
+			.filter((exp) => !exp.hidden)
+			.map((exp) => {
+				const endTs = getEndDateTimestamp(exp.endDate ?? '');
+				const startTs = parseDateToTimestamp(exp.startDate) ?? 0;
+				return { exp, recency: endTs * 10 + startTs };
+			})
+			.sort((a, b) => b.recency - a.recency)
+			.slice(0, 16)
+			.map((exp, index) => {
+				const company = clip(exp.exp.company ?? '', 80) || 'Unknown company';
+				const role = clip(getLocalized(exp.exp.role, targetLanguage), 120);
+				const location = clip(getLocalized(exp.exp.location, targetLanguage), 80);
+				const description = clip(stripHtml(getLocalized(exp.exp.description, targetLanguage)), 260);
+				const startDate = normalize(exp.exp.startDate ?? '');
+				const endDate = normalize(exp.exp.endDate ?? '') || 'Present';
+				const technologies = (exp.exp.technologies ?? [])
+					.map((tech) => normalize(tech))
+					.filter(Boolean);
+				const parts = [
+					`E${index + 1}: ${company}`,
+					role ? `Role: ${role}` : '',
+					location ? `Location: ${location}` : '',
+					startDate ? `Dates: ${startDate} - ${endDate}` : '',
+					technologies.length > 0 ? `Tech: ${technologies.join(', ')}` : '',
+					description ? `Description: ${description}` : ''
+				].filter(Boolean);
+				return parts.join(' | ');
+			});
+		if (experienceLines.length > 0) {
+			lines.push('Previous experience (most recent first):');
+			lines.push(...experienceLines);
+		}
+
+		const recentCutoff = Date.now() - 5 * 365 * 24 * 60 * 60 * 1000;
+		const recentRoleCounts: Record<string, { count: number; label: string }> = {};
+		for (const exp of editingData.experiences.filter((entry) => !entry.hidden)) {
+			const endTs = getEndDateTimestamp(exp.endDate ?? '');
+			if (endTs < recentCutoff) continue;
+			const role = clip(getLocalized(exp.role, targetLanguage), 120);
+			if (!role) continue;
+			const key = role.toLowerCase();
+			const current = recentRoleCounts[key];
+			if (!current) {
+				recentRoleCounts[key] = { count: 1, label: role };
+			} else {
+				recentRoleCounts[key] = { ...current, count: current.count + 1 };
+			}
+		}
+		const recentRoleFocus = Object.values(recentRoleCounts)
+			.sort((a, b) => b.count - a.count)
+			.slice(0, 3)
+			.map((entry) => entry.label);
+		if (recentRoleFocus.length > 0) {
+			lines.push(`Recent role focus (last 5 years): ${recentRoleFocus.join(', ')}`);
+			lines.push(
+				'Interpret these as current primary profile, and frame older roles as supporting background.'
+			);
+		}
+
+		const exampleSkills = (editingData.exampleSkills ?? [])
+			.map((skill) => normalize(skill))
+			.filter(Boolean);
+		if (exampleSkills.length > 0) {
+			lines.push(`Example skills (supporting): ${exampleSkills.join(', ')}`);
+		}
+
+		const profileCategoryLines = (profileCategories ?? [])
+			.map((category) => {
+				const categoryName = clip(category.name ?? '', 80);
+				const skills = (category.skills ?? []).map((skill) => normalize(skill)).filter(Boolean);
+				if (!categoryName || skills.length === 0) return '';
+				return `${categoryName}: ${skills.join(', ')}`;
+			})
+			.filter(Boolean)
+			.slice(0, 12);
+		if (profileCategoryLines.length > 0) {
+			lines.push('Skills profile (supporting):');
+			lines.push(...profileCategoryLines);
+		}
+
+		const languageLines = editingData.languages
+			.map((entry) => {
+				const name = clip(getLocalized(entry.label, targetLanguage), 60);
+				const level = clip(getLocalized(entry.value, targetLanguage), 60);
+				return [name, level].filter(Boolean).join(': ');
+			})
+			.filter(Boolean)
+			.slice(0, 10);
+		if (languageLines.length > 0) {
+			lines.push(`Languages: ${languageLines.join(', ')}`);
+		}
+
+		const educationLines = editingData.education
+			.map((entry) => {
+				const school = clip(
+					typeof entry.label === 'string'
+						? entry.label
+						: getLocalized(entry.label as LocalizedText, targetLanguage),
+					80
+				);
+				const program = clip(getLocalized(entry.value, targetLanguage), 120);
+				return [school, program].filter(Boolean).join(': ');
+			})
+			.filter(Boolean)
+			.slice(0, 10);
+		if (educationLines.length > 0) {
+			lines.push(`Education: ${educationLines.join(' | ')}`);
+		}
+
+		return lines.join('\n');
+	};
+
+	const summaryContextByLanguage = $derived({
+		sv: buildSummaryContext('sv'),
+		en: buildSummaryContext('en')
+	});
+
 	// Toggle language
 	const toggleLanguage = () => {
 		language = language === 'sv' ? 'en' : 'sv';
@@ -91,12 +280,12 @@
 	const addExperience = () => {
 		const newExp: ExperienceItem = {
 			_id: crypto.randomUUID(),
-			startDate: new Date().toISOString().split('T')[0],
-			endDate: null,
-			company: 'Company Name',
-			location: { sv: 'Plats', en: 'Location' },
-			role: { sv: 'Roll', en: 'Role' },
-			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
+			startDate: '',
+			endDate: '',
+			company: '',
+			location: { sv: '', en: '' },
+			role: { sv: '', en: '' },
+			description: { sv: '', en: '' },
 			technologies: []
 		};
 		editingData.experiences = [newExp, ...editingData.experiences];
@@ -125,9 +314,9 @@
 	const addHighlightedExperience = () => {
 		const newExp: HighlightedExperience = {
 			_id: crypto.randomUUID(),
-			company: 'Company Name',
-			role: { sv: 'Roll', en: 'Role' },
-			description: { sv: '<p>Beskrivning...</p>', en: '<p>Description...</p>' },
+			company: '',
+			role: { sv: '', en: '' },
+			description: { sv: '', en: '' },
 			technologies: []
 		};
 		editingData.highlightedExperiences = [...editingData.highlightedExperiences, newExp];
@@ -150,8 +339,8 @@
 	// Language management
 	const addLanguage = () => {
 		const newLang: LabeledItem = {
-			label: { sv: 'Språk', en: 'Language' },
-			value: { sv: 'Nivå', en: 'Level' }
+			label: { sv: '', en: '' },
+			value: { sv: '', en: '' }
 		};
 		editingData.languages = [...editingData.languages, newLang];
 	};
@@ -163,8 +352,8 @@
 	// Education management
 	const addEducation = () => {
 		const newEdu: LabeledItem = {
-			label: 'Institution',
-			value: { sv: 'Program', en: 'Program' }
+			label: '',
+			value: { sv: '', en: '' }
 		};
 		editingData.education = [...editingData.education, newEdu];
 	};
@@ -175,7 +364,7 @@
 
 	// Portfolio management
 	const addPortfolioUrl = () => {
-		editingData.portfolio = [...(editingData.portfolio ?? []), 'https://'];
+		editingData.portfolio = [...(editingData.portfolio ?? []), ''];
 	};
 
 	const removePortfolioUrl = (index: number) => {
@@ -184,7 +373,7 @@
 
 	// Contact management
 	const addContact = () => {
-		editingData.contacts = [...editingData.contacts, { name: 'Name', phone: '', email: '' }];
+		editingData.contacts = [...editingData.contacts, { name: '', phone: '', email: '' }];
 	};
 
 	const removeContact = (index: number) => {
@@ -217,30 +406,46 @@
 					<div class="flex-1">
 						<!-- Name fixed from profile; allow title editing -->
 						<h1 class="mb-2 text-4xl font-bold text-slate-900">{displayName}</h1>
-						<ResumeNameTitle bind:title={editingData.title} {isEditing} {language} />
+						<ResumeNameTitle
+							bind:title={editingData.title}
+							{isEditing}
+							language={componentLanguage}
+						/>
 					</div>
 				</div>
 
 				<!-- Example Skills + Contacts stacked -->
 				<div class="space-y-4">
-					<ResumeExampleSkills bind:skills={editingData.exampleSkills} {isEditing} {language} />
+					<ResumeExampleSkills
+						bind:skills={editingData.exampleSkills}
+						{isEditing}
+						language={componentLanguage}
+					/>
 					<ResumeContacts
 						bind:contacts={editingData.contacts}
 						{isEditing}
-						{language}
+						language={componentLanguage}
 						onAdd={addContact}
 						onRemove={removeContact}
 					/>
 				</div>
 
 				<!-- Summary -->
-				<ResumeSummary bind:summary={editingData.summary} {isEditing} {language} />
+				<ResumeSummary
+					bind:summary={editingData.summary}
+					{isEditing}
+					language={componentLanguage}
+					resumeContextSv={summaryContextByLanguage.sv}
+					resumeContextEn={summaryContextByLanguage.en}
+					{onGenerateDescription}
+				/>
 
 				<!-- Highlighted Experience -->
 				<ResumeHighlightedExperiences
 					bind:experiences={editingData.highlightedExperiences}
 					{isEditing}
-					{language}
+					language={componentLanguage}
+					{onGenerateDescription}
 					onAdd={addHighlightedExperience}
 					onRemove={removeHighlightedExperience}
 					onMove={moveHighlightedExperience}
@@ -255,13 +460,17 @@
 					<ResumeProfileImage image={resolvedImage ?? image} name={displayName} />
 
 					<!-- Example Skills -->
-					<ResumeExampleSkills bind:skills={editingData.exampleSkills} {isEditing} {language} />
+					<ResumeExampleSkills
+						bind:skills={editingData.exampleSkills}
+						{isEditing}
+						language={componentLanguage}
+					/>
 
 					<!-- Contacts -->
 					<ResumeContacts
 						bind:contacts={editingData.contacts}
 						{isEditing}
-						{language}
+						language={componentLanguage}
 						onAdd={addContact}
 						onRemove={removeContact}
 					/>
@@ -274,17 +483,25 @@
 						name={displayName}
 						bind:title={editingData.title}
 						{isEditing}
-						{language}
+						language={componentLanguage}
 					/>
 
 					<!-- Summary -->
-					<ResumeSummary bind:summary={editingData.summary} {isEditing} {language} />
+					<ResumeSummary
+						bind:summary={editingData.summary}
+						{isEditing}
+						language={componentLanguage}
+						resumeContextSv={summaryContextByLanguage.sv}
+						resumeContextEn={summaryContextByLanguage.en}
+						{onGenerateDescription}
+					/>
 
 					<!-- Highlighted Experience -->
 					<ResumeHighlightedExperiences
 						bind:experiences={editingData.highlightedExperiences}
 						{isEditing}
-						{language}
+						language={componentLanguage}
+						{onGenerateDescription}
 						onAdd={addHighlightedExperience}
 						onRemove={removeHighlightedExperience}
 						onMove={moveHighlightedExperience}
@@ -298,7 +515,8 @@
 	<ResumePreviousExperiences
 		bind:experiences={editingData.experiences}
 		{isEditing}
-		{language}
+		language={componentLanguage}
+		{onGenerateDescription}
 		onAdd={addExperience}
 		onRemove={removeExperience}
 		onMove={moveExperience}
@@ -311,7 +529,7 @@
 		bind:methods={editingData.methods}
 		bind:profileTechStack={profileCategories}
 		{isEditing}
-		{language}
+		language={componentLanguage}
 	/>
 
 	<!-- Other Section -->
@@ -320,7 +538,7 @@
 		bind:education={editingData.education}
 		portfolio={editingData.portfolio ?? []}
 		{isEditing}
-		{language}
+		language={componentLanguage}
 		onAddLanguage={addLanguage}
 		onRemoveLanguage={removeLanguage}
 		onAddEducation={addEducation}
@@ -330,7 +548,7 @@
 	/>
 
 	<!-- Footer -->
-	<ResumeFooter bind:footerNote={editingData.footerNote} {isEditing} {language} />
+	<ResumeFooter bind:footerNote={editingData.footerNote} {isEditing} language={componentLanguage} />
 
 	<!-- Worldclass Image -->
 	<div class="mt-8 flex justify-center border-t border-slate-200 pt-6">

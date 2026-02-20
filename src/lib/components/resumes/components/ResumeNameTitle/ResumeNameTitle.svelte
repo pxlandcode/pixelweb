@@ -20,6 +20,7 @@
 			<Input
 				value={getLocalizedValue(title, 'sv')}
 				oninput={(e) => (title = setLocalizedValue(title, 'sv', e.currentTarget.value))}
+				placeholder="Title (SV)"
 				class="border-slate-300 bg-white text-slate-900"
 			/>
 		</FormControl>
@@ -27,6 +28,7 @@
 			<Input
 				value={getLocalizedValue(title, 'en')}
 				oninput={(e) => (title = setLocalizedValue(title, 'en', e.currentTarget.value))}
+				placeholder="Title (EN)"
 				class="border-slate-300 bg-white text-slate-900"
 			/>
 		</FormControl>

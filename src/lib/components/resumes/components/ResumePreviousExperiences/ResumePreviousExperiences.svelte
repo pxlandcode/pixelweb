@@ -2,7 +2,16 @@
 	import type { ExperienceItem } from '$lib/types/resume';
 	import { Button, Input, FormControl } from '@pixelcode_/blocks/components';
 	import { QuillEditor, TechStackSelector } from '$lib/components';
-	import { t, getLocalizedValue, setLocalizedValue, formatDate, type Language } from '../utils';
+	import { ResumeAiWriterDrawer } from '../ResumeAiWriterDrawer';
+	import {
+		t,
+		getLocalizedValue,
+		setLocalizedValue,
+		formatDate,
+		type Language,
+		type ResumeAiGenerateParams,
+		type ResumeAiGenerateResult
+	} from '../utils';
 
 	let {
 		experiences = $bindable(),
@@ -11,7 +20,8 @@
 		onAdd,
 		onRemove,
 		onMove,
-		onReorder
+		onReorder,
+		onGenerateDescription
 	}: {
 		experiences: ExperienceItem[];
 		isEditing?: boolean;
@@ -20,11 +30,23 @@
 		onRemove?: (index: number) => void;
 		onMove?: (index: number, direction: 'up' | 'down') => void;
 		onReorder?: (fromIndex: number, toIndex: number) => void;
+		onGenerateDescription?: (params: ResumeAiGenerateParams) => Promise<ResumeAiGenerateResult>;
 	} = $props();
+	const debugLoggingEnabled = import.meta.env.DEV;
 
 	// Collapse state - track which items are expanded
 	let expandedIds = $state<Set<string>>(new Set());
 	let allCollapsed = $state(true);
+	let aiDescriptionRevisionByRow = $state<Record<string, number>>({});
+
+	const getRowId = (exp: ExperienceItem, index: number) => exp._id ?? `row-${index}`;
+	const getDescriptionRevision = (rowId: string) => aiDescriptionRevisionByRow[rowId] ?? 0;
+	const bumpDescriptionRevision = (rowId: string) => {
+		aiDescriptionRevisionByRow = {
+			...aiDescriptionRevisionByRow,
+			[rowId]: (aiDescriptionRevisionByRow[rowId] ?? 0) + 1
+		};
+	};
 
 	const toggleExpanded = (id: string) => {
 		if (expandedIds.has(id)) {
@@ -115,6 +137,7 @@
 					</Button>
 				</div>
 				{#each experiences as exp, index (exp._id ?? index)}
+					{@const rowId = getRowId(exp, index)}
 					<div
 						class="rounded-xs border border-slate-200 bg-slate-50 transition-all {draggedIndex ===
 						index
@@ -203,6 +226,82 @@
 								</div>
 							</div>
 							<div class="flex flex-shrink-0 gap-1">
+								{#if onGenerateDescription}
+									<ResumeAiWriterDrawer
+										rowTitle={exp.company || `Experience ${index + 1}`}
+										sectionType="experience"
+										{language}
+										company={exp.company}
+										roleSv={getLocalizedValue(exp.role, 'sv')}
+										roleEn={getLocalizedValue(exp.role, 'en')}
+										locationSv={getLocalizedValue(exp.location ?? '', 'sv')}
+										locationEn={getLocalizedValue(exp.location ?? '', 'en')}
+										startDate={exp.startDate}
+										endDate={exp.endDate}
+										technologies={exp.technologies}
+										descriptionSv={getLocalizedValue(exp.description, 'sv')}
+										descriptionEn={getLocalizedValue(exp.description, 'en')}
+										{onGenerateDescription}
+										onAccept={(payload) => {
+											let nextDescription = setLocalizedValue(
+												exp.description,
+												'sv',
+												payload.drafts.descriptionByLanguage.sv
+											);
+											nextDescription = setLocalizedValue(
+												nextDescription,
+												'en',
+												payload.drafts.descriptionByLanguage.en
+											);
+
+											let nextRole = setLocalizedValue(
+												exp.role,
+												'sv',
+												payload.drafts.roleByLanguage.sv
+											);
+											nextRole = setLocalizedValue(
+												nextRole,
+												'en',
+												payload.drafts.roleByLanguage.en
+											);
+
+											let nextLocation = setLocalizedValue(
+												exp.location ?? '',
+												'sv',
+												payload.drafts.locationByLanguage.sv
+											);
+											nextLocation = setLocalizedValue(
+												nextLocation,
+												'en',
+												payload.drafts.locationByLanguage.en
+											);
+
+											const nextExp: ExperienceItem = {
+												...exp,
+												description: nextDescription,
+												role: nextRole,
+												location: nextLocation,
+												company: payload.drafts.company,
+												startDate: payload.drafts.startDate,
+												endDate: payload.drafts.endDate,
+												technologies: [...payload.drafts.technologies]
+											};
+
+											experiences = experiences.map((item, itemIndex) =>
+												itemIndex === index ? nextExp : item
+											);
+											bumpDescriptionRevision(rowId);
+											if (debugLoggingEnabled) {
+												console.info('[resume-ai] apply:experience-row', {
+													rowId,
+													language: payload.language,
+													svLength: payload.drafts.descriptionByLanguage.sv?.length ?? 0,
+													enLength: payload.drafts.descriptionByLanguage.en?.length ?? 0
+												});
+											}
+										}}
+									/>
+								{/if}
 								<Button
 									variant={exp.hidden ? 'outline' : 'ghost'}
 									size="sm"
@@ -238,6 +337,7 @@
 									<FormControl label="Start Date (YYYY-MM-DD)">
 										<Input
 											bind:value={exp.startDate}
+											placeholder="YYYY-MM-DD"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -253,6 +353,7 @@
 									<FormControl label="Company">
 										<Input
 											bind:value={exp.company}
+											placeholder="Company"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -266,6 +367,7 @@
 														'sv',
 														e.currentTarget.value
 													))}
+												placeholder="Location (SV)"
 												class="border-slate-300 bg-white text-slate-900"
 											/>
 										</FormControl>
@@ -278,6 +380,7 @@
 														'en',
 														e.currentTarget.value
 													))}
+												placeholder="Location (EN)"
 												class="border-slate-300 bg-white text-slate-900"
 											/>
 										</FormControl>
@@ -289,6 +392,7 @@
 											value={getLocalizedValue(exp.role, 'sv')}
 											oninput={(e) =>
 												(exp.role = setLocalizedValue(exp.role, 'sv', e.currentTarget.value))}
+											placeholder="Role (SV)"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -297,6 +401,7 @@
 											value={getLocalizedValue(exp.role, 'en')}
 											oninput={(e) =>
 												(exp.role = setLocalizedValue(exp.role, 'en', e.currentTarget.value))}
+											placeholder="Role (EN)"
 											class="border-slate-300 bg-white text-slate-900"
 										/>
 									</FormControl>
@@ -304,27 +409,31 @@
 								<div>
 									<p class="mb-1 text-sm font-medium text-slate-700">Description (SV)</p>
 									<div class="rounded-xs border border-slate-300 bg-white">
-										<QuillEditor
-											content={getLocalizedValue(exp.description, 'sv')}
-											onchange={(html) =>
-												(exp.description = setLocalizedValue(exp.description, 'sv', html))}
-										/>
+										{#key `sv-${rowId}-${getDescriptionRevision(rowId)}`}
+											<QuillEditor
+												content={getLocalizedValue(exp.description, 'sv')}
+												placeholder="Description (SV)"
+												onchange={(html) =>
+													(exp.description = setLocalizedValue(exp.description, 'sv', html))}
+											/>
+										{/key}
 									</div>
 								</div>
 								<div>
 									<p class="mb-1 text-sm font-medium text-slate-700">Description (EN)</p>
 									<div class="rounded-xs border border-slate-300 bg-white">
-										<QuillEditor
-											content={getLocalizedValue(exp.description, 'en')}
-											onchange={(html) =>
-												(exp.description = setLocalizedValue(exp.description, 'en', html))}
-										/>
+										{#key `en-${rowId}-${getDescriptionRevision(rowId)}`}
+											<QuillEditor
+												content={getLocalizedValue(exp.description, 'en')}
+												placeholder="Description (EN)"
+												onchange={(html) =>
+													(exp.description = setLocalizedValue(exp.description, 'en', html))}
+											/>
+										{/key}
 									</div>
 								</div>
 								<div>
-									<p class="mb-1 text-sm font-medium text-slate-700">
-										{language === 'sv' ? 'Nyckeltekniker' : 'Key Technologies'}
-									</p>
+									<p class="mb-1 text-sm font-medium text-slate-700">Key Technologies</p>
 									<TechStackSelector
 										bind:value={exp.technologies}
 										onchange={(techs) => (exp.technologies = techs ?? [])}

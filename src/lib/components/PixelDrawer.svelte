@@ -18,6 +18,7 @@
 		title?: string;
 		subtitle?: string;
 		dismissable?: boolean;
+		beforeClose?: () => boolean | Promise<boolean>;
 	};
 
 	const drawerVariants = tv({
@@ -27,20 +28,20 @@
 				right: 'mr-0 w-1/3 max-h-full',
 				left: 'ml-0 w-1/3 max-h-full',
 				top: 'mt-0 w-full',
-				bottom: 'mb-0 w-full',
+				bottom: 'mb-0 w-full max-h-[92vh]',
 				modal: 'w-full md:w-2/3'
 			}
 		}
 	});
 
 	const drawerContainerVariants = tv({
-		base: 'flex w-full flex-col overscroll-contain bg-background p-8',
+		base: 'flex min-h-0 w-full flex-col overscroll-contain bg-background p-8',
 		variants: {
 			variant: {
 				right: 'min-h-screen pt-16',
 				left: 'min-h-screen pt-16',
 				top: '',
-				bottom: '',
+				bottom: 'max-h-[92vh] overflow-hidden',
 				modal: 'max-h-[90vh] overflow-y-hidden'
 			}
 		}
@@ -53,6 +54,7 @@
 		subtitle,
 		variant = 'modal' as DrawerVariant,
 		open = $bindable(false),
+		beforeClose,
 		dismissable = true,
 		...rest
 	}: Props & HTMLAttributes<HTMLDialogElement> = $props();
@@ -73,33 +75,43 @@
 		return base;
 	});
 
-let dialog: HTMLDialogElement | undefined = $state();
-let container: HTMLDivElement | null = null;
-let pointerDownInside = false;
+	let dialog: HTMLDialogElement | undefined = $state();
+	let container: HTMLDivElement | null = null;
+	let pointerDownInside = false;
 
-function handleClickOutside(event: MouseEvent) {
-	if (!dismissable) return;
-	// Only close when the interaction both starts and ends on the backdrop.
-	if (!pointerDownInside && event.target === event.currentTarget) {
-		open = false;
+	function handleClickOutside(event: MouseEvent) {
+		// Only close when the interaction both starts and ends on the backdrop.
+		if (!pointerDownInside && event.target === event.currentTarget) {
+			void requestClose('outside');
+		}
 	}
-}
 
-// Sync dialog state with `open`.
-$effect(() => {
-	if (!dialog || !dialog.isConnected) return;
+	const requestClose = async (reason: 'button' | 'outside' | 'escape' = 'button') => {
+		if ((reason === 'outside' || reason === 'escape') && !dismissable) {
+			return;
+		}
 
-	if (open && !dialog.open) {
-		dialog.showModal();
-	} else if (!open && dialog.open) {
-		dialog.close();
-	}
-});
+		const shouldClose = beforeClose ? await beforeClose() : true;
+		if (shouldClose) {
+			open = false;
+		}
+	};
 
-// Prevent background scrolling when open.
-$effect(() => {
-	if (typeof document === 'undefined') return;
-	if (!open) return;
+	// Sync dialog state with `open`.
+	$effect(() => {
+		if (!dialog || !dialog.isConnected) return;
+
+		if (open && !dialog.open) {
+			dialog.showModal();
+		} else if (!open && dialog.open) {
+			dialog.close();
+		}
+	});
+
+	// Prevent background scrolling when open.
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		if (!open) return;
 
 		const prevBodyOverflow = document.body.style.overflow;
 		const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -136,7 +148,7 @@ $effect(() => {
 		on:click={handleClickOutside}
 		on:cancel={(e) => {
 			e.preventDefault();
-			open = false;
+			void requestClose('escape');
 		}}
 		bind:this={dialog}
 		{...rest}
@@ -144,7 +156,7 @@ $effect(() => {
 		<div class={cn(drawerContainerVariants({ variant }))} bind:this={container}>
 			<div class="flex items-start justify-between">
 				<h2 class="flex-1 text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
-				<button type="button" on:click={() => (open = false)} aria-label="Close">
+				<button type="button" on:click={() => void requestClose('button')} aria-label="Close">
 					<X class="text-foreground" />
 				</button>
 			</div>
@@ -153,7 +165,7 @@ $effect(() => {
 				<p class="tracking-tight text-muted-fg">{subtitle}</p>
 			{/if}
 
-			<div class="mt-4 flex flex-1 flex-col text-foreground">
+			<div class="mt-4 flex min-h-0 flex-1 flex-col text-foreground">
 				{@render children()}
 			</div>
 		</div>

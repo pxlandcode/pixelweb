@@ -3,40 +3,39 @@ const QUILL_STYLESHEET_URL = 'https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quil
 const STYLE_ELEMENT_ID = 'quill-snow-stylesheet';
 
 export type QuillInstance = {
-        root: HTMLElement;
-        clipboard: { dangerouslyPasteHTML: (value: string) => void };
-        on: (event: string, handler: () => void) => void;
-        setContents?: (delta: unknown) => void;
-        setText?: (text: string) => void;
+	root: HTMLElement;
+	clipboard: { dangerouslyPasteHTML: (value: string) => void };
+	on: (event: string, handler: (...args: unknown[]) => void) => void;
+	setContents?: (delta: unknown) => void;
+	setText?: (text: string) => void;
 };
 
 export type QuillConstructor = new (
-        container: HTMLElement,
-        options: Record<string, unknown>
+	container: HTMLElement,
+	options: Record<string, unknown>
 ) => QuillInstance;
 
 const ensureQuillStylesheet = () => {
-        if (typeof document === 'undefined') return;
-        if (document.getElementById(STYLE_ELEMENT_ID)) return;
+	if (typeof document === 'undefined') return;
+	if (document.getElementById(STYLE_ELEMENT_ID)) return;
 
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = QUILL_STYLESHEET_URL;
-        link.id = STYLE_ELEMENT_ID;
-        document.head.appendChild(link);
+	const link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.href = QUILL_STYLESHEET_URL;
+	link.id = STYLE_ELEMENT_ID;
+	document.head.appendChild(link);
 };
 
 export const loadQuill = async (): Promise<QuillConstructor | null> => {
-        if (typeof window === 'undefined') {
-                return null;
-        }
+	if (typeof window === 'undefined') {
+		return null;
+	}
 
-        ensureQuillStylesheet();
+	ensureQuillStylesheet();
 
-        const module = (await import(/* @vite-ignore */ QUILL_MODULE_URL)) as {
-                default: QuillConstructor;
-        };
+	const module = (await import(/* @vite-ignore */ QUILL_MODULE_URL)) as {
+		default: QuillConstructor;
+	};
 
-        return module.default;
+	return module.default;
 };
-

@@ -20,64 +20,91 @@
 
 	let quillContainer: HTMLDivElement | null = null;
 	let quillEditor: QuillInstance | null = null;
+	let applyingExternalContent = false;
+	let isMounted = false;
+	let mountSession = 0;
+
+	const normalizeEditorHtml = (value: string | null | undefined): string => {
+		const raw = (value ?? '').trim();
+		if (!raw || raw === '<p><br></p>') return '';
+		return raw.replace(/\s+/g, ' ');
+	};
 
 	const destroyQuill = () => {
 		if (quillEditor) {
 			quillEditor = null;
-		}
-		if (quillContainer) {
-			quillContainer.innerHTML = '';
 		}
 	};
 
 	const mountQuill = async () => {
 		if (!quillContainer) return;
 		if (quillEditor) return;
+		const container = quillContainer;
+		const session = ++mountSession;
 
 		const QuillConstructor = await loadQuill();
 		if (!QuillConstructor) return;
+		if (!isMounted || session !== mountSession) return;
+		if (!quillContainer || quillContainer !== container) return;
 
-		quillEditor = new QuillConstructor(quillContainer, {
-			theme: 'snow',
-			placeholder,
-			modules: {
-				toolbar: toolbarOptions
-			}
-		});
+		let nextEditor: QuillInstance | null = null;
+		try {
+			nextEditor = new QuillConstructor(container, {
+				theme: 'snow',
+				placeholder,
+				modules: {
+					toolbar: toolbarOptions
+				}
+			});
+		} catch (error) {
+			console.error('[quill-editor] failed to initialize', error);
+			return;
+		}
+		if (!nextEditor) return;
+		if (!isMounted || session !== mountSession) return;
+		quillEditor = nextEditor;
 
 		// Initial content
-		if (content) {
+		if (content && quillEditor.clipboard?.dangerouslyPasteHTML) {
 			quillEditor.clipboard.dangerouslyPasteHTML(content);
 		}
 
 		// Listen for changes
-		quillEditor.on('text-change', () => {
+		quillEditor.on?.('text-change', () => {
 			const newContent = quillEditor?.root.innerHTML ?? '';
 			content = newContent;
-			onchange?.(newContent);
+			if (!applyingExternalContent) {
+				onchange?.(newContent);
+			}
 		});
 	};
 
 	$effect(() => {
-		if (quillEditor && content !== quillEditor.root.innerHTML) {
-			// Only update if the content is significantly different to avoid cursor jumping
-			// This is a simple check, might need more robust handling for complex scenarios
-			// but for now we trust the editor's internal state for local edits.
-			// Actually, syncing back from prop to editor while editing is tricky.
-			// We'll assume one-way binding for now (editor -> prop) is primary during edit.
-			// If we need to reset from outside, we might need a key or a method.
-			// For this simple use case, we'll just check if it's empty in editor but not in prop (initial load)
-			if (quillEditor.root.innerHTML === '<p><br></p>' && content) {
-				quillEditor.clipboard.dangerouslyPasteHTML(content);
+		if (quillEditor) {
+			const next = normalizeEditorHtml(content);
+			const current = normalizeEditorHtml(quillEditor.root.innerHTML);
+			if (next !== current) {
+				applyingExternalContent = true;
+				if (!next) {
+					quillEditor.setText?.('');
+				} else if (quillEditor.clipboard?.dangerouslyPasteHTML) {
+					quillEditor.clipboard.dangerouslyPasteHTML(content);
+				}
+				queueMicrotask(() => {
+					applyingExternalContent = false;
+				});
 			}
 		}
 	});
 
 	onMount(() => {
+		isMounted = true;
 		mountQuill();
 	});
 
 	onDestroy(() => {
+		isMounted = false;
+		mountSession += 1;
 		destroyQuill();
 	});
 </script>

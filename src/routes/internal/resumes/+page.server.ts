@@ -6,6 +6,69 @@ import {
 } from '$lib/server/supabase';
 import { siteMeta } from '$lib/seo';
 
+const toStringArray = (value: unknown): string[] => {
+	if (!Array.isArray(value)) return [];
+	return value.map((entry) => (typeof entry === 'string' ? entry.trim() : '')).filter(Boolean);
+};
+
+const uniq = (values: string[]) => {
+	const seen = new Set<string>();
+	const uniqueValues: string[] = [];
+
+	for (const value of values) {
+		const key = value.toLowerCase();
+		if (seen.has(key)) continue;
+		seen.add(key);
+		uniqueValues.push(value);
+	}
+
+	return uniqueValues;
+};
+
+const extractProfileTechs = (techStack: unknown): string[] => {
+	if (!Array.isArray(techStack)) return [];
+
+	const skills: string[] = [];
+	for (const category of techStack) {
+		if (!category || typeof category !== 'object') continue;
+		skills.push(...toStringArray((category as { skills?: unknown }).skills));
+	}
+
+	return uniq(skills);
+};
+
+const extractExperienceTechs = (items: unknown): string[] => {
+	if (!Array.isArray(items)) return [];
+
+	const skills: string[] = [];
+	for (const item of items) {
+		if (!item || typeof item !== 'object') continue;
+		skills.push(...toStringArray((item as { technologies?: unknown }).technologies));
+	}
+
+	return skills;
+};
+
+const extractResumeTechs = (content: unknown): string[] => {
+	if (!content || typeof content !== 'object') return [];
+
+	const data = content as {
+		techniques?: unknown;
+		methods?: unknown;
+		exampleSkills?: unknown;
+		highlightedExperiences?: unknown;
+		experiences?: unknown;
+	};
+
+	return uniq([
+		...toStringArray(data.techniques),
+		...toStringArray(data.methods),
+		...toStringArray(data.exampleSkills),
+		...extractExperienceTechs(data.highlightedExperiences),
+		...extractExperienceTechs(data.experiences)
+	]);
+};
+
 export const load: PageServerLoad = async ({ cookies }) => {
 	const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);
 
@@ -22,7 +85,7 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	const [{ data: profiles }, rolesResult, authUsersResult] = await Promise.all([
 		adminClient
 			.from('profiles')
-			.select('id, first_name, last_name, avatar_url')
+			.select('id, first_name, last_name, avatar_url, tech_stack')
 			.order('last_name', { ascending: true }),
 		(async () => {
 			if (!adminClient) return { data: null, error: new Error('Admin client unavailable') };
@@ -62,16 +125,45 @@ export const load: PageServerLoad = async ({ cookies }) => {
 		});
 	}
 
+	const employeeIdList = Array.from(employeeIds);
+	const resumesResult =
+		employeeIdList.length === 0
+			? { data: [] as Array<{ user_id: string; content: unknown }>, error: null }
+			: await adminClient.from('resumes').select('user_id, content').in('user_id', employeeIdList);
+
+	if (resumesResult.error) {
+		console.warn('[resumes index] resumes error', resumesResult.error);
+	}
+
+	const resumeTechMap = new Map<string, Set<string>>();
+	for (const row of resumesResult.data ?? []) {
+		const userId = typeof row.user_id === 'string' ? row.user_id : '';
+		if (!userId) continue;
+
+		if (!resumeTechMap.has(userId)) {
+			resumeTechMap.set(userId, new Set<string>());
+		}
+
+		const techSet = resumeTechMap.get(userId)!;
+		for (const tech of extractResumeTechs(row.content)) {
+			techSet.add(tech);
+		}
+	}
+
 	const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-	const employees = Array.from(employeeIds).map((id) => {
+	const employees = employeeIdList.map((id) => {
 		const profile = profileMap.get(id);
+		const profileTechs = extractProfileTechs(profile?.tech_stack);
+		const resumeTechs = Array.from(resumeTechMap.get(id) ?? []);
+
 		return {
 			id,
 			first_name: profile?.first_name ?? '',
 			last_name: profile?.last_name ?? '',
 			avatar_url: profile?.avatar_url ?? null,
-			email: authMap.get(id)?.email ?? null
+			email: authMap.get(id)?.email ?? null,
+			search_techs: uniq([...profileTechs, ...resumeTechs])
 		};
 	});
 
