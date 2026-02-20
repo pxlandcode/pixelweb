@@ -77,7 +77,7 @@
 			variant={searchOpen ? 'secondary' : 'outline'}
 			size="sm"
 			onclick={toggleSearch}
-			class="flex items-center gap-2 shrink-0"
+			class="flex shrink-0 items-center gap-2"
 		>
 			{#if searchOpen}
 				<X size={16} />
@@ -86,7 +86,9 @@
 				<Search size={16} />
 				Search
 				{#if selectedTechs.length > 0}
-					<span class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
+					<span
+						class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white"
+					>
 						{selectedTechs.length}
 					</span>
 				{/if}
@@ -177,10 +179,10 @@
 						<span
 							class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
 								{group.matchCount === group.total
-									? 'bg-emerald-100 text-emerald-700'
-									: group.matchCount >= group.total * 0.6
-										? 'bg-amber-100 text-amber-700'
-										: 'bg-slate-100 text-slate-700'}"
+								? 'bg-emerald-100 text-emerald-700'
+								: group.matchCount >= group.total * 0.6
+									? 'bg-amber-100 text-amber-700'
+									: 'bg-slate-100 text-slate-700'}"
 						>
 							{group.matchCount}/{group.total} techs
 						</span>
@@ -199,7 +201,7 @@
 									class="flex h-full flex-col overflow-hidden rounded-none transition-all hover:shadow-md
 										{group.matchCount === group.total ? 'ring-2 ring-emerald-200' : ''}"
 								>
-									<div class="aspect-square w-full overflow-hidden bg-slate-100 relative">
+									<div class="relative aspect-square w-full overflow-hidden bg-slate-100">
 										{#if employee.avatar_url}
 											<img
 												src={employee.avatar_url}
@@ -215,10 +217,10 @@
 										<span
 											class="absolute top-2 right-2 inline-flex items-center rounded-full px-2 py-1 text-xs font-bold shadow-sm
 												{group.matchCount === group.total
-													? 'bg-emerald-500 text-white'
-													: group.matchCount >= group.total * 0.6
-														? 'bg-amber-500 text-white'
-														: 'bg-slate-500 text-white'}"
+												? 'bg-emerald-500 text-white'
+												: group.matchCount >= group.total * 0.6
+													? 'bg-amber-500 text-white'
+													: 'bg-slate-500 text-white'}"
 										>
 											{group.matchCount}/{group.total}
 										</span>
@@ -227,7 +229,8 @@
 									<div class="flex flex-1 flex-col p-6">
 										<div class="mb-4">
 											<h3 class="text-xl font-semibold text-slate-900">
-												{[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Unnamed'}
+												{[employee.first_name, employee.last_name].filter(Boolean).join(' ') ||
+													'Unnamed'}
 											</h3>
 											<p class="text-sm font-medium text-primary">Employee profile</p>
 										</div>
