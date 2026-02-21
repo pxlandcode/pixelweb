@@ -1,17 +1,34 @@
 <script lang="ts">
-	import { Button, Card } from '@pixelcode_/blocks/components';
-	import { ArrowLeft, Calendar, CheckCircle2, Copy, FileText, Trash2, User } from 'lucide-svelte';
+	import { Button } from '@pixelcode_/blocks/components';
+	import {
+		ArrowLeft,
+		Calendar,
+		CheckCircle2,
+		Copy,
+		FileText,
+		Trash2,
+		Upload,
+		User
+	} from 'lucide-svelte';
+	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { TechStackEditor } from '$lib/components';
+	import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import { confirm } from '$lib/utils/confirm';
 	import { loading } from '$lib/stores/loading';
+	import { onDestroy, tick } from 'svelte';
+	import Uppy from '@uppy/core';
+	import Dashboard from '@uppy/dashboard';
+	import type { UppyFile } from '@uppy/utils/lib/UppyFile';
 
 	const { data } = $props();
 
 	const profile = data.profile;
 	const resumes = data.resumes ?? [];
 	const canEdit = data.canEdit ?? false;
-	const techStack = (profile?.tech_stack as any[]) ?? [];
+	type ResumeListItem = (typeof resumes)[number];
+	type TechCategory = { name?: string; skills?: string[] };
+	const techStack = (profile?.tech_stack as TechCategory[]) ?? [];
 	const viewCategories = $derived(
 		(techStack ?? []).filter((cat) => Array.isArray(cat?.skills) && cat.skills.length > 0)
 	);
@@ -21,9 +38,17 @@
 	let editingTechStack = $state(structuredClone(techStack));
 	const techStackJson = $derived(JSON.stringify(editingTechStack ?? []));
 
-	let resumeList = $state(resumes ?? []);
-	let draggedResume: any = $state(null);
+	let resumeList = $state<ResumeListItem[]>(resumes ?? []);
+	let draggedResume: ResumeListItem | null = $state(null);
 	let dragOverIndex: number | null = $state(null);
+	let importDrawerOpen = $state(false);
+	let importError = $state<string | null>(null);
+	let importStatus = $state<'idle' | 'importing'>('idle');
+	let uppyContainer: HTMLDivElement | null = null;
+	let uppy: InstanceType<typeof Uppy> | null = null;
+	let selectedImportFile = $state<UppyFile<Record<string, unknown>, unknown> | null>(null);
+	let importAbortController: AbortController | null = null;
+	const isImporting = $derived(importStatus === 'importing');
 
 	// Sort resumes: main first, then by updated_at descending
 	const sortedResumeList = $derived(
@@ -50,7 +75,7 @@
 		}
 	});
 
-	const handleDragStart = (resume) => {
+	const handleDragStart = (resume: ResumeListItem) => {
 		if (!canEdit) return;
 		draggedResume = resume;
 	};
@@ -108,7 +133,6 @@
 			formData.set('person_id', profile.id);
 			const res = await fetch('?/createResume', { method: 'POST', body: formData });
 			if (res.ok) {
-				const { id } = await res.json().catch(() => ({}));
 				// Refresh list
 				location.reload();
 			}
@@ -147,6 +171,191 @@
 			loading(false);
 		}
 	};
+
+	const destroyUppy = () => {
+		if (!uppy) return;
+
+		uppy.cancelAll();
+		uppy.destroy();
+		uppy = null;
+	};
+
+	const runPdfImport = async (sourceFile: UppyFile<Record<string, unknown>, unknown>) => {
+		if (!profile || !canEdit || isImporting) return;
+		const blob = sourceFile.data as Blob | undefined;
+		if (!blob) {
+			importError = 'Could not read selected PDF file.';
+			return;
+		}
+
+		const file =
+			blob instanceof File
+				? blob
+				: new File([blob], sourceFile.name || 'resume.pdf', {
+						type: blob.type || 'application/pdf'
+					});
+
+		const formData = new FormData();
+		formData.set('person_id', profile.id);
+		formData.set('file', file);
+
+		importStatus = 'importing';
+		importError = null;
+		loading(true, 'Importing and building resume...');
+		const controller = new AbortController();
+		importAbortController = controller;
+
+		try {
+			const response = await fetch(resolve('/internal/api/resumes/import-from-pdf'), {
+				method: 'POST',
+				body: formData,
+				credentials: 'include',
+				signal: controller.signal
+			});
+
+			const payload = (await response.json().catch(() => null)) as {
+				id?: unknown;
+				message?: unknown;
+			} | null;
+
+			if (!response.ok) {
+				const message =
+					typeof payload?.message === 'string' && payload.message.trim()
+						? payload.message
+						: 'Could not import resume from PDF.';
+				throw new Error(message);
+			}
+
+			const id = typeof payload?.id === 'string' ? payload.id : '';
+			if (!id) {
+				throw new Error('Import finished but no resume ID was returned.');
+			}
+
+			importDrawerOpen = false;
+			selectedImportFile = null;
+			destroyUppy();
+			await goto(
+				resolve('/internal/resumes/[personId]/resume/[resumeId]', {
+					personId: profile.id,
+					resumeId: id
+				})
+			);
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				importError = 'Import cancelled.';
+			} else if (error instanceof TypeError) {
+				importError =
+					'Network error while reaching the import endpoint. Check your proxy/firewall and browser Network tab.';
+			} else {
+				importError = error instanceof Error ? error.message : 'Could not import resume from PDF.';
+			}
+		} finally {
+			importAbortController = null;
+			importStatus = 'idle';
+			loading(false);
+		}
+	};
+
+	const initializeUppy = () => {
+		if (!profile || !canEdit) return;
+		if (!uppyContainer || uppy) return;
+
+		uppy = new Uppy({
+			autoProceed: false,
+			allowMultipleUploads: false,
+			restrictions: {
+				maxNumberOfFiles: 1,
+				maxFileSize: 10 * 1024 * 1024,
+				allowedFileTypes: ['.pdf', 'application/pdf']
+			}
+		});
+
+		uppy.use(Dashboard, {
+			target: uppyContainer,
+			inline: true,
+			proudlyDisplayPoweredByUppy: false,
+			hideUploadButton: true,
+			disableStatusBar: true,
+			showRemoveButtonAfterComplete: true,
+			note: 'PDF up to 10MB'
+		});
+
+		uppy.on('file-added', (file) => {
+			importError = null;
+			selectedImportFile = file as UppyFile<Record<string, unknown>, unknown>;
+		});
+
+		uppy.on('file-removed', (file) => {
+			if (selectedImportFile?.id === file.id) {
+				selectedImportFile = null;
+			}
+		});
+
+		uppy.on('restriction-failed', (_file, error) => {
+			importError = error?.message || 'Invalid file. Please upload a PDF up to 10MB.';
+		});
+	};
+
+	const importSelectedPdf = async () => {
+		if (!selectedImportFile || isImporting) return;
+		await runPdfImport(selectedImportFile);
+	};
+
+	const openImportDrawer = async () => {
+		if (!profile || !canEdit) return;
+		importError = null;
+		importStatus = 'idle';
+		selectedImportFile = null;
+		importDrawerOpen = true;
+		await tick();
+		initializeUppy();
+	};
+
+	const closeImportDrawer = () => {
+		if (isImporting) {
+			const shouldClose = window.confirm(
+				'The PDF import is still running. Do you want to cancel and close?'
+			);
+			if (!shouldClose) return;
+			importAbortController?.abort();
+		}
+		loading(false);
+		importStatus = 'idle';
+		importError = null;
+		selectedImportFile = null;
+		importDrawerOpen = false;
+		destroyUppy();
+	};
+
+	const requestImportDrawerClose = () => {
+		if (!isImporting) return true;
+		return window.confirm('The PDF import is still running. Do you want to cancel and close?');
+	};
+
+	$effect(() => {
+		if (!importDrawerOpen) {
+			importStatus = 'idle';
+			importError = null;
+			selectedImportFile = null;
+			importAbortController?.abort();
+			importAbortController = null;
+			loading(false);
+			destroyUppy();
+			return;
+		}
+
+		void (async () => {
+			await tick();
+			initializeUppy();
+		})();
+	});
+
+	onDestroy(() => {
+		importAbortController?.abort();
+		importAbortController = null;
+		loading(false);
+		destroyUppy();
+	});
 </script>
 
 <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
@@ -242,13 +451,13 @@
 								<p class="text-sm text-slate-600">No tech stack recorded yet.</p>
 							{:else}
 								<div class="space-y-3">
-									{#each viewCategories as cat}
+									{#each viewCategories as cat (cat.name ?? '')}
 										<div class="space-y-1">
 											<p class="text-xs font-semibold tracking-wide text-slate-800 uppercase">
 												{cat.name}
 											</p>
 											<div class="flex flex-wrap gap-2">
-												{#each cat.skills as skill}
+												{#each cat.skills as skill, skillIndex (`${cat.name ?? 'cat'}-${skill}-${skillIndex}`)}
 													<span
 														class="inline-flex min-h-[28px] min-w-[28px] items-center justify-center border border-primary bg-transparent px-2 py-1 text-xs font-semibold text-primary"
 													>
@@ -274,7 +483,13 @@
 			<div class="mb-6 flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-slate-900">Resumes</h2>
 				{#if canEdit}
-					<Button size="sm" variant="outline" onclick={addResume}>+ Add resume</Button>
+					<div class="flex items-center gap-2">
+						<Button size="sm" variant="outline" onclick={openImportDrawer}>
+							<Upload size={14} />
+							Create resume from PDF
+						</Button>
+						<Button size="sm" variant="outline" onclick={addResume}>+ Add resume</Button>
+					</div>
 				{/if}
 			</div>
 
@@ -290,7 +505,13 @@
 							draggedResume = null;
 							dragOverIndex = null;
 						}}
-						onclick={() => goto(`/internal/resumes/${profile.id}/resume/${resume.id}`)}
+						onclick={() =>
+							goto(
+								resolve('/internal/resumes/[personId]/resume/[resumeId]', {
+									personId: profile.id,
+									resumeId: resume.id
+								})
+							)}
 						class={`flex cursor-pointer items-center justify-between rounded-none border p-6 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
 							dragOverIndex === index ? 'border-primary' : 'border-slate-200'
 						} ${draggedResume?.id === resume.id ? 'opacity-50' : ''}`}
@@ -366,6 +587,51 @@
 	{/if}
 </div>
 
+{#if profile && canEdit}
+	<PixelDrawer
+		bind:open={importDrawerOpen}
+		variant="bottom"
+		title="Create Resume From PDF (Beta)"
+		subtitle="Upload a resume PDF and we will generate a new editable resume draft."
+		beforeClose={requestImportDrawerClose}
+	>
+		<div class="flex min-h-0 flex-1 flex-col gap-4">
+			<p class="text-sm text-slate-600">
+				Generation can take some time depending on PDF complexity.
+			</p>
+
+			<div
+				bind:this={uppyContainer}
+				class="uppy-container h-56 w-full rounded-xs border border-slate-200"
+			/>
+
+			{#if isImporting}
+				<p class="text-sm text-slate-600">Importing and building resume...</p>
+			{:else if selectedImportFile}
+				<p class="text-sm text-slate-600">Selected file: {selectedImportFile.name}</p>
+			{/if}
+
+			{#if importError}
+				<p class="text-sm text-red-600">{importError}</p>
+			{/if}
+
+			<div class="flex justify-end gap-2 border-t border-slate-200 pt-4">
+				<Button
+					type="button"
+					variant="primary"
+					onclick={importSelectedPdf}
+					disabled={!selectedImportFile || isImporting}
+					loading={isImporting}
+					loading-text="Generating..."
+				>
+					Generate Resume
+				</Button>
+				<Button type="button" variant="ghost" onclick={closeImportDrawer}>Close</Button>
+			</div>
+		</div>
+	</PixelDrawer>
+{/if}
+
 <style>
 	@keyframes loading-bar {
 		0% {
@@ -377,5 +643,17 @@
 		100% {
 			transform: translateX(-100%);
 		}
+	}
+
+	:global(.uppy-container .uppy-Dashboard) {
+		border: none;
+		border-radius: 0;
+		background: transparent;
+	}
+	:global(.uppy-container .uppy-Dashboard-inner) {
+		background: transparent;
+	}
+	:global(.uppy-container .uppy-Dashboard-AddFiles) {
+		border-radius: 0;
 	}
 </style>

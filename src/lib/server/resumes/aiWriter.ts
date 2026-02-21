@@ -100,6 +100,31 @@ const sanitizeField = (value: unknown, maxLength: number): string | undefined =>
 	return cleaned || undefined;
 };
 
+const sanitizeMultilineField = (value: unknown, maxLength: number): string | undefined => {
+	if (typeof value !== 'string') return undefined;
+	const normalizedLines = value
+		.replace(/\r/g, '')
+		.split('\n')
+		.map((line) => normalize(line));
+
+	const compactedLines: string[] = [];
+	let previousWasEmpty = false;
+	for (const line of normalizedLines) {
+		if (!line) {
+			if (!previousWasEmpty && compactedLines.length > 0) {
+				compactedLines.push('');
+			}
+			previousWasEmpty = true;
+			continue;
+		}
+		compactedLines.push(line);
+		previousWasEmpty = false;
+	}
+
+	const cleaned = compactedLines.join('\n').trim().slice(0, maxLength);
+	return cleaned || undefined;
+};
+
 const hasJsonShape = (value: string) => {
 	const trimmed = value.trim();
 	return trimmed.startsWith('{') && trimmed.endsWith('}');
@@ -271,6 +296,41 @@ const escapeHtml = (value: string) =>
 		.replaceAll('"', '&quot;')
 		.replaceAll("'", '&#39;');
 
+const splitIntoParagraphs = (line: string): string[] => {
+	const compact = normalize(line);
+	if (!compact) return [];
+	if (compact.length <= 220) return [compact];
+
+	const sentences =
+		compact.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)?.map((part) => normalize(part)) ?? [];
+	if (sentences.length <= 1) {
+		return [compact];
+	}
+
+	const paragraphs: string[] = [];
+	let current = '';
+
+	for (const sentence of sentences) {
+		if (!sentence) continue;
+		const candidate = current ? `${current} ${sentence}` : sentence;
+		if (candidate.length <= 260) {
+			current = candidate;
+			continue;
+		}
+
+		if (current) {
+			paragraphs.push(current);
+		}
+		current = sentence;
+	}
+
+	if (current) {
+		paragraphs.push(current);
+	}
+
+	return paragraphs.length > 0 ? paragraphs : [compact];
+};
+
 const toQuillHtml = (rawText: string): string => {
 	const cleaned = stripTags(rawText)
 		.split(/\r?\n/)
@@ -301,10 +361,13 @@ const toQuillHtml = (rawText: string): string => {
 			continue;
 		}
 
-		blocks.push(`<p>${escapeHtml(line)}</p>`);
+		const paragraphs = splitIntoParagraphs(line);
+		for (const paragraph of paragraphs) {
+			blocks.push(`<p>${escapeHtml(paragraph)}</p>`);
+		}
 	}
 
-	return blocks.join('');
+	return blocks.join('<p><br></p>');
 };
 
 const languageInstruction = (language: ResumeAiLanguage) =>
@@ -333,6 +396,9 @@ const outputRequirementsInstruction = (sectionType: ResumeAiSectionType) =>
 }
 - Keep company/role/location/technologies/startDate/endDate empty for summary.
 - Keep description as plain text (2-4 short paragraphs, optional bullets).
+- Use a blank line between paragraphs.
+- Always write in third person.
+- Use consultant name references naturally: introduce with first name when needed, then vary with pronouns/the consultant to avoid repeating the name every sentence.
 - Prioritize recent experiences first and treat older roles as background context.`
 		: `Output requirements:
 - Return JSON only.
@@ -349,6 +415,9 @@ const outputRequirementsInstruction = (sectionType: ResumeAiSectionType) =>
 - Use empty string for unknown text/date fields.
 - Keep technologies as short skill names.
 - Keep description as plain text (2-4 short paragraphs, optional bullets).
+- Use a blank line between paragraphs.
+- Always write in third person.
+- Use consultant name references naturally: introduce with first name when needed, then vary with pronouns/the consultant to avoid repeating the name every sentence.
 - You may update structured fields only if they are listed as editable.
 - For locked fields, preserve the provided context values exactly (or leave empty if context is empty).`;
 
@@ -381,7 +450,8 @@ export const generateResumeProjectText = async (
 		0,
 		MAX_RESUME_CONTEXT_LENGTH
 	);
-	const consultantName = normalize(input.consultantName ?? '').slice(0, 80);
+	const consultantName = normalize(stripTags(input.consultantName ?? '')).slice(0, 80);
+	const consultantFirstName = consultantName.split(' ').filter(Boolean)[0] ?? '';
 	const unlockedFields = Array.isArray(input.unlockedFields)
 		? Array.from(
 				new Set(
@@ -414,7 +484,9 @@ ${outputRequirementsInstruction(input.sectionType)}`
 				content: `Create a polished resume project description.
 
 Context:
-- Consultant name: ${consultantName || 'Unknown'}
+- Consultant profile name: ${consultantName || 'Unknown'}
+- Consultant profile first name: ${consultantFirstName || 'Unknown'}
+- Third-person naming rule: refer to the consultant in third person and vary naturally between first name and pronouns/the consultant. Avoid repeating the name in every sentence.
 - Company: ${company || 'Unknown'}
 - Role: ${role || 'Unknown'}
 - Location: ${location || 'Unknown'}
@@ -442,9 +514,9 @@ ${prompt}`
 
 	const payload = extractJsonPayload(rawOutput);
 	const descriptionText =
-		sanitizeField(payload.description, 6_000) ??
-		sanitizeField(payload.text, 6_000) ??
-		sanitizeField(payload.summary, 6_000);
+		sanitizeMultilineField(payload.description, 6_000) ??
+		sanitizeMultilineField(payload.text, 6_000) ??
+		sanitizeMultilineField(payload.summary, 6_000);
 	const extractedCompany = sanitizeField(payload.company, 120);
 	const extractedRole = sanitizeField(payload.role, 160);
 	const extractedLocation = sanitizeField(payload.location, 120);
