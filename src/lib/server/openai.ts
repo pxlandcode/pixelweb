@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { OPENAI_API_KEY, LLM_MODEL } from '$env/static/private';
+import { OPENAI_API_KEY, LLM_MODEL, LLM_MODEL_PDF_IMPORT } from '$env/static/private';
 
 const apiKey = OPENAI_API_KEY?.trim();
 
@@ -8,6 +8,7 @@ if (!apiKey) {
 }
 
 const resolvedModel = (LLM_MODEL?.trim() || 'gpt-4o-mini') as string;
+const resolvedPdfImportModel = (LLM_MODEL_PDF_IMPORT?.trim() || resolvedModel) as string;
 const debugLoggingEnabled =
 	process.env.OPENAI_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
 
@@ -21,10 +22,12 @@ export const openai = new OpenAI({
 });
 
 export const getModel = (): string => resolvedModel;
+export const getPdfImportModel = (): string => resolvedPdfImportModel;
 
 if (debugLoggingEnabled) {
 	console.info('[openai] initialized', {
 		model: resolvedModel,
+		pdfImportModel: resolvedPdfImportModel,
 		apiKey: maskApiKey(apiKey)
 	});
 }
