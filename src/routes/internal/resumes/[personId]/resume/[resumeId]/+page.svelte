@@ -62,13 +62,20 @@
 		if (!result || typeof result !== 'object') return null;
 
 		const resultRecord = result as Record<string, unknown>;
-		if (typeof resultRecord.descriptionHtml !== 'string' || !resultRecord.descriptionHtml.trim()) {
-			return null;
-		}
-
 		const parsed: ResumeAiGenerateResult = {
-			descriptionHtml: resultRecord.descriptionHtml
+			descriptionHtml:
+				typeof resultRecord.descriptionHtml === 'string' ? resultRecord.descriptionHtml : ''
 		};
+
+		if (Array.isArray(resultRecord.skills)) {
+			const skills = resultRecord.skills
+				.filter((entry): entry is string => typeof entry === 'string')
+				.map((entry) => entry.trim())
+				.filter(Boolean);
+			if (skills.length > 0) {
+				parsed.skills = skills;
+			}
+		}
 
 		if (typeof resultRecord.company === 'string' && resultRecord.company.trim()) {
 			parsed.company = resultRecord.company.trim();
@@ -95,6 +102,20 @@
 			parsed.endDate = null;
 		} else if (typeof resultRecord.endDate === 'string' && resultRecord.endDate.trim()) {
 			parsed.endDate = resultRecord.endDate.trim();
+		}
+
+		const hasMeaningfulContent = Boolean(
+			parsed.descriptionHtml.trim() ||
+				(parsed.skills?.length ?? 0) > 0 ||
+				parsed.company ||
+				parsed.role ||
+				parsed.location ||
+				(parsed.technologies?.length ?? 0) > 0 ||
+				parsed.startDate ||
+				parsed.endDate !== undefined
+		);
+		if (!hasMeaningfulContent) {
+			return null;
 		}
 
 		return parsed;
