@@ -1,6 +1,4 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getResumeEditPermissions } from '../../src/lib/server/resumes/permissions';
-import { importResumeFromPdf, ResumePdfImportError } from '../../src/lib/server/resumes/pdfImport';
 
 const AUTH_COOKIE_ACCESS = 'sb-access-token';
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -30,6 +28,11 @@ type ResumeImportJobRow = {
 	status: ResumeImportJobStatus;
 	source_filename: string;
 	source_size_bytes: number;
+};
+
+type ResumePdfImportErrorLike = Error & {
+	status?: number;
+	name?: string;
 };
 
 const jsonResponse = (statusCode: number, body: Record<string, unknown>): NetlifyResponse => ({
@@ -174,6 +177,8 @@ const isUploadFile = (
 	typeof value === 'object' &&
 	typeof (value as { arrayBuffer?: unknown }).arrayBuffer === 'function';
 
+console.info('[resume-import-bg] module:loaded');
+
 export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => {
 	const requestId = event.headers['x-nf-request-id'] ?? null;
 	const startedAtMs = Date.now();
@@ -185,6 +190,17 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 	let adminClient: SupabaseClient | null = null;
 
 	try {
+		logPhase('handler:entered', {
+			request_id: requestId,
+			method: event.httpMethod || 'POST',
+			path: event.path || null
+		});
+
+		const [{ getResumeEditPermissions }, { importResumeFromPdf }] = await Promise.all([
+			import('../../src/lib/server/resumes/permissions'),
+			import('../../src/lib/server/resumes/pdfImport')
+		]);
+
 		const formData = await toRequest(event).formData();
 		const jobIdValue = formData.get('job_id');
 		const personIdValue = formData.get('person_id');
@@ -389,10 +405,12 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 
 		return jsonResponse(202, { ok: true, status: 'processing' });
 	} catch (error) {
-		const isMappedImportError = error instanceof ResumePdfImportError;
+		const errorLike =
+			error && typeof error === 'object' ? (error as ResumePdfImportErrorLike) : null;
+		const isMappedImportError = errorLike?.name === 'ResumePdfImportError';
 		const status =
-			isMappedImportError && typeof error.status === 'number'
-				? error.status
+			isMappedImportError && typeof errorLike?.status === 'number'
+				? errorLike.status
 				: typeof error === 'object' &&
 					  error !== null &&
 					  typeof (error as { status?: unknown }).status === 'number'
