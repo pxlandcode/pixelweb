@@ -52,7 +52,13 @@
 	let showCloseConfirm = $state(false);
 	let pendingCloseAction = $state<(() => void) | null>(null);
 	let handledOpenImportParam = $state(false);
-	type PdfImportPhase = 'idle' | 'creating-job' | 'starting-background' | 'queued' | 'processing';
+	type PdfImportPhase =
+		| 'idle'
+		| 'creating-job'
+		| 'staging-file'
+		| 'starting-background'
+		| 'queued'
+		| 'processing';
 	type ResumeImportJobStatus = 'queued' | 'processing' | 'succeeded' | 'failed';
 	type ResumeImportJobStatusResponse = {
 		id: string;
@@ -74,22 +80,27 @@
 	let importJobId = $state<string | null>(null);
 	let importPollTimeoutId: number | null = null;
 	let importSourceFilename = $state<string | null>(null);
-	let importJobDetails = $state<ResumeImportJobStatusResponse | null>(null);
 	const isImportBusy = $derived(importStatus !== 'idle');
 	const isKickoffImporting = $derived(
-		importStatus === 'creating-job' || importStatus === 'starting-background'
+		importStatus === 'creating-job' ||
+			importStatus === 'staging-file' ||
+			importStatus === 'starting-background'
 	);
 	const isBackgroundImporting = $derived(
 		importStatus === 'queued' || importStatus === 'processing'
 	);
 	const importStatusLabel = $derived(
-		importStatus === 'creating-job' || importStatus === 'starting-background'
-			? 'Starting import...'
-			: importStatus === 'queued'
-				? 'Waiting in queue...'
-				: importStatus === 'processing'
-					? 'Building your resume...'
-					: ''
+		importStatus === 'creating-job'
+			? 'Preparing import...'
+			: importStatus === 'staging-file'
+				? 'Uploading PDF to secure temp storage...'
+				: importStatus === 'starting-background'
+					? 'Starting background import...'
+					: importStatus === 'queued'
+						? 'Queued import...'
+						: importStatus === 'processing'
+							? 'Importing and building resume...'
+							: ''
 	);
 
 	// Sort resumes: main first, then by updated_at descending
@@ -138,9 +149,7 @@
 		const shouldOpen = $page.url.searchParams.get('openImport') === '1';
 		if (shouldOpen) {
 			handledOpenImportParam = true;
-			const url = new URL($page.url);
-			url.searchParams.delete('openImport');
-			replaceState(url, {});
+			replaceState(resolve('/internal/resumes/[personId]', { personId: profile.id }), {});
 			void openImportDrawer();
 		}
 	});
@@ -271,7 +280,6 @@
 		importError = null;
 		importJobId = null;
 		importSourceFilename = null;
-		importJobDetails = null;
 		selectedImportFile = null;
 		loading(false);
 		pdfImportStore.clear();
@@ -282,17 +290,6 @@
 		importAbortController = null;
 		selectedImportFile = null;
 		loading(false);
-	};
-
-	const formatImportTimestamp = (value: string | null | undefined): string => {
-		if (!value) return '—';
-		const parsed = new Date(value);
-		if (Number.isNaN(parsed.getTime())) return '—';
-		return parsed.toLocaleTimeString([], {
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		});
 	};
 
 	const getErrorMessageFromResponse = async (response: Response, fallback: string) => {
@@ -351,7 +348,39 @@
 		return jobId;
 	};
 
-	const kickoffPdfImportBackground = async (file: File, jobId: string) => {
+	const stagePdfImportFile = async (file: File, jobId: string) => {
+		if (!profile) {
+			throw new Error('Missing profile context.');
+		}
+
+		importStatus = 'staging-file';
+		const controller = new AbortController();
+		importAbortController = controller;
+
+		const formData = new FormData();
+		formData.set('person_id', profile.id);
+		formData.set('file', file);
+
+		const response = await fetch(
+			resolve('/internal/api/resumes/import-from-pdf/jobs/[jobId]/stage-file', { jobId }),
+			{
+				method: 'POST',
+				body: formData,
+				credentials: 'include',
+				signal: controller.signal
+			}
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessageFromResponse(
+				response,
+				'Could not upload PDF to secure temp storage.'
+			);
+			throw new Error(message);
+		}
+	};
+
+	const kickoffPdfImportBackground = async (jobId: string) => {
 		if (!profile) {
 			throw new Error('Missing profile context.');
 		}
@@ -360,14 +389,12 @@
 		const controller = new AbortController();
 		importAbortController = controller;
 
-		const formData = new FormData();
-		formData.set('job_id', jobId);
-		formData.set('person_id', profile.id);
-		formData.set('file', file);
-
 		const response = await fetch(`${base}/.netlify/functions/resume-import-from-pdf-background`, {
 			method: 'POST',
-			body: formData,
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({ job_id: jobId }),
 			credentials: 'include',
 			signal: controller.signal
 		});
@@ -391,7 +418,6 @@
 		importStatus = 'idle';
 		importError = null;
 		importJobId = null;
-		importJobDetails = null;
 		importSourceFilename = null;
 		clearPersistedImportJob();
 		selectedImportFile = null;
@@ -437,7 +463,6 @@
 
 			const payload = (await response.json()) as ResumeImportJobStatusResponse;
 			if (importJobId !== jobId) return;
-			importJobDetails = payload;
 
 			if (payload.status === 'queued') {
 				importStatus = 'queued';
@@ -505,7 +530,6 @@
 
 		importError = null;
 		importJobId = null;
-		importJobDetails = null;
 		importSourceFilename = file.name || sourceFile.name || 'resume.pdf';
 		loading(true, 'Starting PDF import...');
 
@@ -513,7 +537,8 @@
 			const jobId = await createPdfImportJob(file);
 			importJobId = jobId;
 
-			await kickoffPdfImportBackground(file, jobId);
+			await stagePdfImportFile(file, jobId);
+			await kickoffPdfImportBackground(jobId);
 
 			importAbortController = null;
 			loading(false);
@@ -589,7 +614,6 @@
 			importError = null;
 			importStatus = 'idle';
 			importJobId = null;
-			importJobDetails = null;
 			importSourceFilename = null;
 		}
 		selectedImportFile = null;
@@ -668,7 +692,6 @@
 			importError = storeState.error;
 			importJobId = storeState.jobId;
 			importSourceFilename = storeState.sourceFilename;
-			importJobDetails = null;
 			importStatus = storeState.status === 'processing' ? 'processing' : 'queued';
 
 			void tick().then(() => {
