@@ -1,0 +1,167 @@
+import { writable, derived, get } from 'svelte/store';
+import { browser } from '$app/environment';
+
+export type PdfImportPhase =
+	| 'idle'
+	| 'creating-job'
+	| 'starting-background'
+	| 'queued'
+	| 'processing';
+
+export interface PdfImportState {
+	status: PdfImportPhase;
+	jobId: string | null;
+	personId: string | null;
+	sourceFilename: string | null;
+	error: string | null;
+}
+
+const STORAGE_KEY_PREFIX = 'resume-pdf-import-job:';
+
+function getStorageKey(personId: string): string {
+	return `${STORAGE_KEY_PREFIX}${personId}`;
+}
+
+function createPdfImportStore() {
+	const initialState: PdfImportState = {
+		status: 'idle',
+		jobId: null,
+		personId: null,
+		sourceFilename: null,
+		error: null
+	};
+
+	const { subscribe, set, update } = writable<PdfImportState>(initialState);
+
+	// Try to restore from sessionStorage on init
+	if (browser) {
+		try {
+			// Look for any persisted import job
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
+				if (key?.startsWith(STORAGE_KEY_PREFIX)) {
+					const raw = sessionStorage.getItem(key);
+					if (raw) {
+						const parsed = JSON.parse(raw);
+						if (parsed.jobId && parsed.status && parsed.status !== 'idle') {
+							const personId = key.replace(STORAGE_KEY_PREFIX, '');
+							set({
+								status: parsed.status === 'processing' ? 'processing' : 'queued',
+								jobId: parsed.jobId,
+								personId,
+								sourceFilename: parsed.sourceFilename || null,
+								error: null
+							});
+							break;
+						}
+					}
+				}
+			}
+		} catch {
+			// Ignore storage errors
+		}
+	}
+
+	function persist(state: PdfImportState) {
+		if (!browser || !state.personId || !state.jobId) return;
+		if (state.status === 'idle') {
+			try {
+				sessionStorage.removeItem(getStorageKey(state.personId));
+			} catch {
+				// Ignore
+			}
+			return;
+		}
+
+		try {
+			sessionStorage.setItem(
+				getStorageKey(state.personId),
+				JSON.stringify({
+					jobId: state.jobId,
+					sourceFilename: state.sourceFilename,
+					status: state.status,
+					savedAt: new Date().toISOString()
+				})
+			);
+		} catch {
+			// Ignore storage write failures
+		}
+	}
+
+	return {
+		subscribe,
+		setImporting: (
+			personId: string,
+			jobId: string,
+			filename: string | null,
+			status: PdfImportPhase
+		) => {
+			const newState: PdfImportState = {
+				status,
+				jobId,
+				personId,
+				sourceFilename: filename,
+				error: null
+			};
+			set(newState);
+			persist(newState);
+		},
+		setStatus: (status: PdfImportPhase) => {
+			update((s) => {
+				const newState = { ...s, status };
+				persist(newState);
+				return newState;
+			});
+		},
+		setError: (error: string) => {
+			update((s) => {
+				const newState: PdfImportState = { ...s, status: 'idle', error };
+				persist(newState);
+				return newState;
+			});
+		},
+		clear: () => {
+			const current = get({ subscribe });
+			if (browser && current.personId) {
+				try {
+					sessionStorage.removeItem(getStorageKey(current.personId));
+				} catch {
+					// Ignore
+				}
+			}
+			set(initialState);
+		},
+		reset: () => set(initialState)
+	};
+}
+
+export const pdfImportStore = createPdfImportStore();
+
+export const isImportActive = derived(
+	pdfImportStore,
+	($store) => $store.status !== 'idle' || !!$store.error
+);
+
+export const isBackgroundImporting = derived(
+	pdfImportStore,
+	($store) => $store.status === 'queued' || $store.status === 'processing'
+);
+
+export const isKickoffImporting = derived(
+	pdfImportStore,
+	($store) => $store.status === 'creating-job' || $store.status === 'starting-background'
+);
+
+export const importStatusLabel = derived(pdfImportStore, ($store) => {
+	switch ($store.status) {
+		case 'creating-job':
+		case 'starting-background':
+			return 'Starting import...';
+		case 'queued':
+			return 'Waiting in queue...';
+		case 'processing':
+			return 'Building your resume...';
+		default:
+			return '';
+	}
+});

@@ -3,7 +3,15 @@
 	import { Mode } from '@pixelcode_/blocks/components';
 	import { navigating, page } from '$app/stores';
 	import { loadingStore } from '$lib/stores/loading';
+	import {
+		pdfImportStore,
+		isImportActive,
+		isBackgroundImporting,
+		importStatusLabel
+	} from '$lib/stores/pdfImportStore';
 	import { onDestroy } from 'svelte';
+	import { Loader2, AlertCircle } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
 	import './internal.css';
 	import './app.css';
 
@@ -19,6 +27,19 @@
 	const loadingLabel = $derived(
 		$loadingStore.loadingText ?? (Boolean($navigating) ? 'Loading page...' : 'Loading...')
 	);
+
+	// PDF Import indicator state
+	const showImportIndicator = $derived($isImportActive && !plainRoutes.has(routeId));
+	const importHasError = $derived(!!$pdfImportStore.error && $pdfImportStore.status === 'idle');
+	const importPersonId = $derived($pdfImportStore.personId);
+	const importFilename = $derived($pdfImportStore.sourceFilename);
+	const importError = $derived($pdfImportStore.error);
+	const statusLabel = $derived($importStatusLabel);
+
+	function getImportLink(): string {
+		if (!importPersonId) return '/internal/resumes';
+		return resolve('/internal/resumes/[personId]', { personId: importPersonId }) + '?openImport=1';
+	}
 
 	let barVisible = $state(false);
 	let barCompleting = $state(false);
@@ -62,6 +83,51 @@
 </script>
 
 <Mode.Watcher defaultMode="light" />
+
+{#if showImportIndicator}
+	<div class="fixed bottom-6 left-6 z-40">
+		<div class="group relative">
+			<a
+				href={getImportLink()}
+				class={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 ${
+					importHasError
+						? 'bg-red-500 text-white hover:bg-red-600'
+						: 'bg-primary text-white hover:bg-primary/90'
+				}`}
+				title="View import status"
+			>
+				{#if importHasError}
+					<AlertCircle size={20} />
+				{:else}
+					<Loader2 size={20} class="animate-spin" />
+				{/if}
+			</a>
+
+			<!-- Hover tooltip -->
+			<div
+				class="pointer-events-none invisible absolute bottom-full left-0 mb-2 w-56 rounded-lg border border-slate-200 bg-white p-3 text-left text-sm text-slate-700 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100"
+			>
+				<p class="mb-1 font-semibold text-slate-900">
+					{#if importHasError}
+						Import Failed
+					{:else}
+						Importing PDF
+					{/if}
+				</p>
+				{#if importFilename}
+					<p class="mb-1 truncate text-xs text-slate-500">{importFilename}</p>
+				{/if}
+				{#if importError}
+					<p class="text-xs text-red-600">{importError}</p>
+				{:else}
+					<p class="text-xs text-slate-500">{statusLabel || 'Processing...'}</p>
+				{/if}
+				<p class="mt-2 text-[11px] text-slate-400">Click to view details</p>
+			</div>
+		</div>
+	</div>
+{/if}
+
 {#if barVisible}
 	{#key barKey}
 		<div

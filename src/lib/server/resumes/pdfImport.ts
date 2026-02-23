@@ -3,8 +3,8 @@ import type {
 	HighlightedExperience,
 	LabeledItem,
 	ResumeData
-} from '$lib/types/resume';
-import { getPdfImportModel, openai } from '$lib/server/openai';
+} from '../../types/resume';
+import { getPdfImportModel, openai } from '../openai';
 import { RESUME_AI_STYLE_GUIDE } from './resumeAiStyle';
 
 type ResumeImportUsage = {
