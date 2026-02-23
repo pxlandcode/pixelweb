@@ -4,6 +4,7 @@ import { browser } from '$app/environment';
 export type PdfImportPhase =
 	| 'idle'
 	| 'creating-job'
+	| 'staging-file'
 	| 'starting-background'
 	| 'queued'
 	| 'processing';
@@ -46,7 +47,12 @@ function createPdfImportStore() {
 						if (parsed.jobId && parsed.status && parsed.status !== 'idle') {
 							const personId = key.replace(STORAGE_KEY_PREFIX, '');
 							set({
-								status: parsed.status === 'processing' ? 'processing' : 'queued',
+								status:
+									parsed.status === 'processing'
+										? 'processing'
+										: parsed.status === 'queued'
+											? 'queued'
+											: 'queued',
 								jobId: parsed.jobId,
 								personId,
 								sourceFilename: parsed.sourceFilename || null,
@@ -149,18 +155,24 @@ export const isBackgroundImporting = derived(
 
 export const isKickoffImporting = derived(
 	pdfImportStore,
-	($store) => $store.status === 'creating-job' || $store.status === 'starting-background'
+	($store) =>
+		$store.status === 'creating-job' ||
+		$store.status === 'staging-file' ||
+		$store.status === 'starting-background'
 );
 
 export const importStatusLabel = derived(pdfImportStore, ($store) => {
 	switch ($store.status) {
 		case 'creating-job':
+			return 'Preparing import...';
+		case 'staging-file':
+			return 'Uploading PDF to secure temp storage...';
 		case 'starting-background':
-			return 'Starting import...';
+			return 'Starting background import...';
 		case 'queued':
-			return 'Waiting in queue...';
+			return 'Queued import...';
 		case 'processing':
-			return 'Building your resume...';
+			return 'Importing and building resume...';
 		default:
 			return '';
 	}

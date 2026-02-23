@@ -5,6 +5,10 @@ CREATE TABLE IF NOT EXISTS public.resume_import_jobs (
   status text NOT NULL CHECK (status IN ('queued', 'processing', 'succeeded', 'failed')),
   source_filename text NOT NULL,
   source_size_bytes integer NOT NULL CHECK (source_size_bytes > 0),
+  source_bucket text NULL,
+  source_object_path text NULL,
+  source_uploaded_at timestamptz NULL,
+  source_deleted_at timestamptz NULL,
   error_message text NULL,
   resume_id bigint NULL REFERENCES public.resumes(id) ON DELETE SET NULL,
   resume_version_name text NULL,
@@ -28,6 +32,12 @@ CREATE INDEX IF NOT EXISTS resume_import_jobs_status_idx
 
 CREATE INDEX IF NOT EXISTS resume_import_jobs_created_at_desc_idx
   ON public.resume_import_jobs (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS resume_import_jobs_source_bucket_idx
+  ON public.resume_import_jobs (source_bucket);
+
+CREATE INDEX IF NOT EXISTS resume_import_jobs_source_object_path_idx
+  ON public.resume_import_jobs (source_object_path);
 
 ALTER TABLE public.resume_import_jobs ENABLE ROW LEVEL SECURITY;
 

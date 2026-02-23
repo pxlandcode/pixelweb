@@ -2,7 +2,6 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const AUTH_COOKIE_ACCESS = 'sb-access-token';
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set(['application/pdf']);
 
 type NetlifyEvent = {
 	body: string | null;
@@ -28,6 +27,8 @@ type ResumeImportJobRow = {
 	status: ResumeImportJobStatus;
 	source_filename: string;
 	source_size_bytes: number;
+	source_bucket: string | null;
+	source_object_path: string | null;
 };
 
 type ResumePdfImportErrorLike = Error & {
@@ -48,8 +49,6 @@ const toSafeMessage = (value: unknown, fallback: string): string => {
 	const trimmed = value.trim();
 	return trimmed ? trimmed.slice(0, 300) : fallback;
 };
-
-const hasPdfExtension = (filename: string): boolean => filename.toLowerCase().endsWith('.pdf');
 
 const getCookieValue = (cookieHeader: string | undefined, key: string): string | null => {
 	if (!cookieHeader) return null;
@@ -170,13 +169,6 @@ const failJob = async (
 	});
 };
 
-const isUploadFile = (
-	value: FormDataEntryValue | null
-): value is File & { arrayBuffer: () => Promise<ArrayBuffer> } =>
-	!!value &&
-	typeof value === 'object' &&
-	typeof (value as { arrayBuffer?: unknown }).arrayBuffer === 'function';
-
 console.info('[resume-import-bg] module:loaded');
 
 export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => {
@@ -188,6 +180,8 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 	let filename = '';
 	let sizeBytes = 0;
 	let adminClient: SupabaseClient | null = null;
+	let cleanupBucket: string | null = null;
+	let cleanupObjectPath: string | null = null;
 
 	try {
 		logPhase('handler:entered', {
@@ -201,41 +195,18 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 			import('../../src/lib/server/resumes/pdfImport')
 		]);
 
-		const formData = await toRequest(event).formData();
-		const jobIdValue = formData.get('job_id');
-		const personIdValue = formData.get('person_id');
-		const fileValue = formData.get('file');
+		const request = toRequest(event);
+		const payload = (await request.json().catch(() => null)) as {
+			job_id?: unknown;
+			person_id?: unknown;
+		} | null;
 
-		jobId = typeof jobIdValue === 'string' ? jobIdValue.trim() : '';
-		personId = typeof personIdValue === 'string' ? personIdValue.trim() : '';
+		jobId = typeof payload?.job_id === 'string' ? payload.job_id.trim() : '';
+		const requestedPersonId =
+			typeof payload?.person_id === 'string' ? payload.person_id.trim() : '';
 
 		if (!jobId) {
 			return jsonResponse(400, { message: 'Missing job_id.' });
-		}
-
-		if (!personId) {
-			return jsonResponse(400, { message: 'Missing person_id.' });
-		}
-
-		if (!isUploadFile(fileValue)) {
-			return jsonResponse(400, { message: 'PDF file is required.' });
-		}
-
-		filename = fileValue.name || 'resume.pdf';
-		const mimeType = (fileValue.type || '').toLowerCase();
-		if (!ALLOWED_MIME_TYPES.has(mimeType) && !hasPdfExtension(filename)) {
-			return jsonResponse(400, { message: 'Only PDF files are allowed.' });
-		}
-
-		const fileBytes = new Uint8Array(await fileValue.arrayBuffer());
-		sizeBytes = fileBytes.byteLength;
-
-		if (sizeBytes === 0) {
-			return jsonResponse(400, { message: 'PDF file is empty.' });
-		}
-
-		if (sizeBytes > MAX_PDF_BYTES) {
-			return jsonResponse(400, { message: 'PDF file is too large. Max size is 10MB.' });
 		}
 
 		const accessToken = getCookieValue(event.headers.cookie, AUTH_COOKIE_ACCESS);
@@ -248,7 +219,9 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 
 		const { data: jobRow, error: jobError } = await adminClient
 			.from('resume_import_jobs')
-			.select('id, person_id, requested_by_user_id, status, source_filename, source_size_bytes')
+			.select(
+				'id, person_id, requested_by_user_id, status, source_filename, source_size_bytes, source_bucket, source_object_path'
+			)
 			.eq('id', jobId)
 			.maybeSingle();
 
@@ -261,8 +234,18 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 		}
 
 		const job = jobRow as ResumeImportJobRow;
+		personId = job.person_id;
+		filename = job.source_filename || 'resume.pdf';
+		logPhase('job:loaded', {
+			job_id: jobId,
+			person_id: personId,
+			status: job.status,
+			source_bucket: job.source_bucket,
+			source_object_path: job.source_object_path,
+			request_id: requestId
+		});
 
-		if (job.person_id !== personId) {
+		if (requestedPersonId && requestedPersonId !== personId) {
 			await failJob(adminClient, jobId, 'Import job does not match target profile.', {
 				request_id: requestId
 			});
@@ -291,12 +274,22 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 			return jsonResponse(409, { message: 'Import job cannot be started again.' });
 		}
 
-		if (job.source_size_bytes !== sizeBytes) {
-			await failJob(adminClient, jobId, 'Uploaded file does not match queued import metadata.', {
-				request_id: requestId
+		if (!job.source_bucket || !job.source_object_path) {
+			await failJob(
+				adminClient,
+				jobId,
+				'Staged PDF could not be loaded. Please re-upload and try again.',
+				{
+					request_id: requestId
+				}
+			);
+			return jsonResponse(400, {
+				message: 'Staged PDF could not be loaded. Please re-upload and try again.'
 			});
-			return jsonResponse(400, { message: 'Uploaded file metadata does not match import job.' });
 		}
+
+		cleanupBucket = job.source_bucket;
+		cleanupObjectPath = job.source_object_path;
 
 		const permissions = await getResumeEditPermissions(clients.supabase, adminClient, personId);
 		if (!permissions.canEdit || !permissions.userId) {
@@ -344,6 +337,56 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 			filename,
 			size_bytes: sizeBytes,
 			model,
+			request_id: requestId
+		});
+
+		logPhase('storage:download:start', {
+			job_id: jobId,
+			person_id: personId,
+			source_bucket: cleanupBucket,
+			source_object_path: cleanupObjectPath,
+			request_id: requestId
+		});
+		const { data: stagedFile, error: downloadError } = await adminClient.storage
+			.from(job.source_bucket)
+			.download(job.source_object_path);
+
+		if (downloadError || !stagedFile) {
+			throw new Error('Staged PDF could not be loaded. Please re-upload and try again.');
+		}
+
+		const stagedArrayBuffer =
+			typeof (stagedFile as { arrayBuffer?: unknown }).arrayBuffer === 'function'
+				? await (stagedFile as Blob).arrayBuffer()
+				: stagedFile instanceof ArrayBuffer
+					? stagedFile
+					: ArrayBuffer.isView(stagedFile)
+						? stagedFile.buffer.slice(
+								stagedFile.byteOffset,
+								stagedFile.byteOffset + stagedFile.byteLength
+							)
+						: null;
+
+		if (!stagedArrayBuffer) {
+			throw new Error('Staged PDF could not be read. Please re-upload and try again.');
+		}
+
+		const fileBytes = new Uint8Array(stagedArrayBuffer);
+		sizeBytes = fileBytes.byteLength;
+		if (sizeBytes === 0) {
+			throw new Error('Staged PDF is empty. Please re-upload and try again.');
+		}
+		if (sizeBytes > MAX_PDF_BYTES) {
+			throw new Error('Staged PDF is too large. Max size is 10MB.');
+		}
+		if (job.source_size_bytes && job.source_size_bytes !== sizeBytes) {
+			throw new Error('Staged PDF size does not match queued import metadata.');
+		}
+
+		logPhase('storage:download:done', {
+			job_id: jobId,
+			person_id: personId,
+			size_bytes: sizeBytes,
 			request_id: requestId
 		});
 
@@ -459,5 +502,55 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
 		);
 
 		return jsonResponse(status >= 400 && status <= 599 ? status : 500, { message });
+	} finally {
+		if (adminClient && cleanupBucket && cleanupObjectPath) {
+			const { error: removeError } = await adminClient.storage
+				.from(cleanupBucket)
+				.remove([cleanupObjectPath]);
+
+			if (removeError) {
+				logPhase(
+					'storage:delete:failed',
+					{
+						job_id: jobId || null,
+						person_id: personId || null,
+						source_bucket: cleanupBucket,
+						source_object_path: cleanupObjectPath,
+						message: toSafeMessage(removeError.message, 'Failed to delete staged PDF.'),
+						request_id: requestId
+					},
+					'warn'
+				);
+			} else {
+				try {
+					await updateJob(adminClient, jobId, {
+						source_deleted_at: new Date().toISOString()
+					});
+				} catch (error) {
+					logPhase(
+						'storage:delete:metadata-update-failed',
+						{
+							job_id: jobId || null,
+							source_bucket: cleanupBucket,
+							source_object_path: cleanupObjectPath,
+							message: toSafeMessage(
+								error instanceof Error ? error.message : undefined,
+								'Failed to update staged file deletion metadata.'
+							),
+							request_id: requestId
+						},
+						'warn'
+					);
+				}
+
+				logPhase('storage:delete:ok', {
+					job_id: jobId || null,
+					person_id: personId || null,
+					source_bucket: cleanupBucket,
+					source_object_path: cleanupObjectPath,
+					request_id: requestId
+				});
+			}
+		}
 	}
 };
