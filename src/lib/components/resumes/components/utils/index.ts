@@ -2,7 +2,7 @@ import type { LocalizedText } from '$lib/types/resume';
 
 export type Language = 'sv' | 'en';
 
-export type ResumeAiSectionType = 'highlighted' | 'experience' | 'summary';
+export type ResumeAiSectionType = 'highlighted' | 'experience' | 'summary' | 'exampleSkills';
 export type ResumeAiFieldKey =
 	| 'company'
 	| 'role'
@@ -13,6 +13,7 @@ export type ResumeAiFieldKey =
 
 export type ResumeAiGenerateResult = {
 	descriptionHtml: string;
+	skills?: string[];
 	company?: string;
 	role?: string;
 	location?: string;

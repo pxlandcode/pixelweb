@@ -2,7 +2,7 @@ import { getModel, openai } from '$lib/server/openai';
 import { RESUME_AI_STYLE_GUIDE } from './resumeAiStyle';
 
 export type ResumeAiLanguage = 'sv' | 'en';
-export type ResumeAiSectionType = 'highlighted' | 'experience' | 'summary';
+export type ResumeAiSectionType = 'highlighted' | 'experience' | 'summary' | 'exampleSkills';
 export type ResumeAiFieldKey =
 	| 'company'
 	| 'role'
@@ -13,6 +13,7 @@ export type ResumeAiFieldKey =
 
 export type GeneratedResumeProjectTextResult = {
 	descriptionHtml: string;
+	skills?: string[];
 	company?: string;
 	role?: string;
 	location?: string;
@@ -263,6 +264,19 @@ const sanitizeTechnologies = (value: unknown): string[] | undefined => {
 	return deduped.length > 0 ? deduped : undefined;
 };
 
+const sanitizeTechnologiesFromText = (value: string): string[] | undefined => {
+	const cleaned = stripTags(value);
+	if (!cleaned.trim()) return undefined;
+
+	const parts = cleaned
+		.replace(/\r/g, '\n')
+		.split(/\n|,|;|•|·|\|/g)
+		.map((entry) => normalize(entry.replace(/^[-*]\s*/, '')))
+		.filter(Boolean);
+
+	return sanitizeTechnologies(parts);
+};
+
 const isIsoDate = (value: string): boolean => {
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 	const date = new Date(value);
@@ -376,9 +390,11 @@ const languageInstruction = (language: ResumeAiLanguage) =>
 const sectionInstruction = (sectionType: ResumeAiSectionType) =>
 	sectionType === 'summary'
 		? 'This is a resume summary section. Prioritize concrete evidence from highlighted and previous experiences first. Use skills only as supporting context. Weight recent experiences highest and describe the current professional profile based on the last years. Mention earlier roles as background depth.'
-		: sectionType === 'highlighted'
-			? 'This is a highlighted experience block. Prioritize company, role, key technologies, and a concise high-impact description.'
-			: 'This is a previous experience block. Extract as many concrete fields as possible (dates, location, company, role, technologies, description).';
+		: sectionType === 'exampleSkills'
+			? 'This is the "Examples of skills" sidebar list in a resume. Select a concise, relevant stack based on resume evidence. Prioritize highlighted experiences and recent previous experiences first, then use the profile skills/categories as supporting evidence.'
+			: sectionType === 'highlighted'
+				? 'This is a highlighted experience block. Prioritize company, role, key technologies, and a concise high-impact description.'
+				: 'This is a previous experience block. Extract as many concrete fields as possible (dates, location, company, role, technologies, description).';
 
 const outputRequirementsInstruction = (sectionType: ResumeAiSectionType) =>
 	sectionType === 'summary'
@@ -400,7 +416,20 @@ const outputRequirementsInstruction = (sectionType: ResumeAiSectionType) =>
 - Always write in third person.
 - Use consultant name references naturally: introduce with first name when needed, then vary with pronouns/the consultant to avoid repeating the name every sentence.
 - Prioritize recent experiences first and treat older roles as background context.`
-		: `Output requirements:
+		: sectionType === 'exampleSkills'
+			? `Output requirements:
+- Return JSON only.
+- Use this exact shape:
+{
+  "skills": ["string"],
+  "description": ""
+}
+- Keep skills as short concrete technology/method names.
+- Prefer resume-backed items (frameworks, languages, platforms, tools, cloud, databases).
+- Avoid soft skills unless the user explicitly asks for them.
+- Return a concise list (typically 8-18 items).
+- Sort by relevance to the user prompt/context first, then by strength of evidence in the resume.`
+			: `Output requirements:
 - Return JSON only.
 - Use this exact shape:
 {
@@ -466,6 +495,10 @@ export const generateResumeProjectText = async (
 	const lockedFields = ALLOWED_FIELD_KEYS.filter((field) => !unlockedFieldSet.has(field));
 
 	const model = getModel();
+	const generationTaskInstruction =
+		input.sectionType === 'exampleSkills'
+			? 'Select and rank a relevant "Examples of skills" list for a resume.'
+			: 'Create a polished resume project description.';
 	const response = await openai.responses.create({
 		model,
 		temperature: 0.35,
@@ -481,7 +514,7 @@ ${outputRequirementsInstruction(input.sectionType)}`
 			},
 			{
 				role: 'user',
-				content: `Create a polished resume project description.
+				content: `${generationTaskInstruction}
 
 Context:
 - Consultant profile name: ${consultantName || 'Unknown'}
@@ -513,6 +546,10 @@ ${prompt}`
 	}
 
 	const payload = extractJsonPayload(rawOutput);
+	const extractedSkills =
+		sanitizeTechnologies(payload.skills) ??
+		sanitizeTechnologies(payload.exampleSkills) ??
+		sanitizeTechnologies(payload.technologies);
 	const descriptionText =
 		sanitizeMultilineField(payload.description, 6_000) ??
 		sanitizeMultilineField(payload.text, 6_000) ??
@@ -525,6 +562,29 @@ ${prompt}`
 	const extractedEndDate = sanitizeEndDate(payload.endDate);
 
 	const plainTextFallback = hasJsonShape(output) ? '' : output;
+	const plainTextSkillsFallback = plainTextFallback
+		? sanitizeTechnologiesFromText(plainTextFallback)
+		: undefined;
+
+	if (input.sectionType === 'exampleSkills') {
+		const nextSkills = extractedSkills ?? plainTextSkillsFallback;
+		if (nextSkills && nextSkills.length > 0) {
+			return {
+				descriptionHtml: '',
+				skills: nextSkills
+			};
+		}
+
+		if (technologies.length > 0) {
+			return {
+				descriptionHtml: '',
+				skills: sanitizeTechnologies(technologies) ?? technologies
+			};
+		}
+
+		throw new Error('AI response did not include any skills.');
+	}
+
 	const html = descriptionText
 		? toQuillHtml(descriptionText)
 		: plainTextFallback

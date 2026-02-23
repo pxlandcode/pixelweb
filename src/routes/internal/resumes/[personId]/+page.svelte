@@ -6,17 +6,22 @@
 		CheckCircle2,
 		Copy,
 		FileText,
+		Loader2,
 		Trash2,
 		Upload,
-		User
+		User,
+		AlertCircle
 	} from 'lucide-svelte';
-	import { resolve } from '$app/paths';
-	import { goto } from '$app/navigation';
+	import { base, resolve } from '$app/paths';
+	import { goto, replaceState } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { TechStackEditor } from '$lib/components';
 	import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import { confirm } from '$lib/utils/confirm';
 	import { loading } from '$lib/stores/loading';
-	import { onDestroy, tick } from 'svelte';
+	import { pdfImportStore } from '$lib/stores/pdfImportStore';
+	import { get } from 'svelte/store';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import Uppy from '@uppy/core';
 	import Dashboard from '@uppy/dashboard';
 	import type { UppyFile } from '@uppy/utils/lib/UppyFile';
@@ -42,13 +47,50 @@
 	let draggedResume: ResumeListItem | null = $state(null);
 	let dragOverIndex: number | null = $state(null);
 	let importDrawerOpen = $state(false);
+	let importDrawerWasOpened = $state(false);
 	let importError = $state<string | null>(null);
-	let importStatus = $state<'idle' | 'importing'>('idle');
+	let showCloseConfirm = $state(false);
+	let pendingCloseAction = $state<(() => void) | null>(null);
+	let handledOpenImportParam = $state(false);
+	type PdfImportPhase = 'idle' | 'creating-job' | 'starting-background' | 'queued' | 'processing';
+	type ResumeImportJobStatus = 'queued' | 'processing' | 'succeeded' | 'failed';
+	type ResumeImportJobStatusResponse = {
+		id: string;
+		status: ResumeImportJobStatus;
+		error_message: string | null;
+		resume_id: string | null;
+		resume_version_name: string | null;
+		created_at: string | null;
+		started_at: string | null;
+		completed_at: string | null;
+	};
+
+	let importStatus = $state<PdfImportPhase>('idle');
 	let uppyContainer: HTMLDivElement | null = null;
 	let uppy: InstanceType<typeof Uppy> | null = null;
-	let selectedImportFile = $state<UppyFile<Record<string, unknown>, unknown> | null>(null);
+	let selectedImportFile = $state<UppyFile<Record<string, unknown>, Blob> | null>(null);
 	let importAbortController: AbortController | null = null;
-	const isImporting = $derived(importStatus === 'importing');
+	let importPollAbortController: AbortController | null = null;
+	let importJobId = $state<string | null>(null);
+	let importPollTimeoutId: number | null = null;
+	let importSourceFilename = $state<string | null>(null);
+	let importJobDetails = $state<ResumeImportJobStatusResponse | null>(null);
+	const isImportBusy = $derived(importStatus !== 'idle');
+	const isKickoffImporting = $derived(
+		importStatus === 'creating-job' || importStatus === 'starting-background'
+	);
+	const isBackgroundImporting = $derived(
+		importStatus === 'queued' || importStatus === 'processing'
+	);
+	const importStatusLabel = $derived(
+		importStatus === 'creating-job' || importStatus === 'starting-background'
+			? 'Starting import...'
+			: importStatus === 'queued'
+				? 'Waiting in queue...'
+				: importStatus === 'processing'
+					? 'Building your resume...'
+					: ''
+	);
 
 	// Sort resumes: main first, then by updated_at descending
 	const sortedResumeList = $derived(
@@ -72,6 +114,34 @@
 	$effect(() => {
 		if (!canEdit) {
 			isEditing = false;
+		}
+	});
+
+	// Sync import state with global store (debounced to prevent loops)
+	let lastSyncedState = $state<string | null>(null);
+	$effect(() => {
+		if (!profile || !canEdit) return;
+
+		const stateKey = `${importJobId}-${importStatus}-${importError}`;
+		if (stateKey === lastSyncedState) return;
+		lastSyncedState = stateKey;
+
+		if (importJobId && (isKickoffImporting || isBackgroundImporting)) {
+			pdfImportStore.setImporting(profile.id, importJobId, importSourceFilename, importStatus);
+		} else if (importError) {
+			pdfImportStore.setError(importError);
+		}
+	});
+
+	$effect(() => {
+		if (!profile || !canEdit || handledOpenImportParam) return;
+		const shouldOpen = $page.url.searchParams.get('openImport') === '1';
+		if (shouldOpen) {
+			handledOpenImportParam = true;
+			const url = new URL($page.url);
+			url.searchParams.delete('openImport');
+			replaceState(url, {});
+			void openImportDrawer();
 		}
 	});
 
@@ -180,8 +250,246 @@
 		uppy = null;
 	};
 
-	const runPdfImport = async (sourceFile: UppyFile<Record<string, unknown>, unknown>) => {
-		if (!profile || !canEdit || isImporting) return;
+	const stopImportPolling = () => {
+		if (importPollTimeoutId !== null) {
+			window.clearTimeout(importPollTimeoutId);
+			importPollTimeoutId = null;
+		}
+		importPollAbortController?.abort();
+		importPollAbortController = null;
+	};
+
+	const clearPersistedImportJob = () => {
+		pdfImportStore.clear();
+	};
+
+	const resetImportProcessState = () => {
+		importAbortController?.abort();
+		importAbortController = null;
+		stopImportPolling();
+		importStatus = 'idle';
+		importError = null;
+		importJobId = null;
+		importSourceFilename = null;
+		importJobDetails = null;
+		selectedImportFile = null;
+		loading(false);
+		pdfImportStore.clear();
+	};
+
+	const clearDrawerOnlyImportState = () => {
+		importAbortController?.abort();
+		importAbortController = null;
+		selectedImportFile = null;
+		loading(false);
+	};
+
+	const formatImportTimestamp = (value: string | null | undefined): string => {
+		if (!value) return '—';
+		const parsed = new Date(value);
+		if (Number.isNaN(parsed.getTime())) return '—';
+		return parsed.toLocaleTimeString([], {
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		});
+	};
+
+	const getErrorMessageFromResponse = async (response: Response, fallback: string) => {
+		const contentType = response.headers.get('content-type') || '';
+		if (contentType.includes('application/json')) {
+			const payload = (await response.json().catch(() => null)) as { message?: unknown } | null;
+			if (typeof payload?.message === 'string' && payload.message.trim()) {
+				return payload.message;
+			}
+		}
+
+		const text = (await response.text().catch(() => '')).trim();
+		return text || fallback;
+	};
+
+	const createPdfImportJob = async (file: File): Promise<string> => {
+		if (!profile) {
+			throw new Error('Missing profile context.');
+		}
+
+		importStatus = 'creating-job';
+		const controller = new AbortController();
+		importAbortController = controller;
+
+		const response = await fetch(resolve('/internal/api/resumes/import-from-pdf/jobs'), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({
+				person_id: profile.id,
+				filename: file.name,
+				size_bytes: file.size
+			}),
+			credentials: 'include',
+			signal: controller.signal
+		});
+
+		const payload = (await response.json().catch(() => null)) as {
+			job_id?: unknown;
+			message?: unknown;
+		} | null;
+		if (!response.ok) {
+			const message =
+				typeof payload?.message === 'string' && payload.message.trim()
+					? payload.message
+					: 'Could not start PDF import.';
+			throw new Error(message);
+		}
+
+		const jobId = typeof payload?.job_id === 'string' ? payload.job_id : '';
+		if (!jobId) {
+			throw new Error('Import job created but no job ID was returned.');
+		}
+
+		return jobId;
+	};
+
+	const kickoffPdfImportBackground = async (file: File, jobId: string) => {
+		if (!profile) {
+			throw new Error('Missing profile context.');
+		}
+
+		importStatus = 'starting-background';
+		const controller = new AbortController();
+		importAbortController = controller;
+
+		const formData = new FormData();
+		formData.set('job_id', jobId);
+		formData.set('person_id', profile.id);
+		formData.set('file', file);
+
+		const response = await fetch(`${base}/.netlify/functions/resume-import-from-pdf-background`, {
+			method: 'POST',
+			body: formData,
+			credentials: 'include',
+			signal: controller.signal
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessageFromResponse(
+				response,
+				'Could not start background PDF import.'
+			);
+			throw new Error(message);
+		}
+	};
+
+	const handleImportJobSuccess = async (resumeId: string) => {
+		if (!profile) return;
+		stopImportPolling();
+		importAbortController?.abort();
+		importAbortController = null;
+		loading(false);
+		importDrawerOpen = false;
+		importStatus = 'idle';
+		importError = null;
+		importJobId = null;
+		importJobDetails = null;
+		importSourceFilename = null;
+		clearPersistedImportJob();
+		selectedImportFile = null;
+		destroyUppy();
+		await goto(
+			resolve('/internal/resumes/[personId]/resume/[resumeId]', {
+				personId: profile.id,
+				resumeId
+			})
+		);
+	};
+
+	const scheduleImportJobPoll = (jobId: string) => {
+		if (importJobId !== jobId) return;
+		importPollTimeoutId = window.setTimeout(() => {
+			void pollImportJob(jobId);
+		}, 2000);
+	};
+
+	const pollImportJob = async (jobId: string) => {
+		if (!profile || importJobId !== jobId) return;
+
+		const controller = new AbortController();
+		importPollAbortController = controller;
+
+		try {
+			const response = await fetch(
+				resolve('/internal/api/resumes/import-from-pdf/jobs/[jobId]', { jobId }),
+				{
+					method: 'GET',
+					credentials: 'include',
+					signal: controller.signal
+				}
+			);
+
+			if (!response.ok) {
+				const message = await getErrorMessageFromResponse(
+					response,
+					'Could not fetch PDF import status.'
+				);
+				throw new Error(message);
+			}
+
+			const payload = (await response.json()) as ResumeImportJobStatusResponse;
+			if (importJobId !== jobId) return;
+			importJobDetails = payload;
+
+			if (payload.status === 'queued') {
+				importStatus = 'queued';
+				scheduleImportJobPoll(jobId);
+				return;
+			}
+
+			if (payload.status === 'processing') {
+				importStatus = 'processing';
+				scheduleImportJobPoll(jobId);
+				return;
+			}
+
+			if (payload.status === 'failed') {
+				stopImportPolling();
+				importStatus = 'idle';
+				importJobId = null;
+				clearPersistedImportJob();
+				importError = payload.error_message || 'Could not import resume from PDF.';
+				return;
+			}
+
+			const resumeId = payload.resume_id?.trim() || '';
+			if (!resumeId) {
+				throw new Error('PDF import finished but no resume ID was returned.');
+			}
+
+			await handleImportJobSuccess(resumeId);
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				return;
+			}
+
+			stopImportPolling();
+			importStatus = 'idle';
+			importJobId = null;
+			clearPersistedImportJob();
+			importError =
+				error instanceof TypeError
+					? 'Network error while checking import status. Please reopen the drawer and try again.'
+					: error instanceof Error
+						? error.message
+						: 'Could not fetch PDF import status.';
+		} finally {
+			if (importPollAbortController === controller) {
+				importPollAbortController = null;
+			}
+		}
+	};
+
+	const runPdfImport = async (sourceFile: UppyFile<Record<string, unknown>, Blob>) => {
+		if (!profile || !canEdit || isImportBusy) return;
 		const blob = sourceFile.data as Blob | undefined;
 		if (!blob) {
 			importError = 'Could not read selected PDF file.';
@@ -195,63 +503,37 @@
 						type: blob.type || 'application/pdf'
 					});
 
-		const formData = new FormData();
-		formData.set('person_id', profile.id);
-		formData.set('file', file);
-
-		importStatus = 'importing';
 		importError = null;
-		loading(true, 'Importing and building resume...');
-		const controller = new AbortController();
-		importAbortController = controller;
+		importJobId = null;
+		importJobDetails = null;
+		importSourceFilename = file.name || sourceFile.name || 'resume.pdf';
+		loading(true, 'Starting PDF import...');
 
 		try {
-			const response = await fetch(resolve('/internal/api/resumes/import-from-pdf'), {
-				method: 'POST',
-				body: formData,
-				credentials: 'include',
-				signal: controller.signal
-			});
+			const jobId = await createPdfImportJob(file);
+			importJobId = jobId;
 
-			const payload = (await response.json().catch(() => null)) as {
-				id?: unknown;
-				message?: unknown;
-			} | null;
+			await kickoffPdfImportBackground(file, jobId);
 
-			if (!response.ok) {
-				const message =
-					typeof payload?.message === 'string' && payload.message.trim()
-						? payload.message
-						: 'Could not import resume from PDF.';
-				throw new Error(message);
-			}
-
-			const id = typeof payload?.id === 'string' ? payload.id : '';
-			if (!id) {
-				throw new Error('Import finished but no resume ID was returned.');
-			}
-
-			importDrawerOpen = false;
-			selectedImportFile = null;
-			destroyUppy();
-			await goto(
-				resolve('/internal/resumes/[personId]/resume/[resumeId]', {
-					personId: profile.id,
-					resumeId: id
-				})
-			);
+			importAbortController = null;
+			loading(false);
+			importStatus = 'queued';
+			await pollImportJob(jobId);
 		} catch (error) {
 			if (error instanceof DOMException && error.name === 'AbortError') {
 				importError = 'Import cancelled.';
 			} else if (error instanceof TypeError) {
 				importError =
-					'Network error while reaching the import endpoint. Check your proxy/firewall and browser Network tab.';
+					'Network error while starting the PDF import. Check your proxy/firewall and browser Network tab.';
 			} else {
 				importError = error instanceof Error ? error.message : 'Could not import resume from PDF.';
 			}
+			importStatus = 'idle';
+			importJobId = null;
+			clearPersistedImportJob();
+			stopImportPolling();
 		} finally {
 			importAbortController = null;
-			importStatus = 'idle';
 			loading(false);
 		}
 	};
@@ -282,7 +564,7 @@
 
 		uppy.on('file-added', (file) => {
 			importError = null;
-			selectedImportFile = file as UppyFile<Record<string, unknown>, unknown>;
+			selectedImportFile = file as UppyFile<Record<string, unknown>, Blob>;
 		});
 
 		uppy.on('file-removed', (file) => {
@@ -297,14 +579,19 @@
 	};
 
 	const importSelectedPdf = async () => {
-		if (!selectedImportFile || isImporting) return;
+		if (!selectedImportFile || isImportBusy) return;
 		await runPdfImport(selectedImportFile);
 	};
 
 	const openImportDrawer = async () => {
 		if (!profile || !canEdit) return;
-		importError = null;
-		importStatus = 'idle';
+		if (!isBackgroundImporting && !isKickoffImporting) {
+			importError = null;
+			importStatus = 'idle';
+			importJobId = null;
+			importJobDetails = null;
+			importSourceFilename = null;
+		}
 		selectedImportFile = null;
 		importDrawerOpen = true;
 		await tick();
@@ -312,47 +599,90 @@
 	};
 
 	const closeImportDrawer = () => {
-		if (isImporting) {
-			const shouldClose = window.confirm(
-				'The PDF import is still running. Do you want to cancel and close?'
-			);
-			if (!shouldClose) return;
-			importAbortController?.abort();
-		}
-		loading(false);
-		importStatus = 'idle';
-		importError = null;
-		selectedImportFile = null;
+		if (!requestImportDrawerClose()) return;
 		importDrawerOpen = false;
-		destroyUppy();
 	};
 
-	const requestImportDrawerClose = () => {
-		if (!isImporting) return true;
-		return window.confirm('The PDF import is still running. Do you want to cancel and close?');
+	const requestImportDrawerClose = (): boolean => {
+		if (isKickoffImporting) {
+			showCloseConfirm = true;
+			pendingCloseAction = () => {
+				importAbortController?.abort();
+				importDrawerOpen = false;
+			};
+			return false;
+		}
+
+		if (isBackgroundImporting) {
+			// Just close - import continues in background
+			return true;
+		}
+
+		return true;
+	};
+
+	const confirmClose = () => {
+		showCloseConfirm = false;
+		if (pendingCloseAction) {
+			pendingCloseAction();
+			pendingCloseAction = null;
+		}
+	};
+
+	const cancelClose = () => {
+		showCloseConfirm = false;
+		pendingCloseAction = null;
 	};
 
 	$effect(() => {
-		if (!importDrawerOpen) {
-			importStatus = 'idle';
-			importError = null;
-			selectedImportFile = null;
-			importAbortController?.abort();
-			importAbortController = null;
-			loading(false);
+		if (importDrawerOpen) {
+			importDrawerWasOpened = true;
+			void (async () => {
+				await tick();
+				initializeUppy();
+			})();
+			return;
+		}
+
+		// Only reset state if drawer was actually opened and then closed
+		// (not on initial page load when drawer starts closed)
+		if (!importDrawerWasOpened) return;
+
+		if (isBackgroundImporting) {
+			clearDrawerOnlyImportState();
 			destroyUppy();
 			return;
 		}
 
-		void (async () => {
-			await tick();
-			initializeUppy();
-		})();
+		resetImportProcessState();
+		destroyUppy();
+	});
+
+	onMount(() => {
+		if (!profile || !canEdit) return;
+		if (importJobId) return;
+
+		// Check if store has a persisted job for this person
+		const storeState = get(pdfImportStore);
+		if (storeState.personId === profile.id && storeState.jobId && storeState.status !== 'idle') {
+			importError = storeState.error;
+			importJobId = storeState.jobId;
+			importSourceFilename = storeState.sourceFilename;
+			importJobDetails = null;
+			importStatus = storeState.status === 'processing' ? 'processing' : 'queued';
+
+			void tick().then(() => {
+				if (!importJobId || importJobId !== storeState.jobId) return;
+				void pollImportJob(storeState.jobId);
+			});
+		}
 	});
 
 	onDestroy(() => {
+		// Don't clear the store on destroy - let it persist across navigation
 		importAbortController?.abort();
 		importAbortController = null;
+		stopImportPolling();
 		loading(false);
 		destroyUppy();
 	});
@@ -591,69 +921,110 @@
 	<PixelDrawer
 		bind:open={importDrawerOpen}
 		variant="bottom"
-		title="Create Resume From PDF (Beta)"
-		subtitle="Upload a resume PDF and we will generate a new editable resume draft."
+		title="Import from PDF"
+		subtitle="Upload a resume PDF to create an editable draft."
 		beforeClose={requestImportDrawerClose}
 	>
-		<div class="flex min-h-0 flex-1 flex-col gap-4">
-			<p class="text-sm text-slate-600">
-				Generation can take some time depending on PDF complexity.
-			</p>
+		<div class="flex min-h-0 flex-1 flex-col">
+			{#if isBackgroundImporting}
+				<!-- Importing state -->
+				<div class="flex flex-1 flex-col items-center justify-center py-8">
+					<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+						<Loader2 size={32} class="animate-spin text-primary" />
+					</div>
+					<p class="mb-1 text-lg font-medium text-slate-900">{importStatusLabel}</p>
+					{#if importSourceFilename}
+						<p class="text-sm text-slate-500">{importSourceFilename}</p>
+					{/if}
+					<p class="mt-4 text-xs text-slate-400">
+						You can close this drawer. The import will continue in the background.
+					</p>
+				</div>
+			{:else}
+				<!-- Upload state -->
+				<div bind:this={uppyContainer} class="uppy-container w-full flex-1 rounded-xs" />
 
-			<div
-				bind:this={uppyContainer}
-				class="uppy-container h-56 w-full rounded-xs border border-slate-200"
-			/>
+				{#if importError}
+					<div class="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3">
+						<AlertCircle size={16} class="mt-0.5 shrink-0 text-red-500" />
+						<p class="text-sm text-red-700">{importError}</p>
+					</div>
+				{/if}
 
-			{#if isImporting}
-				<p class="text-sm text-slate-600">Importing and building resume...</p>
-			{:else if selectedImportFile}
-				<p class="text-sm text-slate-600">Selected file: {selectedImportFile.name}</p>
+				<div class="mt-4 flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
+					<p class="text-xs text-slate-400">PDF only, max 10MB</p>
+					<div class="flex gap-2">
+						<Button type="button" variant="ghost" size="sm" onclick={closeImportDrawer}>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							variant="primary"
+							size="sm"
+							onclick={importSelectedPdf}
+							disabled={!selectedImportFile || isImportBusy}
+							loading={isKickoffImporting}
+						>
+							Import
+						</Button>
+					</div>
+				</div>
 			{/if}
-
-			{#if importError}
-				<p class="text-sm text-red-600">{importError}</p>
-			{/if}
-
-			<div class="flex justify-end gap-2 border-t border-slate-200 pt-4">
-				<Button
-					type="button"
-					variant="primary"
-					onclick={importSelectedPdf}
-					disabled={!selectedImportFile || isImporting}
-					loading={isImporting}
-					loading-text="Generating..."
-				>
-					Generate Resume
-				</Button>
-				<Button type="button" variant="ghost" onclick={closeImportDrawer}>Close</Button>
-			</div>
 		</div>
 	</PixelDrawer>
+
+	<!-- Close confirmation dialog -->
+	{#if showCloseConfirm}
+		<div
+			class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+			onclick={cancelClose}
+			onkeydown={(e) => e.key === 'Escape' && cancelClose()}
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+		>
+			<div
+				class="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+				onclick={(e) => e.stopPropagation()}
+				role="document"
+			>
+				<h3 class="mb-2 text-lg font-semibold text-slate-900">Cancel import?</h3>
+				<p class="mb-4 text-sm text-slate-600">
+					The import is still starting. If you close now, it will be cancelled.
+				</p>
+				<div class="flex justify-end gap-2">
+					<Button type="button" variant="ghost" size="sm" onclick={cancelClose}>
+						Keep importing
+					</Button>
+					<Button type="button" variant="destructive" size="sm" onclick={confirmClose}>
+						Cancel import
+					</Button>
+				</div>
+			</div>
+		</div>
+	{/if}
 {/if}
 
 <style>
-	@keyframes loading-bar {
-		0% {
-			transform: translateX(-100%);
-		}
-		50% {
-			transform: translateX(200%);
-		}
-		100% {
-			transform: translateX(-100%);
-		}
-	}
-
 	:global(.uppy-container .uppy-Dashboard) {
-		border: none;
-		border-radius: 0;
-		background: transparent;
+		border: 1px dashed var(--color-slate-300, #cbd5e1);
+		border-radius: 0.5rem;
+		background: var(--color-slate-50, #f8fafc);
+		min-height: 160px;
 	}
 	:global(.uppy-container .uppy-Dashboard-inner) {
 		background: transparent;
+		border: none;
 	}
 	:global(.uppy-container .uppy-Dashboard-AddFiles) {
-		border-radius: 0;
+		border: none;
+		border-radius: 0.5rem;
+	}
+	:global(.uppy-container .uppy-Dashboard-AddFiles-title) {
+		font-size: 0.875rem;
+		color: var(--color-slate-600, #475569);
+	}
+	:global(.uppy-container .uppy-Dashboard-note) {
+		display: none;
 	}
 </style>

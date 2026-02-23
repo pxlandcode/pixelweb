@@ -195,7 +195,9 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 
 	const language = body.language === 'en' ? 'en' : 'sv';
 	const sectionType =
-		body.sectionType === 'highlighted' || body.sectionType === 'summary'
+		body.sectionType === 'highlighted' ||
+		body.sectionType === 'summary' ||
+		body.sectionType === 'exampleSkills'
 			? body.sectionType
 			: 'experience';
 	const prompt = asString(body.prompt).trim();

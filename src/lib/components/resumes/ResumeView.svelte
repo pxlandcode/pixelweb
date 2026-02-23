@@ -266,9 +266,172 @@
 		return lines.join('\n');
 	};
 
+	const buildExampleSkillsContext = (targetLanguage: Language): string => {
+		const lines: string[] = [];
+		lines.push(`Consultant name: ${displayName || 'Unknown'}`);
+		lines.push(`Title: ${clip(getLocalized(editingData.title, targetLanguage), 140) || 'Unknown'}`);
+		lines.push('Task: Build a concise, relevant "Examples of skills" list for the resume sidebar.');
+		lines.push(
+			'Prioritize technologies/methods evidenced in highlighted experiences and recent previous experiences. Use the lower skills profile/tech stack section as supporting evidence and to fill gaps.'
+		);
+
+		type SkillSignalSource = 'highlighted' | 'experience' | 'profile' | 'current';
+		type SkillSignal = {
+			label: string;
+			score: number;
+			highlighted: number;
+			experience: number;
+			profile: number;
+			current: number;
+		};
+		const signalByKey = new Map<string, SkillSignal>();
+		const addSignal = (raw: string, source: SkillSignalSource, weight: number) => {
+			const cleaned = clip(raw, 80);
+			const normalizedSkill = normalize(cleaned);
+			if (!normalizedSkill) return;
+			const key = normalizedSkill.toLowerCase();
+			const current = signalByKey.get(key) ?? {
+				label: normalizedSkill,
+				score: 0,
+				highlighted: 0,
+				experience: 0,
+				profile: 0,
+				current: 0
+			};
+			const next: SkillSignal = {
+				...current,
+				score: current.score + weight,
+				[source]: current[source] + 1
+			};
+			signalByKey.set(key, next);
+		};
+
+		const highlightedVisible = editingData.highlightedExperiences.filter((exp) => !exp.hidden);
+		const highlightedLines = highlightedVisible.slice(0, 10).map((exp, index) => {
+			const company = clip(exp.company ?? '', 80) || 'Unknown company';
+			const role = clip(getLocalized(exp.role, targetLanguage), 120);
+			const technologies = (exp.technologies ?? []).map((tech) => normalize(tech)).filter(Boolean);
+			for (const tech of technologies) addSignal(tech, 'highlighted', 8);
+			const parts = [
+				`H${index + 1}: ${company}`,
+				role ? `Role: ${role}` : '',
+				technologies.length > 0 ? `Tech: ${technologies.join(', ')}` : ''
+			].filter(Boolean);
+			return parts.join(' | ');
+		});
+		if (highlightedLines.length > 0) {
+			lines.push('Highlighted experience technology evidence:');
+			lines.push(...highlightedLines);
+		}
+
+		const recentExperiences = editingData.experiences
+			.filter((exp) => !exp.hidden)
+			.map((exp) => {
+				const endTs = getEndDateTimestamp(exp.endDate ?? '');
+				const startTs = parseDateToTimestamp(exp.startDate) ?? 0;
+				return { exp, recency: endTs * 10 + startTs };
+			})
+			.sort((a, b) => b.recency - a.recency);
+
+		const experienceLines = recentExperiences.slice(0, 18).map((entry, index) => {
+			const exp = entry.exp;
+			const company = clip(exp.company ?? '', 80) || 'Unknown company';
+			const role = clip(getLocalized(exp.role, targetLanguage), 120);
+			const startDate = normalize(exp.startDate ?? '');
+			const endDate = normalize(exp.endDate ?? '') || 'Present';
+			const technologies = (exp.technologies ?? []).map((tech) => normalize(tech)).filter(Boolean);
+			const weight = index < 6 ? 6 : index < 12 ? 4 : 2;
+			for (const tech of technologies) addSignal(tech, 'experience', weight);
+			const parts = [
+				`E${index + 1}: ${company}`,
+				role ? `Role: ${role}` : '',
+				startDate ? `Dates: ${startDate} - ${endDate}` : '',
+				technologies.length > 0 ? `Tech: ${technologies.join(', ')}` : ''
+			].filter(Boolean);
+			return parts.join(' | ');
+		});
+		if (experienceLines.length > 0) {
+			lines.push('Previous experience technology evidence (most recent first):');
+			lines.push(...experienceLines);
+		}
+
+		const profileCategoryLines = (profileCategories ?? [])
+			.map((category) => {
+				const categoryName = clip(category.name ?? '', 80);
+				const categorySkills = (category.skills ?? [])
+					.map((skill) => normalize(skill))
+					.filter(Boolean);
+				if (!categoryName || categorySkills.length === 0) return '';
+				for (const skill of categorySkills) addSignal(skill, 'profile', 3);
+				return `${categoryName}: ${categorySkills.join(', ')}`;
+			})
+			.filter(Boolean)
+			.slice(0, 14);
+		if (profileCategoryLines.length > 0) {
+			lines.push('Skills profile / lower resume tech stack (supporting):');
+			lines.push(...profileCategoryLines);
+		}
+
+		const techniques = (editingData.techniques ?? [])
+			.map((skill) => normalize(skill))
+			.filter(Boolean);
+		if (techniques.length > 0) {
+			for (const tech of techniques.slice(0, 120)) addSignal(tech, 'profile', 2);
+			lines.push(`Flattened techniques list: ${techniques.slice(0, 80).join(', ')}`);
+		}
+
+		const methods = (editingData.methods ?? []).map((skill) => normalize(skill)).filter(Boolean);
+		if (methods.length > 0) {
+			for (const method of methods.slice(0, 80)) addSignal(method, 'profile', 2);
+			lines.push(`Methods list: ${methods.slice(0, 60).join(', ')}`);
+		}
+
+		const currentExampleSkills = (editingData.exampleSkills ?? [])
+			.map((skill) => normalize(skill))
+			.filter(Boolean);
+		if (currentExampleSkills.length > 0) {
+			for (const skill of currentExampleSkills) addSignal(skill, 'current', 1);
+			lines.push(
+				`Current example skills (editable target list): ${currentExampleSkills.join(', ')}`
+			);
+		}
+
+		const rankedSignals = Array.from(signalByKey.values())
+			.sort((a, b) => {
+				if (b.score !== a.score) return b.score - a.score;
+				if (b.highlighted !== a.highlighted) return b.highlighted - a.highlighted;
+				if (b.experience !== a.experience) return b.experience - a.experience;
+				return a.label.localeCompare(b.label);
+			})
+			.slice(0, 48)
+			.map((entry, index) => {
+				const evidenceParts = [];
+				if (entry.highlighted > 0) evidenceParts.push(`H:${entry.highlighted}`);
+				if (entry.experience > 0) evidenceParts.push(`E:${entry.experience}`);
+				if (entry.profile > 0) evidenceParts.push(`P:${entry.profile}`);
+				if (entry.current > 0) evidenceParts.push(`C:${entry.current}`);
+				return `${index + 1}. ${entry.label} (score ${entry.score}; ${evidenceParts.join(', ')})`;
+			});
+		if (rankedSignals.length > 0) {
+			lines.push('Ranked skill signals from resume evidence:');
+			lines.push(...rankedSignals);
+		}
+
+		lines.push(
+			'Selection rules: prefer concrete technical skills/tools/platforms; avoid soft skills unless user prompt explicitly asks for them; keep names short; optimize for relevance to the user prompt/context first, then resume evidence strength.'
+		);
+
+		return lines.join('\n');
+	};
+
 	const summaryContextByLanguage = $derived({
 		sv: buildSummaryContext('sv'),
 		en: buildSummaryContext('en')
+	});
+
+	const exampleSkillsContextByLanguage = $derived({
+		sv: buildExampleSkillsContext('sv'),
+		en: buildExampleSkillsContext('en')
 	});
 
 	// Toggle language
@@ -333,6 +496,13 @@
 		if (newIndex < 0 || newIndex >= editingData.highlightedExperiences.length) return;
 		const items = [...editingData.highlightedExperiences];
 		[items[index], items[newIndex]] = [items[newIndex], items[index]];
+		editingData.highlightedExperiences = items;
+	};
+
+	const reorderHighlightedExperience = (fromIndex: number, toIndex: number) => {
+		const items = [...editingData.highlightedExperiences];
+		const [removed] = items.splice(fromIndex, 1);
+		items.splice(toIndex, 0, removed);
 		editingData.highlightedExperiences = items;
 	};
 
@@ -420,6 +590,9 @@
 						bind:skills={editingData.exampleSkills}
 						{isEditing}
 						language={componentLanguage}
+						resumeContextSv={exampleSkillsContextByLanguage.sv}
+						resumeContextEn={exampleSkillsContextByLanguage.en}
+						{onGenerateDescription}
 					/>
 					<ResumeContacts
 						bind:contacts={editingData.contacts}
@@ -449,6 +622,7 @@
 					onAdd={addHighlightedExperience}
 					onRemove={removeHighlightedExperience}
 					onMove={moveHighlightedExperience}
+					onReorder={reorderHighlightedExperience}
 				/>
 			</div>
 		{:else}
@@ -505,6 +679,7 @@
 						onAdd={addHighlightedExperience}
 						onRemove={removeHighlightedExperience}
 						onMove={moveHighlightedExperience}
+						onReorder={reorderHighlightedExperience}
 					/>
 				</div>
 			</div>

@@ -1,15 +1,13 @@
 import OpenAI from 'openai';
-import { OPENAI_API_KEY, LLM_MODEL } from '$env/static/private';
-import { env as dynamicEnv } from '$env/dynamic/private';
-
-const apiKey = OPENAI_API_KEY?.trim();
+const apiKey = process.env.OPENAI_API_KEY?.trim();
 
 if (!apiKey) {
 	throw new Error('OPENAI_API_KEY is required.');
 }
 
-const resolvedModel = (LLM_MODEL?.trim() || 'gpt-4o-mini') as string;
-const resolvedPdfImportModel = (dynamicEnv.LLM_MODEL_PDF_IMPORT?.trim() || resolvedModel) as string;
+const resolvedModel = (process.env.LLM_MODEL?.trim() || 'gpt-4o-mini') as string;
+const resolvedPdfImportModel = (process.env.LLM_MODEL_PDF_IMPORT?.trim() ||
+	resolvedModel) as string;
 const debugLoggingEnabled =
 	process.env.OPENAI_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
 

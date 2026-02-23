@@ -18,11 +18,15 @@
 		selectedTechs.map((tech) => normalize(tech)).filter((tech) => tech.length > 0)
 	);
 
-	type EmployeeWithScore = (typeof liveEmployees)[number] & { matchCount: number };
+	type EmployeeWithScore = (typeof liveEmployees)[number] & {
+		matchCount: number;
+		matchedTechs: string[];
+		unmatchedTechs: string[];
+	};
 
 	const groupedEmployees = $derived.by(() => {
 		if (selectedTechFilters.length === 0) {
-			return [{ matchCount: 0, total: 0, employees: liveEmployees }];
+			return [{ matchCount: 0, total: 0, employees: liveEmployees as EmployeeWithScore[] }];
 		}
 
 		const employeesWithScores: EmployeeWithScore[] = liveEmployees.map((employee) => {
@@ -33,8 +37,20 @@
 					.filter((tech) => tech.length > 0)
 			);
 
-			const matchCount = selectedTechFilters.filter((tech) => employeeTechSet.has(tech)).length;
-			return { ...employee, matchCount };
+			const matchedTechs: string[] = [];
+			const unmatchedTechs: string[] = [];
+
+			// Use original selectedTechs to preserve casing for display
+			for (const tech of selectedTechs) {
+				if (employeeTechSet.has(normalize(tech))) {
+					matchedTechs.push(tech);
+				} else {
+					unmatchedTechs.push(tech);
+				}
+			}
+
+			const matchCount = matchedTechs.length;
+			return { ...employee, matchCount, matchedTechs, unmatchedTechs };
 		});
 
 		// Group by match count, sorted descending
@@ -210,7 +226,7 @@
 										{/if}
 										<!-- Match badge on image -->
 										<span
-											class="absolute top-2 right-2 inline-flex items-center rounded-full px-2 py-1 text-xs font-bold shadow-sm
+											class="group absolute top-2 right-2 inline-flex cursor-help items-center rounded-full px-2 py-1 text-xs font-bold shadow-sm
 												{group.matchCount === group.total
 												? 'bg-emerald-500 text-white'
 												: group.matchCount >= group.total * 0.6
@@ -218,6 +234,27 @@
 													: 'bg-slate-500 text-white'}"
 										>
 											{group.matchCount}/{group.total}
+											<!-- Tooltip -->
+											<div
+												class="pointer-events-none invisible absolute top-full right-0 z-50 mt-2 w-56 rounded-sm border border-slate-200 bg-white p-3 text-left text-sm text-slate-700 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100"
+											>
+												<div class="flex flex-wrap gap-1">
+													{#each employee.matchedTechs as tech}
+														<span
+															class="rounded-sm bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
+														>
+															{tech}
+														</span>
+													{/each}
+													{#each employee.unmatchedTechs as tech}
+														<span
+															class="rounded-sm bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+														>
+															{tech}
+														</span>
+													{/each}
+												</div>
+											</div>
 										</span>
 									</div>
 

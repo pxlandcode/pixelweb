@@ -6,6 +6,7 @@ export { ResumeBrand } from './ResumeBrand';
 export { ResumeLanguageToggle } from './ResumeLanguageToggle';
 export { ResumeProfileImage } from './ResumeProfileImage';
 export { ResumeExampleSkills } from './ResumeExampleSkills';
+export { ResumeExampleSkillsAiWriterDrawer } from './ResumeExampleSkillsAiWriterDrawer';
 export { ResumeContacts } from './ResumeContacts';
 export { ResumeNameTitle } from './ResumeNameTitle';
 export { ResumeSummary } from './ResumeSummary';
