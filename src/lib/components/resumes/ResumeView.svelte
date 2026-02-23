@@ -336,6 +336,13 @@
 		editingData.highlightedExperiences = items;
 	};
 
+	const reorderHighlightedExperience = (fromIndex: number, toIndex: number) => {
+		const items = [...editingData.highlightedExperiences];
+		const [removed] = items.splice(fromIndex, 1);
+		items.splice(toIndex, 0, removed);
+		editingData.highlightedExperiences = items;
+	};
+
 	// Language management
 	const addLanguage = () => {
 		const newLang: LabeledItem = {
@@ -449,6 +456,7 @@
 					onAdd={addHighlightedExperience}
 					onRemove={removeHighlightedExperience}
 					onMove={moveHighlightedExperience}
+					onReorder={reorderHighlightedExperience}
 				/>
 			</div>
 		{:else}
@@ -505,6 +513,7 @@
 						onAdd={addHighlightedExperience}
 						onRemove={removeHighlightedExperience}
 						onMove={moveHighlightedExperience}
+						onReorder={reorderHighlightedExperience}
 					/>
 				</div>
 			</div>
