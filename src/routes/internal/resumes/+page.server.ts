@@ -5,6 +5,10 @@ import {
 	getSupabaseAdminClient
 } from '$lib/server/supabase';
 import { siteMeta } from '$lib/seo';
+import {
+	PROFILE_AVAILABILITY_SELECT,
+	normalizeAvailabilityRow
+} from '$lib/server/consultantAvailability';
 
 const toStringArray = (value: unknown): string[] => {
 	if (!Array.isArray(value)) return [];
@@ -131,8 +135,31 @@ export const load: PageServerLoad = async ({ cookies }) => {
 			? { data: [] as Array<{ user_id: string; content: unknown }>, error: null }
 			: await adminClient.from('resumes').select('user_id, content').in('user_id', employeeIdList);
 
+	const profileAvailabilityResult =
+		employeeIdList.length === 0
+			? {
+					data: [] as Array<{
+						profile_id: string;
+						availability_now_percent: number | null;
+						availability_future_percent: number | null;
+						availability_notice_period_days: number | null;
+						availability_planned_from_date: string | null;
+					}>,
+					error: null
+				}
+			: await adminClient
+					.from('profile_availability')
+					.select(PROFILE_AVAILABILITY_SELECT)
+					.in('profile_id', employeeIdList);
+
 	if (resumesResult.error) {
 		console.warn('[resumes index] resumes error', resumesResult.error);
+	}
+	if (profileAvailabilityResult.error) {
+		console.warn(
+			'[resumes index] profile_availability error',
+			profileAvailabilityResult.error
+		);
 	}
 
 	const resumeTechMap = new Map<string, Set<string>>();
@@ -151,6 +178,12 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	}
 
 	const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+	const availabilityMap = new Map<string, ReturnType<typeof normalizeAvailabilityRow>>();
+	for (const row of profileAvailabilityResult.data ?? []) {
+		const profileId = typeof row.profile_id === 'string' ? row.profile_id : '';
+		if (!profileId) continue;
+		availabilityMap.set(profileId, normalizeAvailabilityRow(row));
+	}
 
 	const employees = employeeIdList.map((id) => {
 		const profile = profileMap.get(id);
@@ -163,7 +196,8 @@ export const load: PageServerLoad = async ({ cookies }) => {
 			last_name: profile?.last_name ?? '',
 			avatar_url: profile?.avatar_url ?? null,
 			email: authMap.get(id)?.email ?? null,
-			search_techs: uniq([...profileTechs, ...resumeTechs])
+			search_techs: uniq([...profileTechs, ...resumeTechs]),
+			availability: availabilityMap.get(id) ?? normalizeAvailabilityRow(null)
 		};
 	});
 
