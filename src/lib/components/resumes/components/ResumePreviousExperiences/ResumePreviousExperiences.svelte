@@ -450,10 +450,8 @@
 						<div class="space-y-1">
 							<p class="text-sm font-semibold text-slate-900">
 								<span class="whitespace-nowrap">{formatDate(exp.startDate, language)}</span>
-								{#if exp.endDate}
-									<span> - </span>
-									<span class="whitespace-nowrap">{formatDate(exp.endDate, language)}</span>
-								{/if}
+								<span> - </span>
+								<span class="whitespace-nowrap">{formatDate(exp.endDate, language)}</span>
 							</p>
 							<p class="text-sm font-semibold text-slate-900">{exp.company}</p>
 							{#if exp.location}

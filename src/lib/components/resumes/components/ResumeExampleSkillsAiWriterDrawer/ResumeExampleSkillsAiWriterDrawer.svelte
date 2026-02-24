@@ -202,7 +202,6 @@
 	onclick={openDrawer}
 >
 	<Sparkles size={16} />
-	AI
 </Button>
 
 <PixelDrawer

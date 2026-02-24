@@ -89,7 +89,7 @@
 
 	// Format date for display (e.g., "Jan 2020")
 	const formatDate = (dateString: string | null | undefined): string => {
-		if (!dateString) return language === 'sv' ? 'Nuvarande' : 'Present';
+		if (!dateString) return language === 'sv' ? 'Pågående' : 'Ongoing';
 		const date = new Date(dateString);
 		if (isNaN(date.getTime())) return dateString;
 		const month = date.toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US', {
