@@ -824,9 +824,7 @@
 			{#if profile && canEdit}
 				<div class="flex gap-2">
 					{#if isEditing}
-						<Button type="button" variant="ghost" onclick={cancelProfileEdit}>
-							Cancel
-						</Button>
+						<Button type="button" variant="ghost" onclick={cancelProfileEdit}>Cancel</Button>
 						<Button form="profile-form" type="submit" variant="primary">Save profile</Button>
 					{:else}
 						<Button type="button" onclick={() => (isEditing = true)}>Edit profile</Button>
@@ -934,7 +932,9 @@
 									<div class="rounded-lg border border-slate-200 bg-white p-5">
 										<p class="mb-3 text-sm font-medium text-slate-900">Current status</p>
 										<div class="flex flex-col gap-2">
-											<label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-slate-50">
+											<label
+												class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-slate-50"
+											>
 												<input
 													type="radio"
 													name="availability-status"
@@ -944,10 +944,13 @@
 												/>
 												<div>
 													<span class="text-sm font-medium text-slate-800">Available now</span>
-													<span class="ml-2 text-xs text-slate-500">100% available immediately</span>
+													<span class="ml-2 text-xs text-slate-500">100% available immediately</span
+													>
 												</div>
 											</label>
-											<label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-slate-50">
+											<label
+												class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-slate-50"
+											>
 												<input
 													type="radio"
 													name="availability-status"
@@ -981,7 +984,9 @@
 														bind:value={editingAvailabilityPlannedFromDate}
 														class="w-full max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
 													/>
-													<p class="mt-1 text-xs text-slate-500">When will the current assignment end?</p>
+													<p class="mt-1 text-xs text-slate-500">
+														When will the current assignment end?
+													</p>
 												</div>
 
 												<div class="border-t border-slate-100 pt-4">
@@ -991,11 +996,13 @@
 															bind:checked={editingOpenToSwitchEarly}
 															class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
 														/>
-														<span class="text-sm font-medium text-slate-800">Open to switching early</span>
+														<span class="text-sm font-medium text-slate-800"
+															>Open to switching early</span
+														>
 													</label>
 
 													{#if editingOpenToSwitchEarly}
-														<div class="ml-7 mt-3">
+														<div class="mt-3 ml-7">
 															<label
 																for="availability-notice-period-days"
 																class="mb-1.5 block text-sm font-medium text-slate-700"
@@ -1009,7 +1016,9 @@
 																step="1"
 																inputmode="numeric"
 																value={editingAvailabilityNoticePeriodDays}
-																oninput={handlePercentInput((value) => (editingAvailabilityNoticePeriodDays = value))}
+																oninput={handlePercentInput(
+																	(value) => (editingAvailabilityNoticePeriodDays = value)
+																)}
 																class="w-full max-w-[120px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
 																placeholder="e.g. 30"
 															/>
@@ -1032,7 +1041,9 @@
 									{:else}
 										<div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
 											<div class="mb-4 flex items-center justify-between">
-												<p class="text-sm font-medium text-slate-900">Custom availability percentages</p>
+												<p class="text-sm font-medium text-slate-900">
+													Custom availability percentages
+												</p>
 												<button
 													type="button"
 													class="text-xs font-medium text-slate-500 hover:text-slate-700"
@@ -1062,11 +1073,16 @@
 															step="1"
 															inputmode="numeric"
 															value={editingAvailabilityNowPercent}
-															oninput={handlePercentInput((value) => (editingAvailabilityNowPercent = value))}
+															oninput={handlePercentInput(
+																(value) => (editingAvailabilityNowPercent = value)
+															)}
 															class="w-full rounded-md border border-slate-200 bg-white py-2 pr-8 pl-3 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
 															placeholder={editingHasAssignment ? '0' : '100'}
 														/>
-														<span class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400">%</span>
+														<span
+															class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400"
+															>%</span
+														>
 													</div>
 												</div>
 												{#if editingHasAssignment && hasFutureAvailabilityTiming}
@@ -1086,11 +1102,16 @@
 																step="1"
 																inputmode="numeric"
 																value={editingAvailabilityFuturePercent}
-																oninput={handlePercentInput((value) => (editingAvailabilityFuturePercent = value))}
+																oninput={handlePercentInput(
+																	(value) => (editingAvailabilityFuturePercent = value)
+																)}
 																class="w-full rounded-md border border-slate-200 bg-white py-2 pr-8 pl-3 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
 																placeholder="100"
 															/>
-															<span class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400">%</span>
+															<span
+																class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400"
+																>%</span
+															>
 														</div>
 													</div>
 												{/if}
@@ -1102,7 +1123,7 @@
 									{/if}
 								</div>
 							{:else}
-								<ConsultantAvailabilityPills availability={availability} />
+								<ConsultantAvailabilityPills {availability} />
 							{/if}
 						</div>
 

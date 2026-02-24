@@ -42,7 +42,8 @@
 		const now = availability?.nowPercent;
 		if (now === 100) return 'available';
 		if (now != null && now > 0) return 'partial';
-		if (availability?.plannedFromDate || availability?.noticePeriodDays != null) return 'ending-soon';
+		if (availability?.plannedFromDate || availability?.noticePeriodDays != null)
+			return 'ending-soon';
 		return 'busy';
 	});
 
@@ -63,10 +64,10 @@
 	// Secondary info (when available)
 	const secondaryInfo = $derived.by(() => {
 		if (status === 'available') return null;
-		
+
 		const hasEndDate = Boolean(availability?.plannedFromDate);
 		const hasNotice = availability?.noticePeriodDays != null;
-		
+
 		if (hasEndDate && hasNotice) {
 			// Both: "Free Mar 15 or 30d notice"
 			return `Free ${formatDate(availability?.plannedFromDate)} or ${availability?.noticePeriodDays}d notice`;
