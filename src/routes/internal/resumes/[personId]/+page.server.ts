@@ -6,6 +6,12 @@ import {
 } from '$lib/server/supabase';
 import { fail } from '@sveltejs/kit';
 import { getResumeEditPermissions } from '$lib/server/resumes/permissions';
+import {
+	PROFILE_AVAILABILITY_SELECT,
+	normalizeAvailabilityRow,
+	parseAvailabilityForm,
+	validateAvailability
+} from '$lib/server/consultantAvailability';
 
 export const load: PageServerLoad = async ({ params, cookies }) => {
 	const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
@@ -15,6 +21,7 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 	if (!supabase || !adminClient) {
 		return {
 			profile: null,
+			availability: normalizeAvailabilityRow(null),
 			resumes: [],
 			fromDb: false,
 			canEdit: false,
@@ -29,35 +36,56 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 		params.personId
 	);
 
-	const [{ data: profile, error: profileError }, resumesResult] = await Promise.all([
-		adminClient
-			.from('profiles')
-			.select('id, first_name, last_name, avatar_url, title, bio, tech_stack')
-			.eq('id', params.personId)
-			.maybeSingle(),
-		(async () => {
-			if (!adminClient) return { data: null, error: new Error('Admin client unavailable') };
-			try {
-				const { data, error } = await adminClient
-					.from('resumes')
-					.select(
-						'id, user_id, version_name, is_main, is_active, allow_word_export, content, preview_html, created_at, updated_at'
-					)
-					.eq('user_id', params.personId)
-					.order('created_at', { ascending: false });
+	const [{ data: profile, error: profileError }, resumesResult, profileAvailabilityResult] =
+		await Promise.all([
+			adminClient
+				.from('profiles')
+				.select('id, first_name, last_name, avatar_url, title, bio, tech_stack')
+				.eq('id', params.personId)
+				.maybeSingle(),
+			(async () => {
+				if (!adminClient) return { data: null, error: new Error('Admin client unavailable') };
+				try {
+					const { data, error } = await adminClient
+						.from('resumes')
+						.select(
+							'id, user_id, version_name, is_main, is_active, allow_word_export, content, preview_html, created_at, updated_at'
+						)
+						.eq('user_id', params.personId)
+						.order('created_at', { ascending: false });
 
-				return { data, error };
-			} catch (err) {
-				return { data: null, error: err as Error };
-			}
-		})()
-	]);
+					return { data, error };
+				} catch (err) {
+					return { data: null, error: err as Error };
+				}
+			})(),
+			(async () => {
+				if (!adminClient) return { data: null, error: new Error('Admin client unavailable') };
+				try {
+					const { data, error } = await adminClient
+						.from('profile_availability')
+						.select(PROFILE_AVAILABILITY_SELECT)
+						.eq('profile_id', params.personId)
+						.maybeSingle();
+
+					return { data, error };
+				} catch (err) {
+					return { data: null, error: err as Error };
+				}
+			})()
+		]);
 
 	if (profileError) {
 		console.warn('[resumes detail] profile error', profileError);
 	}
 	if (resumesResult.error) {
 		console.warn('[resumes detail] resumes error', resumesResult.error);
+	}
+	if (profileAvailabilityResult.error) {
+		console.warn(
+			'[resumes detail] profile_availability error',
+			profileAvailabilityResult.error
+		);
 	}
 
 	// Helper to extract English title from content
@@ -85,6 +113,7 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 
 	return {
 		profile: profile ?? null,
+		availability: normalizeAvailabilityRow(profileAvailabilityResult.data ?? null),
 		resumes,
 		fromDb: Boolean(profile),
 		canEdit,
@@ -132,16 +161,44 @@ export const actions: Actions = {
 			return fail(403, { ok: false, message: 'Not authorized to update this profile' });
 		}
 
+		const parsedAvailability = parseAvailabilityForm(formData);
+		const availabilityValidation = validateAvailability(parsedAvailability);
+
+		if (!availabilityValidation.ok) {
+			return fail(400, {
+				ok: false,
+				type: 'updateProfile',
+				message: availabilityValidation.message
+			});
+		}
+
 		const { error } = await adminClient
 			.from('profiles')
 			.update({ bio, tech_stack: techStack })
 			.eq('id', personId);
 
 		if (error) {
-			return fail(500, { ok: false, message: error.message });
+			return fail(500, { ok: false, type: 'updateProfile', message: error.message });
 		}
 
-		return { ok: true };
+		const { error: profileAvailabilityError } = await adminClient.from('profile_availability').upsert(
+			{
+				profile_id: personId,
+				...availabilityValidation.db,
+				updated_at: new Date().toISOString()
+			},
+			{ onConflict: 'profile_id' }
+		);
+
+		if (profileAvailabilityError) {
+			return fail(500, {
+				ok: false,
+				type: 'updateProfile',
+				message: profileAvailabilityError.message
+			});
+		}
+
+		return { ok: true, type: 'updateProfile', message: 'Profile updated.' };
 	},
 	createResume: async ({ request, cookies, params }) => {
 		const supabase = createSupabaseServerClient(cookies.get(AUTH_COOKIE_NAMES.access) ?? null);

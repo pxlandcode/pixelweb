@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { TechStackSelector } from '$lib/components';
+	import ConsultantAvailabilityPills from '$lib/components/resumes/ConsultantAvailabilityPills.svelte';
 	import { Button, Card } from '@pixelcode_/blocks/components';
-	import { FileText, User, Search, X } from 'lucide-svelte';
+	import { User, Search, X } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -155,20 +156,11 @@
 							{/if}
 						</div>
 
-						<div class="flex flex-1 flex-col p-6">
-							<div class="mb-4">
-								<h3 class="text-xl font-semibold text-slate-900">
-									{[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Unnamed'}
-								</h3>
-								<p class="text-sm font-medium text-primary">Employee profile</p>
-							</div>
-
-							<div class="mt-auto flex items-center text-xs text-slate-500">
-								<span class="flex items-center gap-1">
-									<FileText size={14} />
-									View profile
-								</span>
-							</div>
+						<div class="flex flex-1 flex-col p-5">
+							<h3 class="mb-2 text-lg font-semibold text-slate-900">
+								{[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Unnamed'}
+							</h3>
+							<ConsultantAvailabilityPills availability={employee.availability} compact />
 						</div>
 					</Card>
 				</a>
@@ -258,21 +250,12 @@
 										</span>
 									</div>
 
-									<div class="flex flex-1 flex-col p-6">
-										<div class="mb-4">
-											<h3 class="text-xl font-semibold text-slate-900">
-												{[employee.first_name, employee.last_name].filter(Boolean).join(' ') ||
-													'Unnamed'}
-											</h3>
-											<p class="text-sm font-medium text-primary">Employee profile</p>
-										</div>
-
-										<div class="mt-auto flex items-center text-xs text-slate-500">
-											<span class="flex items-center gap-1">
-												<FileText size={14} />
-												View profile
-											</span>
-										</div>
+									<div class="flex flex-1 flex-col p-5">
+										<h3 class="mb-2 text-lg font-semibold text-slate-900">
+											{[employee.first_name, employee.last_name].filter(Boolean).join(' ') ||
+												'Unnamed'}
+										</h3>
+										<ConsultantAvailabilityPills availability={employee.availability} compact />
 									</div>
 								</Card>
 							</a>

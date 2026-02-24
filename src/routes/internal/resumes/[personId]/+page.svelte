@@ -16,6 +16,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { TechStackEditor } from '$lib/components';
+	import ConsultantAvailabilityPills from '$lib/components/resumes/ConsultantAvailabilityPills.svelte';
 	import PixelDrawer from '$lib/components/PixelDrawer.svelte';
 	import { confirm } from '$lib/utils/confirm';
 	import { loading } from '$lib/stores/loading';
@@ -26,9 +27,10 @@
 	import Dashboard from '@uppy/dashboard';
 	import type { UppyFile } from '@uppy/utils/lib/UppyFile';
 
-	const { data } = $props();
+	const { data, form } = $props();
 
 	const profile = data.profile;
+	const availability = data.availability ?? null;
 	const resumes = data.resumes ?? [];
 	const canEdit = data.canEdit ?? false;
 	type ResumeListItem = (typeof resumes)[number];
@@ -38,10 +40,107 @@
 		(techStack ?? []).filter((cat) => Array.isArray(cat?.skills) && cat.skills.length > 0)
 	);
 
+	const deriveHasAssignment = (value: typeof availability) => {
+		if (!value) return true;
+		if (value.noticePeriodDays != null || value.plannedFromDate) return true;
+		if (value.nowPercent === 100) return false;
+		return true;
+	};
+
+	const deriveUsesCustomAvailabilityPercentages = (value: typeof availability) => {
+		const hasAssignment = deriveHasAssignment(value);
+		const hasFutureTiming = Boolean(value?.noticePeriodDays != null || value?.plannedFromDate);
+		const defaultNowPercent = hasAssignment ? null : 100;
+		const defaultFuturePercent = hasFutureTiming ? 100 : null;
+
+		return (
+			(value?.nowPercent ?? null) !== defaultNowPercent ||
+			(value?.futurePercent ?? null) !== defaultFuturePercent
+		);
+	};
+
 	let isEditing = $state(false);
 	let editingBio = $state(profile?.bio ?? '');
 	let editingTechStack = $state(structuredClone(techStack));
+	let editingAvailabilityNowPercent = $state(
+		availability?.nowPercent != null ? String(availability.nowPercent) : ''
+	);
+	let editingAvailabilityFuturePercent = $state(
+		availability?.futurePercent != null ? String(availability.futurePercent) : ''
+	);
+	let editingAvailabilityNoticePeriodDays = $state(
+		availability?.noticePeriodDays != null ? String(availability.noticePeriodDays) : ''
+	);
+	let editingAvailabilityPlannedFromDate = $state(availability?.plannedFromDate ?? '');
+	let editingHasAssignment = $state(deriveHasAssignment(availability));
+	let editingOpenToSwitchEarly = $state(availability?.noticePeriodDays != null);
+	let editingUseCustomAvailabilityPercentages = $state(
+		deriveUsesCustomAvailabilityPercentages(availability)
+	);
 	const techStackJson = $derived(JSON.stringify(editingTechStack ?? []));
+
+	const hasNoticePeriodInput = $derived(
+		editingHasAssignment &&
+			editingOpenToSwitchEarly &&
+			editingAvailabilityNoticePeriodDays.trim().length > 0
+	);
+	const hasPlannedAvailabilityDate = $derived(
+		editingHasAssignment && editingAvailabilityPlannedFromDate.trim().length > 0
+	);
+	const hasFutureAvailabilityTiming = $derived(hasNoticePeriodInput || hasPlannedAvailabilityDate);
+
+	const submittedAvailabilityNowPercent = $derived.by(() => {
+		const defaultValue = editingHasAssignment ? '' : '100';
+		if (!editingUseCustomAvailabilityPercentages) return defaultValue;
+		const customValue = editingAvailabilityNowPercent.trim();
+		return customValue.length > 0 ? customValue : defaultValue;
+	});
+
+	const submittedAvailabilityFuturePercent = $derived.by(() => {
+		if (!editingHasAssignment) return '';
+		if (!hasFutureAvailabilityTiming) return '';
+
+		const defaultValue = '100';
+		if (!editingUseCustomAvailabilityPercentages) return defaultValue;
+		const customValue = editingAvailabilityFuturePercent.trim();
+		return customValue.length > 0 ? customValue : defaultValue;
+	});
+
+	const submittedAvailabilityNoticePeriodDays = $derived.by(() => {
+		if (!editingHasAssignment || !editingOpenToSwitchEarly) return '';
+		return editingAvailabilityNoticePeriodDays.trim();
+	});
+
+	const submittedAvailabilityPlannedFromDate = $derived.by(() => {
+		if (!editingHasAssignment) return '';
+		return editingAvailabilityPlannedFromDate.trim();
+	});
+
+	const resetProfileEditor = () => {
+		editingBio = profile?.bio ?? '';
+		editingTechStack = structuredClone(techStack);
+		editingAvailabilityNowPercent =
+			availability?.nowPercent != null ? String(availability.nowPercent) : '';
+		editingAvailabilityFuturePercent =
+			availability?.futurePercent != null ? String(availability.futurePercent) : '';
+		editingAvailabilityNoticePeriodDays =
+			availability?.noticePeriodDays != null ? String(availability.noticePeriodDays) : '';
+		editingAvailabilityPlannedFromDate = availability?.plannedFromDate ?? '';
+		editingHasAssignment = deriveHasAssignment(availability);
+		editingOpenToSwitchEarly = availability?.noticePeriodDays != null;
+		editingUseCustomAvailabilityPercentages = deriveUsesCustomAvailabilityPercentages(availability);
+	};
+
+	const handlePercentInput =
+		(setter: (value: string) => void) =>
+		(event: Event & { currentTarget: EventTarget & HTMLInputElement }) => {
+			setter(event.currentTarget.value);
+		};
+
+	const cancelProfileEdit = () => {
+		resetProfileEditor();
+		isEditing = false;
+	};
 
 	let resumeList = $state<ResumeListItem[]>(resumes ?? []);
 	let draggedResume: ResumeListItem | null = $state(null);
@@ -117,8 +216,7 @@
 	);
 
 	$effect(() => {
-		editingBio = profile?.bio ?? '';
-		editingTechStack = structuredClone(techStack);
+		resetProfileEditor();
 		resumeList = [...(resumes ?? [])];
 	});
 
@@ -726,7 +824,7 @@
 			{#if profile && canEdit}
 				<div class="flex gap-2">
 					{#if isEditing}
-						<Button type="button" variant="ghost" onclick={() => (isEditing = false)}>
+						<Button type="button" variant="ghost" onclick={cancelProfileEdit}>
 							Cancel
 						</Button>
 						<Button form="profile-form" type="submit" variant="primary">Save profile</Button>
@@ -768,6 +866,17 @@
 						<input type="hidden" name="person_id" value={profile.id} />
 						<input type="hidden" name="tech_stack" value={techStackJson} />
 
+						{#if form?.message}
+							<div
+								class="rounded border px-3 py-2 text-sm
+									{form.ok
+									? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+									: 'border-red-200 bg-red-50 text-red-700'}"
+							>
+								{form.message}
+							</div>
+						{/if}
+
 						<div>
 							<h1 class="text-3xl font-bold text-slate-900 sm:text-4xl">
 								{[profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Unnamed'}
@@ -793,6 +902,207 @@
 								</p>
 							{:else}
 								<p class="text-sm text-slate-500">No bio yet.</p>
+							{/if}
+						</div>
+
+						<div class="pt-2">
+							<h3 class="mb-2 text-lg font-semibold text-slate-900">Availability</h3>
+							{#if isEditing && canEdit}
+								<div class="space-y-4">
+									<input
+										type="hidden"
+										name="availability_now_percent"
+										value={submittedAvailabilityNowPercent}
+									/>
+									<input
+										type="hidden"
+										name="availability_future_percent"
+										value={submittedAvailabilityFuturePercent}
+									/>
+									<input
+										type="hidden"
+										name="availability_notice_period_days"
+										value={submittedAvailabilityNoticePeriodDays}
+									/>
+									<input
+										type="hidden"
+										name="availability_planned_from_date"
+										value={submittedAvailabilityPlannedFromDate}
+									/>
+
+									<!-- Current status -->
+									<div class="rounded-lg border border-slate-200 bg-white p-5">
+										<p class="mb-3 text-sm font-medium text-slate-900">Current status</p>
+										<div class="flex flex-col gap-2">
+											<label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-slate-50">
+												<input
+													type="radio"
+													name="availability-status"
+													checked={!editingHasAssignment}
+													onchange={() => (editingHasAssignment = false)}
+													class="h-4 w-4 border-slate-300 text-primary focus:ring-primary"
+												/>
+												<div>
+													<span class="text-sm font-medium text-slate-800">Available now</span>
+													<span class="ml-2 text-xs text-slate-500">100% available immediately</span>
+												</div>
+											</label>
+											<label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-slate-50">
+												<input
+													type="radio"
+													name="availability-status"
+													checked={editingHasAssignment}
+													onchange={() => (editingHasAssignment = true)}
+													class="h-4 w-4 border-slate-300 text-primary focus:ring-primary"
+												/>
+												<div>
+													<span class="text-sm font-medium text-slate-800">On assignment</span>
+													<span class="ml-2 text-xs text-slate-500">Currently busy</span>
+												</div>
+											</label>
+										</div>
+									</div>
+
+									<!-- Assignment details (only when on assignment) -->
+									{#if editingHasAssignment}
+										<div class="rounded-lg border border-slate-200 bg-white p-5">
+											<p class="mb-4 text-sm font-medium text-slate-900">Assignment details</p>
+											<div class="space-y-4">
+												<div>
+													<label
+														for="availability-planned-date"
+														class="mb-1.5 block text-sm font-medium text-slate-700"
+													>
+														Assignment end date
+													</label>
+													<input
+														id="availability-planned-date"
+														type="date"
+														bind:value={editingAvailabilityPlannedFromDate}
+														class="w-full max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
+													/>
+													<p class="mt-1 text-xs text-slate-500">When will the current assignment end?</p>
+												</div>
+
+												<div class="border-t border-slate-100 pt-4">
+													<label class="flex cursor-pointer items-center gap-3">
+														<input
+															type="checkbox"
+															bind:checked={editingOpenToSwitchEarly}
+															class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+														/>
+														<span class="text-sm font-medium text-slate-800">Open to switching early</span>
+													</label>
+
+													{#if editingOpenToSwitchEarly}
+														<div class="ml-7 mt-3">
+															<label
+																for="availability-notice-period-days"
+																class="mb-1.5 block text-sm font-medium text-slate-700"
+															>
+																Notice period (days)
+															</label>
+															<input
+																id="availability-notice-period-days"
+																type="number"
+																min="0"
+																step="1"
+																inputmode="numeric"
+																value={editingAvailabilityNoticePeriodDays}
+																oninput={handlePercentInput((value) => (editingAvailabilityNoticePeriodDays = value))}
+																class="w-full max-w-[120px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
+																placeholder="e.g. 30"
+															/>
+														</div>
+													{/if}
+												</div>
+											</div>
+										</div>
+									{/if}
+
+									<!-- Advanced options toggle -->
+									{#if !editingUseCustomAvailabilityPercentages}
+										<button
+											type="button"
+											class="text-sm font-medium text-slate-500 hover:text-slate-700"
+											onclick={() => (editingUseCustomAvailabilityPercentages = true)}
+										>
+											+ Advanced options
+										</button>
+									{:else}
+										<div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
+											<div class="mb-4 flex items-center justify-between">
+												<p class="text-sm font-medium text-slate-900">Custom availability percentages</p>
+												<button
+													type="button"
+													class="text-xs font-medium text-slate-500 hover:text-slate-700"
+													onclick={() => {
+														editingUseCustomAvailabilityPercentages = false;
+														editingAvailabilityNowPercent = '';
+														editingAvailabilityFuturePercent = '';
+													}}
+												>
+													Reset to defaults
+												</button>
+											</div>
+											<div class="grid gap-4 sm:grid-cols-2">
+												<div>
+													<label
+														for="availability-now-percent"
+														class="mb-1.5 block text-sm font-medium text-slate-700"
+													>
+														Available now
+													</label>
+													<div class="relative max-w-[120px]">
+														<input
+															id="availability-now-percent"
+															type="number"
+															min="0"
+															max="100"
+															step="1"
+															inputmode="numeric"
+															value={editingAvailabilityNowPercent}
+															oninput={handlePercentInput((value) => (editingAvailabilityNowPercent = value))}
+															class="w-full rounded-md border border-slate-200 bg-white py-2 pr-8 pl-3 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
+															placeholder={editingHasAssignment ? '0' : '100'}
+														/>
+														<span class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400">%</span>
+													</div>
+												</div>
+												{#if editingHasAssignment && hasFutureAvailabilityTiming}
+													<div>
+														<label
+															for="availability-future-percent"
+															class="mb-1.5 block text-sm font-medium text-slate-700"
+														>
+															Future availability
+														</label>
+														<div class="relative max-w-[120px]">
+															<input
+																id="availability-future-percent"
+																type="number"
+																min="0"
+																max="100"
+																step="1"
+																inputmode="numeric"
+																value={editingAvailabilityFuturePercent}
+																oninput={handlePercentInput((value) => (editingAvailabilityFuturePercent = value))}
+																class="w-full rounded-md border border-slate-200 bg-white py-2 pr-8 pl-3 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary"
+																placeholder="100"
+															/>
+															<span class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400">%</span>
+														</div>
+													</div>
+												{/if}
+											</div>
+											<p class="mt-3 text-xs text-slate-500">
+												Override default percentages for part-time or partial availability.
+											</p>
+										</div>
+									{/if}
+								</div>
+							{:else}
+								<ConsultantAvailabilityPills availability={availability} />
 							{/if}
 						</div>
 
