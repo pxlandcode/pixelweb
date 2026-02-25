@@ -7,7 +7,8 @@ export type PdfImportPhase =
 	| 'staging-file'
 	| 'starting-background'
 	| 'queued'
-	| 'processing';
+	| 'processing'
+	| 'succeeded';
 
 export interface PdfImportState {
 	status: PdfImportPhase;
@@ -15,6 +16,7 @@ export interface PdfImportState {
 	personId: string | null;
 	sourceFilename: string | null;
 	error: string | null;
+	resumeId: string | null;
 }
 
 const STORAGE_KEY_PREFIX = 'resume-pdf-import-job:';
@@ -29,7 +31,8 @@ function createPdfImportStore() {
 		jobId: null,
 		personId: null,
 		sourceFilename: null,
-		error: null
+		error: null,
+		resumeId: null
 	};
 
 	const { subscribe, set, update } = writable<PdfImportState>(initialState);
@@ -56,7 +59,8 @@ function createPdfImportStore() {
 								jobId: parsed.jobId,
 								personId,
 								sourceFilename: parsed.sourceFilename || null,
-								error: null
+								error: null,
+								resumeId: null
 							});
 							break;
 						}
@@ -107,10 +111,25 @@ function createPdfImportStore() {
 				jobId,
 				personId,
 				sourceFilename: filename,
-				error: null
+				error: null,
+				resumeId: null
 			};
 			set(newState);
 			persist(newState);
+		},
+		setSuccess: (resumeId: string) => {
+			update((s) => {
+				const newState: PdfImportState = { ...s, status: 'succeeded', resumeId, error: null };
+				// Clear the storage since we're done
+				if (browser && s.personId) {
+					try {
+						sessionStorage.removeItem(getStorageKey(s.personId));
+					} catch {
+						// Ignore
+					}
+				}
+				return newState;
+			});
 		},
 		setStatus: (status: PdfImportPhase) => {
 			update((s) => {
@@ -161,6 +180,8 @@ export const isKickoffImporting = derived(
 		$store.status === 'starting-background'
 );
 
+export const isImportSucceeded = derived(pdfImportStore, ($store) => $store.status === 'succeeded');
+
 export const importStatusLabel = derived(pdfImportStore, ($store) => {
 	switch ($store.status) {
 		case 'creating-job':
@@ -173,6 +194,8 @@ export const importStatusLabel = derived(pdfImportStore, ($store) => {
 			return 'Queued import...';
 		case 'processing':
 			return 'Importing and building resume...';
+		case 'succeeded':
+			return 'Import complete!';
 		default:
 			return '';
 	}
