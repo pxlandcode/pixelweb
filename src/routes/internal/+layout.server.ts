@@ -30,6 +30,28 @@ const PUBLIC_PATHS = ['/internal/login', '/internal/reset-password'] as const;
 // Role guard configuration centralizes who can visit each internal path.
 const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 	{ pattern: /^\/internal$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
+	{ pattern: /^\/internal\/admin$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
+	{ pattern: /^\/internal\/admin\/users(\/.*)?$/, roles: ['admin', 'employer'] },
+	{ pattern: /^\/internal\/admin\/news(\/.*)?$/, roles: ['admin', 'cms_admin'] },
+	{ pattern: /^\/internal\/admin\/cases(\/.*)?$/, roles: ['admin', 'cms_admin'] },
+	{
+		pattern: /^\/internal\/admin\/feedback(\/.*)?$/,
+		roles: ['admin', 'cms_admin', 'employee', 'employer']
+	},
+	{ pattern: /^\/internal\/resume$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
+	{ pattern: /^\/internal\/resume\/users(\/.*)?$/, roles: ['admin', 'employer'] },
+	{
+		pattern: /^\/internal\/resume\/employees(\/.*)?$/,
+		roles: ['admin', 'employer', 'employee']
+	},
+	{
+		pattern: /^\/internal\/resume\/resumes\/consultant\//,
+		roles: ['admin', 'cms_admin', 'employee', 'employer']
+	},
+	{
+		pattern: /^\/internal\/resume\/resumes(\/.*)?$/,
+		roles: ['admin', 'cms_admin', 'employee', 'employer']
+	},
 	{ pattern: /^\/internal\/users/, roles: ['admin', 'employer'] },
 	{ pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
 	{ pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },

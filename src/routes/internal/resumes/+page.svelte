@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { TechStackSelector } from '$lib/components';
 	import ConsultantAvailabilityPills from '$lib/components/resumes/ConsultantAvailabilityPills.svelte';
 	import { Button, Card } from '@pixelcode_/blocks/components';
@@ -136,7 +135,7 @@
 		<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{#each liveEmployees as employee (employee.id)}
 				<a
-					href={resolve('/internal/resumes/[personId]', { personId: employee.id })}
+					href={`/internal/resume/resumes/${encodeURIComponent(employee.id)}`}
 					class="block h-full"
 				>
 					<Card
@@ -197,7 +196,7 @@
 					<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{#each group.employees as employee (employee.id)}
 							<a
-								href={resolve('/internal/resumes/[personId]', { personId: employee.id })}
+								href={`/internal/resume/resumes/${encodeURIComponent(employee.id)}`}
 								class="block h-full"
 							>
 								<Card

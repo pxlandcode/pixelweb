@@ -2,6 +2,7 @@ export * from './about-section';
 export * from './admin';
 export * from './admin-layout';
 export * from './animated-headline';
+export * from './resume-layout';
 export * from './backgrounds';
 export * from './cardstack';
 export * from './contact-postcard';

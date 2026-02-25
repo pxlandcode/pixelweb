@@ -19,42 +19,88 @@
 	export let userEmail: string | null = null;
 	export let unauthorizedMessage: string | null = null;
 
-	// Extend this list when new admin areas are added.
-	const navItems = [
+	type NavItem = {
+		label: string;
+		href: string;
+		allowed: AdminRole[];
+		match: 'exact' | 'prefix';
+	};
+
+	type WorkspaceKey = 'admin' | 'resume';
+
+	type NavSection = {
+		key: WorkspaceKey;
+		label: string;
+		items: NavItem[];
+	};
+
+	// Phase 1 split: expose dedicated namespaces while reusing existing pages under wrapper routes.
+	const navSections: NavSection[] = [
 		{
-			label: 'Dashboard',
-			href: '/internal',
-			allowed: ['admin', 'cms_admin', 'employee', 'employer'] satisfies AdminRole[]
+			key: 'resume',
+			label: 'Resume',
+			items: [
+				{
+					label: 'Dashboard',
+					href: '/internal/resume',
+					allowed: ['admin', 'cms_admin', 'employee', 'employer'],
+					match: 'exact'
+				},
+				{
+					label: 'Users',
+					href: '/internal/resume/users',
+					allowed: ['admin', 'employer'],
+					match: 'prefix'
+				},
+				{
+					label: 'Employees',
+					href: '/internal/resume/employees',
+					allowed: ['admin', 'employer', 'employee'],
+					match: 'prefix'
+				},
+				{
+					label: 'Resumes',
+					href: '/internal/resume/resumes',
+					allowed: ['admin', 'cms_admin', 'employee'],
+					match: 'prefix'
+				}
+			]
 		},
 		{
-			label: 'Users',
-			href: '/internal/users',
-			allowed: ['admin', 'employer'] satisfies AdminRole[]
-		},
-		{
-			label: 'News',
-			href: '/internal/news',
-			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
-		},
-		{
-			label: 'Employees',
-			href: '/internal/employees',
-			allowed: ['admin', 'employer', 'employee'] satisfies AdminRole[]
-		},
-		{
-			label: 'Resumes',
-			href: '/internal/resumes',
-			allowed: ['admin', 'cms_admin', 'employee'] satisfies AdminRole[]
-		},
-		{
-			label: 'Cases',
-			href: '/internal/cases',
-			allowed: ['admin', 'cms_admin'] satisfies AdminRole[]
-		},
-		{
-			label: 'Feedback',
-			href: '/internal/feedback',
-			allowed: ['admin', 'employer', 'cms_admin', 'employee'] satisfies AdminRole[]
+			key: 'admin',
+			label: 'Admin',
+			items: [
+				{
+					label: 'Dashboard',
+					href: '/internal/admin',
+					allowed: ['admin', 'cms_admin', 'employee', 'employer'],
+					match: 'exact'
+				},
+				{
+					label: 'Users',
+					href: '/internal/admin/users',
+					allowed: ['admin', 'employer'],
+					match: 'prefix'
+				},
+				{
+					label: 'News',
+					href: '/internal/admin/news',
+					allowed: ['admin', 'cms_admin'],
+					match: 'prefix'
+				},
+				{
+					label: 'Cases',
+					href: '/internal/admin/cases',
+					allowed: ['admin', 'cms_admin'],
+					match: 'prefix'
+				},
+				{
+					label: 'Feedback',
+					href: '/internal/admin/feedback',
+					allowed: ['admin', 'employer', 'cms_admin', 'employee'],
+					match: 'prefix'
+				}
+			]
 		}
 	];
 
@@ -62,10 +108,47 @@
 	$: displayName = profile
 		? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || userEmail || 'User'
 		: userEmail || 'User';
+	$: activeWorkspace = inferWorkspace(activePath);
+	$: visibleNavSections = activeWorkspace
+		? navSections.filter((section) => section.key === activeWorkspace)
+		: [];
 
 	const canView = (allowed: AdminRole[]) => {
 		const effectiveRoles = roles.length ? roles : role ? [role] : [];
 		return effectiveRoles.some((r) => allowed.includes(r));
+	};
+
+	const isActive = (item: NavItem) => {
+		if (item.match === 'exact') return activePath === item.href;
+		return activePath === item.href || activePath.startsWith(`${item.href}/`);
+	};
+
+	const inferWorkspace = (pathname: string): WorkspaceKey | null => {
+		if (pathname === '/internal/admin' || pathname.startsWith('/internal/admin/')) return 'admin';
+		if (pathname === '/internal/resume' || pathname.startsWith('/internal/resume/')) return 'resume';
+
+		// Legacy routes while we migrate links and add redirects.
+		if (
+			pathname === '/internal/news' ||
+			pathname.startsWith('/internal/news/') ||
+			pathname === '/internal/cases' ||
+			pathname.startsWith('/internal/cases/') ||
+			pathname === '/internal/feedback' ||
+			pathname.startsWith('/internal/feedback/')
+		) {
+			return 'admin';
+		}
+
+		if (
+			pathname === '/internal/employees' ||
+			pathname.startsWith('/internal/employees/') ||
+			pathname === '/internal/resumes' ||
+			pathname.startsWith('/internal/resumes/')
+		) {
+			return 'resume';
+		}
+
+		return null;
 	};
 </script>
 
@@ -76,21 +159,30 @@
 		<div class="flex items-center justify-between px-6 py-5">
 			<img src={pixelcodeLogo} alt="Pixel&Code" class="h-6" />
 		</div>
-		<nav class="space-y-1 px-3 pb-6">
-			{#each navItems as item}
-				{#if canView(item.allowed)}
-					<Button
-						href={item.href}
-						variant={activePath === item.href ? 'nav-active' : 'nav'}
-						size="md"
-						class={`w-full justify-start ${
-							activePath === item.href ? 'font-semibold' : 'text-gray-900'
-						}`}
-					>
-						{item.label}
-					</Button>
-				{/if}
-			{/each}
+		<nav class="space-y-4 px-3 pb-6">
+			{#if visibleNavSections.length === 0}
+				<p class="px-3 text-sm text-gray-500">No workspace menu for this route.</p>
+			{:else}
+				{#each visibleNavSections as section}
+					<div class="space-y-1">
+						<p class="px-3 pt-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+							{section.label}
+						</p>
+						{#each section.items as item}
+							{#if canView(item.allowed)}
+								<Button
+									href={item.href}
+									variant={isActive(item) ? 'nav-active' : 'nav'}
+									size="md"
+									class={`w-full justify-start ${isActive(item) ? 'font-semibold' : 'text-gray-900'}`}
+								>
+									{item.label}
+								</Button>
+							{/if}
+						{/each}
+					</div>
+				{/each}
+			{/if}
 		</nav>
 	</aside>
 

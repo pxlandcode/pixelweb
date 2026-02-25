@@ -247,7 +247,7 @@
 		const shouldOpen = $page.url.searchParams.get('openImport') === '1';
 		if (shouldOpen) {
 			handledOpenImportParam = true;
-			replaceState(resolve('/internal/resumes/[personId]', { personId: profile.id }), {});
+			replaceState(`/internal/resume/resumes/${encodeURIComponent(profile.id)}`, {});
 			void openImportDrawer();
 		}
 	});
@@ -809,7 +809,7 @@
 		<div class="mb-6 flex items-center justify-between">
 			<Button
 				variant="ghost"
-				href="/internal/resumes"
+				href="/internal/resume/resumes"
 				class="pl-0 hover:bg-transparent hover:text-indigo-600"
 			>
 				<ArrowLeft size={16} class="mr-2" />
@@ -1186,10 +1186,7 @@
 						}}
 						onclick={() =>
 							goto(
-								resolve('/internal/resumes/[personId]/resume/[resumeId]', {
-									personId: profile.id,
-									resumeId: resume.id
-								})
+								`/internal/resume/resumes/${encodeURIComponent(profile.id)}/resume/${encodeURIComponent(resume.id)}`
 							)}
 						class={`flex cursor-pointer items-center justify-between rounded-none border p-6 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
 							dragOverIndex === index ? 'border-primary' : 'border-slate-200'

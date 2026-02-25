@@ -25,6 +25,12 @@
 		'/internal/preboard'
 	]);
 	const routeId = $derived($page.route.id ?? '');
+	const isNamespacedWorkspaceRoute = $derived(
+		routeId === '/internal/admin' ||
+			routeId.startsWith('/internal/admin/') ||
+			routeId === '/internal/resume' ||
+			routeId.startsWith('/internal/resume/')
+	);
 	const isBusy = $derived(Boolean($navigating) || $loadingStore.isLoading);
 	const loadingLabel = $derived(
 		$loadingStore.loadingText ?? (Boolean($navigating) ? 'Loading page...' : 'Loading...')
@@ -68,16 +74,13 @@
 	});
 
 	function getImportLink(): string {
-		if (!importPersonId) return '/internal/resumes';
-		return resolve('/internal/resumes/[personId]', { personId: importPersonId }) + '?openImport=1';
+		if (!importPersonId) return '/internal/resume/resumes';
+		return `/internal/resume/resumes/${encodeURIComponent(importPersonId)}?openImport=1`;
 	}
 
 	function getSuccessResumeLink(): string {
-		if (!importPersonId || !importResumeId) return '/internal/resumes';
-		return resolve('/internal/resumes/[personId]/resume/[resumeId]', {
-			personId: importPersonId,
-			resumeId: importResumeId
-		});
+		if (!importPersonId || !importResumeId) return '/internal/resume/resumes';
+		return `/internal/resume/resumes/${encodeURIComponent(importPersonId)}/resume/${encodeURIComponent(importResumeId)}`;
 	}
 
 	function handleSuccessClick() {
@@ -327,6 +330,8 @@
 	{/key}
 {/if}
 {#if plainRoutes.has(routeId)}
+	{@render children?.()}
+{:else if isNamespacedWorkspaceRoute}
 	{@render children?.()}
 {:else}
 	{@const unauthorizedMessage = $page.url.searchParams.get('unauthorized')
