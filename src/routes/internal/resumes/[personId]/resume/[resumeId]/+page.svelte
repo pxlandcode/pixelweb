@@ -222,7 +222,7 @@
 	<div>
 		<Button
 			variant="ghost"
-			href="/internal/resumes"
+			href="/internal/resume/resumes"
 			class=" pl-0 hover:bg-transparent hover:text-indigo-600"
 		>
 			<ArrowLeft size={16} class="mr-2" />
