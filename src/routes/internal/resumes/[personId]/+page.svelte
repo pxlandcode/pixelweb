@@ -517,15 +517,10 @@
 		importError = null;
 		importJobId = null;
 		importSourceFilename = null;
-		clearPersistedImportJob();
 		selectedImportFile = null;
 		destroyUppy();
-		await goto(
-			resolve('/internal/resumes/[personId]/resume/[resumeId]', {
-				personId: profile.id,
-				resumeId
-			})
-		);
+		// Signal success to the store - this will show the success indicator in +layout.svelte
+		pdfImportStore.setSuccess(resumeId);
 	};
 
 	const scheduleImportJobPoll = (jobId: string) => {

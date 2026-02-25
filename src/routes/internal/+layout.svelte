@@ -7,11 +7,13 @@
 		pdfImportStore,
 		isImportActive,
 		isBackgroundImporting,
+		isImportSucceeded,
 		importStatusLabel
 	} from '$lib/stores/pdfImportStore';
-	import { onDestroy } from 'svelte';
-	import { Loader2, AlertCircle } from 'lucide-svelte';
+	import { onDestroy, onMount } from 'svelte';
+	import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-svelte';
 	import { resolve } from '$app/paths';
+	import { browser } from '$app/environment';
 	import './internal.css';
 	import './app.css';
 
@@ -31,15 +33,176 @@
 	// PDF Import indicator state
 	const showImportIndicator = $derived($isImportActive && !plainRoutes.has(routeId));
 	const importHasError = $derived(!!$pdfImportStore.error && $pdfImportStore.status === 'idle');
+	const importIsSuccess = $derived($isImportSucceeded);
 	const importPersonId = $derived($pdfImportStore.personId);
+	const importResumeId = $derived($pdfImportStore.resumeId);
 	const importFilename = $derived($pdfImportStore.sourceFilename);
 	const importError = $derived($pdfImportStore.error);
 	const statusLabel = $derived($importStatusLabel);
+
+	// Success indicator auto-dismiss
+	let successDismissing = $state(false);
+	let successDismissTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	$effect(() => {
+		// When import succeeds, start dismiss timer
+		if (importIsSuccess && !successDismissing) {
+			if (successDismissTimeout) clearTimeout(successDismissTimeout);
+			successDismissTimeout = setTimeout(() => {
+				successDismissing = true;
+				// After animation completes, clear the store
+				setTimeout(() => {
+					pdfImportStore.clear();
+					successDismissing = false;
+				}, 400);
+			}, 4000);
+		}
+		// Reset when not successful
+		if (!importIsSuccess) {
+			successDismissing = false;
+			if (successDismissTimeout) {
+				clearTimeout(successDismissTimeout);
+				successDismissTimeout = null;
+			}
+		}
+	});
 
 	function getImportLink(): string {
 		if (!importPersonId) return '/internal/resumes';
 		return resolve('/internal/resumes/[personId]', { personId: importPersonId }) + '?openImport=1';
 	}
+
+	function getSuccessResumeLink(): string {
+		if (!importPersonId || !importResumeId) return '/internal/resumes';
+		return resolve('/internal/resumes/[personId]/resume/[resumeId]', {
+			personId: importPersonId,
+			resumeId: importResumeId
+		});
+	}
+
+	function handleSuccessClick() {
+		// Clear dismiss timer and go to resume
+		if (successDismissTimeout) {
+			clearTimeout(successDismissTimeout);
+			successDismissTimeout = null;
+		}
+		pdfImportStore.clear();
+	}
+
+	// Global polling for background import status
+	type ResumeImportJobStatus = 'queued' | 'processing' | 'succeeded' | 'failed';
+	type ResumeImportJobStatusResponse = {
+		id: string;
+		status: ResumeImportJobStatus;
+		error_message: string | null;
+		resume_id: string | null;
+	};
+
+	let importPollTimeoutId: ReturnType<typeof setTimeout> | null = null;
+	let importPollAbortController: AbortController | null = null;
+	let isPollingActive = $state(false);
+
+	const stopImportPolling = () => {
+		if (importPollTimeoutId !== null) {
+			clearTimeout(importPollTimeoutId);
+			importPollTimeoutId = null;
+		}
+		importPollAbortController?.abort();
+		importPollAbortController = null;
+		isPollingActive = false;
+	};
+
+	const scheduleImportJobPoll = (jobId: string) => {
+		if ($pdfImportStore.jobId !== jobId) return;
+		importPollTimeoutId = setTimeout(() => {
+			void pollImportJob(jobId);
+		}, 2000);
+	};
+
+	const pollImportJob = async (jobId: string) => {
+		if (!browser || $pdfImportStore.jobId !== jobId) return;
+
+		const controller = new AbortController();
+		importPollAbortController = controller;
+
+		try {
+			const response = await fetch(
+				resolve('/internal/api/resumes/import-from-pdf/jobs/[jobId]', { jobId }),
+				{
+					method: 'GET',
+					credentials: 'include',
+					signal: controller.signal
+				}
+			);
+
+			if (!response.ok) {
+				const text = await response.text().catch(() => '');
+				throw new Error(text || 'Could not fetch PDF import status.');
+			}
+
+			const payload = (await response.json()) as ResumeImportJobStatusResponse;
+			if ($pdfImportStore.jobId !== jobId) return;
+
+			if (payload.status === 'queued') {
+				pdfImportStore.setStatus('queued');
+				scheduleImportJobPoll(jobId);
+				return;
+			}
+
+			if (payload.status === 'processing') {
+				pdfImportStore.setStatus('processing');
+				scheduleImportJobPoll(jobId);
+				return;
+			}
+
+			if (payload.status === 'failed') {
+				stopImportPolling();
+				pdfImportStore.setError(payload.error_message || 'Could not import resume from PDF.');
+				return;
+			}
+
+			const resumeId = payload.resume_id?.trim() || '';
+			if (!resumeId) {
+				throw new Error('PDF import finished but no resume ID was returned.');
+			}
+
+			stopImportPolling();
+			pdfImportStore.setSuccess(resumeId);
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				return;
+			}
+
+			stopImportPolling();
+			pdfImportStore.setError(
+				error instanceof TypeError
+					? 'Network error while checking import status.'
+					: error instanceof Error
+						? error.message
+						: 'Could not fetch PDF import status.'
+			);
+		} finally {
+			if (importPollAbortController === controller) {
+				importPollAbortController = null;
+			}
+		}
+	};
+
+	// Start polling when there's a background import
+	$effect(() => {
+		const jobId = $pdfImportStore.jobId;
+		const status = $pdfImportStore.status;
+		const shouldPoll = status === 'queued' || status === 'processing';
+
+		if (shouldPoll && jobId && !isPollingActive) {
+			isPollingActive = true;
+			void pollImportJob(jobId);
+		}
+
+		if (!shouldPoll && isPollingActive) {
+			stopImportPolling();
+		}
+	});
 
 	let barVisible = $state(false);
 	let barCompleting = $state(false);
@@ -79,52 +242,75 @@
 
 	onDestroy(() => {
 		if (hideTimeout) clearTimeout(hideTimeout);
+		if (successDismissTimeout) clearTimeout(successDismissTimeout);
+		stopImportPolling();
 	});
 </script>
 
 <Mode.Watcher defaultMode="light" />
 
 {#if showImportIndicator}
-	<div class="fixed bottom-6 left-6 z-40">
-		<div class="group relative">
+	<div
+		class={`fixed bottom-6 left-6 z-40 transition-all duration-300 ${successDismissing ? 'import-indicator-dismiss' : ''}`}
+	>
+		{#if importIsSuccess}
+			<!-- Success state - green card -->
 			<a
-				href={getImportLink()}
-				class={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 ${
-					importHasError
-						? 'bg-red-500 text-white hover:bg-red-600'
-						: 'bg-primary text-white hover:bg-primary/90'
-				}`}
-				title="View import status"
+				href={getSuccessResumeLink()}
+				onclick={handleSuccessClick}
+				class="flex items-center gap-3 rounded-lg bg-emerald-500 px-4 py-3 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-600"
+				title="Click to open resume"
 			>
-				{#if importHasError}
-					<AlertCircle size={20} />
-				{:else}
-					<Loader2 size={20} class="animate-spin" />
-				{/if}
-			</a>
-
-			<!-- Hover tooltip -->
-			<div
-				class="pointer-events-none invisible absolute bottom-full left-0 mb-2 w-56 rounded-lg border border-slate-200 bg-white p-3 text-left text-sm text-slate-700 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100"
-			>
-				<p class="mb-1 font-semibold text-slate-900">
-					{#if importHasError}
-						Import Failed
-					{:else}
-						Importing PDF
+				<CheckCircle2 size={24} />
+				<div class="text-left">
+					<p class="font-semibold">Import complete!</p>
+					{#if importFilename}
+						<p class="max-w-48 truncate text-xs text-emerald-100">{importFilename}</p>
 					{/if}
-				</p>
-				{#if importFilename}
-					<p class="mb-1 truncate text-xs text-slate-500">{importFilename}</p>
-				{/if}
-				{#if importError}
-					<p class="text-xs text-red-600">{importError}</p>
-				{:else}
-					<p class="text-xs text-slate-500">{statusLabel || 'Processing...'}</p>
-				{/if}
-				<p class="mt-2 text-[11px] text-slate-400">Click to view details</p>
+				</div>
+			</a>
+		{:else}
+			<!-- Loading/Error state -->
+			<div class="group relative">
+				<a
+					href={getImportLink()}
+					class={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 ${
+						importHasError
+							? 'bg-red-500 text-white hover:bg-red-600'
+							: 'bg-primary text-white hover:bg-primary/90'
+					}`}
+					title="View import status"
+				>
+					{#if importHasError}
+						<AlertCircle size={20} />
+					{:else}
+						<Loader2 size={20} class="animate-spin" />
+					{/if}
+				</a>
+
+				<!-- Hover tooltip -->
+				<div
+					class="pointer-events-none invisible absolute bottom-full left-0 mb-2 w-56 rounded-lg border border-slate-200 bg-white p-3 text-left text-sm text-slate-700 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100"
+				>
+					<p class="mb-1 font-semibold text-slate-900">
+						{#if importHasError}
+							Import Failed
+						{:else}
+							Importing PDF
+						{/if}
+					</p>
+					{#if importFilename}
+						<p class="mb-1 truncate text-xs text-slate-500">{importFilename}</p>
+					{/if}
+					{#if importError}
+						<p class="text-xs text-red-600">{importError}</p>
+					{:else}
+						<p class="text-xs text-slate-500">{statusLabel || 'Processing...'}</p>
+					{/if}
+					<p class="mt-2 text-[11px] text-slate-400">Click to view details</p>
+				</div>
 			</div>
-		</div>
+		{/if}
 	</div>
 {/if}
 
@@ -200,6 +386,21 @@
 		}
 		100% {
 			transform: translateX(120%);
+		}
+	}
+
+	:global(.import-indicator-dismiss) {
+		animation: import-indicator-slide-out 400ms ease-in forwards;
+	}
+
+	@keyframes import-indicator-slide-out {
+		0% {
+			opacity: 1;
+			transform: translateX(0);
+		}
+		100% {
+			opacity: 0;
+			transform: translateX(-100%);
 		}
 	}
 </style>
