@@ -26,18 +26,17 @@ type LoadResult = {
 const normalizePath = (pathname: string) => pathname.replace(/\/$/, '') || '/';
 
 const PUBLIC_PATHS = ['/internal/login', '/internal/reset-password'] as const;
+const LEGACY_ADMIN_ROUTE = /^\/internal\/admin(?:\/|$)/;
+
+const mapLegacyAdminPath = (pathname: string): string | null => {
+	if (!LEGACY_ADMIN_ROUTE.test(pathname)) return null;
+	if (pathname === '/internal/admin') return '/internal';
+	return pathname.replace('/internal/admin', '/internal');
+};
 
 // Role guard configuration centralizes who can visit each internal path.
 const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 	{ pattern: /^\/internal$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
-	{ pattern: /^\/internal\/admin$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
-	{ pattern: /^\/internal\/admin\/users(\/.*)?$/, roles: ['admin', 'employer'] },
-	{ pattern: /^\/internal\/admin\/news(\/.*)?$/, roles: ['admin', 'cms_admin'] },
-	{ pattern: /^\/internal\/admin\/cases(\/.*)?$/, roles: ['admin', 'cms_admin'] },
-	{
-		pattern: /^\/internal\/admin\/feedback(\/.*)?$/,
-		roles: ['admin', 'cms_admin', 'employee', 'employer']
-	},
 	{ pattern: /^\/internal\/resume$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
 	{ pattern: /^\/internal\/resume\/users(\/.*)?$/, roles: ['admin', 'employer'] },
 	{
@@ -54,6 +53,7 @@ const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 	},
 	{ pattern: /^\/internal\/users/, roles: ['admin', 'employer'] },
 	{ pattern: /^\/internal\/news/, roles: ['admin', 'cms_admin'] },
+	{ pattern: /^\/internal\/cases(\/.*)?$/, roles: ['admin', 'cms_admin'] },
 	{ pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
 	{ pattern: /^\/internal\/employees(\/.*)?$/, roles: ['admin', 'employer', 'employee'] },
 	{ pattern: /^\/internal\/feedback(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
@@ -114,6 +114,11 @@ const internalMeta = (pathname: string): PageMetaInput => ({
 
 export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	const pathname = normalizePath(url.pathname);
+	const legacyAdminPath = mapLegacyAdminPath(pathname);
+	if (legacyAdminPath) {
+		throw redirect(308, `${legacyAdminPath}${url.search}`);
+	}
+
 	const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
 
 	if (!accessToken) {

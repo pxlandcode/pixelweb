@@ -26,10 +26,7 @@
 	]);
 	const routeId = $derived($page.route.id ?? '');
 	const isNamespacedWorkspaceRoute = $derived(
-		routeId === '/internal/admin' ||
-			routeId.startsWith('/internal/admin/') ||
-			routeId === '/internal/resume' ||
-			routeId.startsWith('/internal/resume/')
+		routeId === '/internal/resume' || routeId.startsWith('/internal/resume/')
 	);
 	const isBusy = $derived(Boolean($navigating) || $loadingStore.isLoading);
 	const loadingLabel = $derived(

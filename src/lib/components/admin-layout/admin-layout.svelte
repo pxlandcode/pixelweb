@@ -34,7 +34,6 @@
 		items: NavItem[];
 	};
 
-	// Phase 1 split: expose dedicated namespaces while reusing existing pages under wrapper routes.
 	const navSections: NavSection[] = [
 		{
 			key: 'resume',
@@ -72,31 +71,31 @@
 			items: [
 				{
 					label: 'Dashboard',
-					href: '/internal/admin',
+					href: '/internal',
 					allowed: ['admin', 'cms_admin', 'employee', 'employer'],
 					match: 'exact'
 				},
 				{
 					label: 'Users',
-					href: '/internal/admin/users',
+					href: '/internal/users',
 					allowed: ['admin', 'employer'],
 					match: 'prefix'
 				},
 				{
 					label: 'News',
-					href: '/internal/admin/news',
+					href: '/internal/news',
 					allowed: ['admin', 'cms_admin'],
 					match: 'prefix'
 				},
 				{
 					label: 'Cases',
-					href: '/internal/admin/cases',
+					href: '/internal/cases',
 					allowed: ['admin', 'cms_admin'],
 					match: 'prefix'
 				},
 				{
 					label: 'Feedback',
-					href: '/internal/admin/feedback',
+					href: '/internal/feedback',
 					allowed: ['admin', 'employer', 'cms_admin', 'employee'],
 					match: 'prefix'
 				}
@@ -124,11 +123,10 @@
 	};
 
 	const inferWorkspace = (pathname: string): WorkspaceKey | null => {
-		if (pathname === '/internal/admin' || pathname.startsWith('/internal/admin/')) return 'admin';
-		if (pathname === '/internal/resume' || pathname.startsWith('/internal/resume/')) return 'resume';
-
-		// Legacy routes while we migrate links and add redirects.
+		if (pathname === '/internal') return 'admin';
 		if (
+			pathname === '/internal/users' ||
+			pathname.startsWith('/internal/users/') ||
 			pathname === '/internal/news' ||
 			pathname.startsWith('/internal/news/') ||
 			pathname === '/internal/cases' ||
@@ -138,6 +136,8 @@
 		) {
 			return 'admin';
 		}
+
+		if (pathname === '/internal/resume' || pathname.startsWith('/internal/resume/')) return 'resume';
 
 		if (
 			pathname === '/internal/employees' ||
