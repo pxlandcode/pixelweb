@@ -25,8 +25,8 @@
 		base: 'text-fg m-auto max-w-full bg-transparent animate-dialog-backdrop backdrop:animate-dialog-backdrop',
 		variants: {
 			variant: {
-				right: 'mr-0 w-1/3 max-h-full',
-				left: 'ml-0 w-1/3 max-h-full',
+				right: 'mr-0 h-dvh max-h-dvh w-1/3',
+				left: 'ml-0 h-dvh max-h-dvh w-1/3',
 				top: 'mt-0 w-full',
 				bottom: 'mb-0 w-full max-h-[92vh]',
 				modal: 'w-full md:w-2/3'
@@ -38,11 +38,11 @@
 		base: 'flex min-h-0 w-full flex-col overscroll-contain bg-background p-8',
 		variants: {
 			variant: {
-				right: 'min-h-screen pt-16',
-				left: 'min-h-screen pt-16',
+				right: 'h-full min-h-0 max-h-dvh overflow-hidden pt-16',
+				left: 'h-full min-h-0 max-h-dvh overflow-hidden pt-16',
 				top: '',
 				bottom: 'max-h-[92vh] overflow-hidden',
-				modal: 'max-h-[90vh] overflow-y-hidden'
+				modal: 'max-h-[90vh] overflow-hidden'
 			}
 		}
 	});
@@ -165,7 +165,7 @@
 				<p class="tracking-tight text-muted-fg">{subtitle}</p>
 			{/if}
 
-			<div class="mt-4 flex min-h-0 flex-1 flex-col text-foreground">
+			<div class="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden text-foreground">
 				{@render children()}
 			</div>
 		</div>

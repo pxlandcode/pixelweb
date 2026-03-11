@@ -358,7 +358,7 @@
 	class="mr-0 w-full max-w-2xl"
 	dismissable
 >
-	<form class="flex flex-col gap-5 overflow-y-auto pb-16" onsubmit={handleSubmit}>
+	<form class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-16" onsubmit={handleSubmit}>
 		{#if mode === 'edit'}
 			<input type="hidden" name="user_id" value={initial.id} />
 		{/if}
