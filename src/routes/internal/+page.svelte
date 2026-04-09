@@ -20,7 +20,7 @@
 				<Button
 					variant="ghost"
 					size="sm"
-					href={`/internal/resume/employees/${data.user?.id}`}
+					href={`/internal/employees/${data.user?.id}`}
 					class="text-gray-500 hover:text-gray-700"
 				>
 					<Pencil size={16} />

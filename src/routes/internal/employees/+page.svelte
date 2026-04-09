@@ -25,7 +25,7 @@
 			{@const canView = canViewAllProfiles || (!!currentUserId && employee.id === currentUserId)}
 			<svelte:element
 				this={canView ? 'a' : 'div'}
-				href={canView ? `/internal/resume/employees/${employee.id}` : undefined}
+				href={canView ? `/internal/employees/${employee.id}` : undefined}
 				class="block h-full"
 				aria-disabled={!canView}
 			>

@@ -53,7 +53,7 @@
 				},
 				{
 					label: 'Employees',
-					href: '/internal/resume/employees',
+					href: '/internal/employees',
 					allowed: ['admin', 'employer', 'employee'],
 					match: 'prefix'
 				},
@@ -79,6 +79,12 @@
 					label: 'Users',
 					href: '/internal/users',
 					allowed: ['admin', 'employer'],
+					match: 'prefix'
+				},
+				{
+					label: 'Employees',
+					href: '/internal/employees',
+					allowed: ['admin', 'employer', 'employee'],
 					match: 'prefix'
 				},
 				{
@@ -137,15 +143,15 @@
 			return 'admin';
 		}
 
-		if (pathname === '/internal/resume' || pathname.startsWith('/internal/resume/')) return 'resume';
-
-		if (
-			pathname === '/internal/employees' ||
-			pathname.startsWith('/internal/employees/') ||
-			pathname === '/internal/resumes' ||
-			pathname.startsWith('/internal/resumes/')
-		) {
+		if (pathname === '/internal/resume' || pathname.startsWith('/internal/resume/'))
 			return 'resume';
+
+		if (pathname === '/internal/resumes' || pathname.startsWith('/internal/resumes/')) {
+			return 'resume';
+		}
+
+		if (pathname === '/internal/employees' || pathname.startsWith('/internal/employees/')) {
+			return 'admin';
 		}
 
 		return null;

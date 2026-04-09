@@ -8,7 +8,7 @@
 		{
 			title: 'View Employees',
 			description: 'Browse all consultants and their profiles',
-			href: '/internal/resume/employees',
+			href: '/internal/employees',
 			icon: Users,
 			color: 'bg-blue-500'
 		},
@@ -103,7 +103,7 @@
 					</p>
 				</div>
 			</div>
-			<Button variant="outline" size="sm" href={`/internal/resume/employees/${data.user?.id}`}>
+			<Button variant="outline" size="sm" href={`/internal/employees/${data.user?.id}`}>
 				Edit profile
 			</Button>
 		</div>

@@ -43,8 +43,8 @@ export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 	// Employees without elevated roles can only view their own profile.
 	if (!isAdmin && !isEmployer && !isCmsAdmin && !isOwnProfile) {
 		const destination = currentUser?.id
-			? `/internal/resume/employees/${currentUser.id}`
-			: '/internal/resume/employees';
+			? `/internal/employees/${currentUser.id}`
+			: '/internal/employees';
 		throw redirect(303, destination);
 	}
 
@@ -102,7 +102,7 @@ export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 			title: `${siteMeta.name} — ${employee.first_name} ${employee.last_name}`.trim() || 'Employee',
 			description: 'View and manage employee information.',
 			noindex: true,
-			path: `/internal/resume/employees/${userId}`
+			path: `/internal/employees/${userId}`
 		}
 	};
 };

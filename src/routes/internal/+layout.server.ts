@@ -27,11 +27,18 @@ const normalizePath = (pathname: string) => pathname.replace(/\/$/, '') || '/';
 
 const PUBLIC_PATHS = ['/internal/login', '/internal/reset-password'] as const;
 const LEGACY_ADMIN_ROUTE = /^\/internal\/admin(?:\/|$)/;
+const LEGACY_RESUME_EMPLOYEES_ROUTE = /^\/internal\/resume\/employees(?:\/|$)/;
 
 const mapLegacyAdminPath = (pathname: string): string | null => {
 	if (!LEGACY_ADMIN_ROUTE.test(pathname)) return null;
 	if (pathname === '/internal/admin') return '/internal';
 	return pathname.replace('/internal/admin', '/internal');
+};
+
+const mapLegacyEmployeesPath = (pathname: string): string | null => {
+	if (!LEGACY_RESUME_EMPLOYEES_ROUTE.test(pathname)) return null;
+	if (pathname === '/internal/resume/employees') return '/internal/employees';
+	return pathname.replace('/internal/resume/employees', '/internal/employees');
 };
 
 // Role guard configuration centralizes who can visit each internal path.
@@ -56,7 +63,10 @@ const roleGuards: Array<{ pattern: RegExp; roles: Role[] }> = [
 	{ pattern: /^\/internal\/cases(\/.*)?$/, roles: ['admin', 'cms_admin'] },
 	{ pattern: /^\/internal\/preboard$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
 	{ pattern: /^\/internal\/employees(\/.*)?$/, roles: ['admin', 'employer', 'employee'] },
-	{ pattern: /^\/internal\/feedback(\/.*)?$/, roles: ['admin', 'cms_admin', 'employee', 'employer'] },
+	{
+		pattern: /^\/internal\/feedback(\/.*)?$/,
+		roles: ['admin', 'cms_admin', 'employee', 'employer']
+	},
 	{
 		pattern: /^\/internal\/resumes\/consultant\//,
 		roles: ['admin', 'cms_admin', 'employee', 'employer']
@@ -117,6 +127,10 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	const legacyAdminPath = mapLegacyAdminPath(pathname);
 	if (legacyAdminPath) {
 		throw redirect(308, `${legacyAdminPath}${url.search}`);
+	}
+	const legacyEmployeesPath = mapLegacyEmployeesPath(pathname);
+	if (legacyEmployeesPath) {
+		throw redirect(308, `${legacyEmployeesPath}${url.search}`);
 	}
 
 	const accessToken = cookies.get(AUTH_COOKIE_NAMES.access) ?? null;
@@ -193,9 +207,7 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 			});
 		}
 
-		const rolesFromTable = roleRows
-			.map((row) => normalizeRole(row.role))
-			.filter(Boolean) as Role[];
+		const rolesFromTable = roleRows.map((row) => normalizeRole(row.role)).filter(Boolean) as Role[];
 
 		let roles = rolesFromTable;
 
