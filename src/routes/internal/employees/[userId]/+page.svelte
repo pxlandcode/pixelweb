@@ -62,7 +62,7 @@
 	<div class="mb-8">
 		<Button
 			variant="ghost"
-			href="/internal/resume/employees"
+			href="/internal/employees"
 			class="mb-6 pl-0 hover:bg-transparent hover:text-indigo-600"
 		>
 			<ArrowLeft size={16} class="mr-2" />

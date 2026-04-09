@@ -43,7 +43,7 @@
 		},
 		{
 			label: 'Employees',
-			href: '/internal/resume/employees',
+			href: '/internal/employees',
 			allowed: ['admin', 'employer', 'employee'],
 			match: 'prefix'
 		},
